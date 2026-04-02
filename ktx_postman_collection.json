@@ -1,0 +1,528 @@
+{
+	"info": {
+		"_postman_id": "ktx-management-system",
+		"name": "Ký túc xá thông minh API",
+		"description": "Bộ sưu tập API cho Hệ thống Quản lý Ký túc xá thông minh (Backend)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@dorm.com\",\n    \"password\": \"admin123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Admin - Students",
+			"item": [
+				{
+					"name": "Get All Students",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/admin/students",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"students"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Student",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"student1@example.com\",\n    \"password\": \"student123\",\n    \"mssv\": \"SV001\",\n    \"fullname\": \"Nguyễn Văn A\",\n    \"cccd\": \"123456789012\",\n    \"phone\": \"0987654321\",\n    \"address\": \"Hồ Chí Minh\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/students",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"students"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Student",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"fullname\": \"Nguyễn Văn A (Updated)\",\n    \"phone\": \"0123456789\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/students/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"students",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "STUDENT_ID"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Student",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/admin/students/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"students",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "STUDENT_ID"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{admin_token}}",
+						"type": "string"
+					}
+				]
+			}
+		},
+		{
+			"name": "Admin - Rooms",
+			"item": [
+				{
+					"name": "Get All Rooms",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/admin/rooms",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"rooms"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Room",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"room_code\": \"A101\",\n    \"building\": \"Tòa A\",\n    \"capacity\": 4,\n    \"price\": 1200000\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/rooms",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"rooms"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Room",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"price\": 1300000,\n    \"capacity\": 6\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/rooms/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"rooms",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "ROOM_ID"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Room Status",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"Maintenance\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/rooms/:id/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"rooms",
+								":id",
+								"status"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "ROOM_ID"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{admin_token}}",
+						"type": "string"
+					}
+				]
+			}
+		},
+		{
+			"name": "Admin - Requests",
+			"item": [
+				{
+					"name": "Get Pending Requests",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/admin/requests",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"requests"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Approve Request",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/admin/requests/:id/approve",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"requests",
+								":id",
+								"approve"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "REQUEST_ID"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Reject Request",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/admin/requests/:id/reject",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"requests",
+								":id",
+								"reject"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "REQUEST_ID"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{admin_token}}",
+						"type": "string"
+					}
+				]
+			}
+		},
+		{
+			"name": "Admin - Contracts",
+			"item": [
+				{
+					"name": "Get All Contracts",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/admin/contracts",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"contracts"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "End Contract",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/admin/contracts/:id/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"contracts",
+								":id",
+								"status"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CONTRACT_ID"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{admin_token}}",
+						"type": "string"
+					}
+				]
+			}
+		},
+		{
+			"name": "Admin - Feedbacks",
+			"item": [
+				{
+					"name": "Get All Feedbacks",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/admin/feedbacks",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"feedbacks"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Reply Feedback",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"reply_content\": \"Cảm ơn bạn đã đóng góp, chúng tôi sẽ xử lý sự cố này sớm.\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/feedbacks/:id/reply",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"feedbacks",
+								":id",
+								"reply"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "FEEDBACK_ID"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{admin_token}}",
+						"type": "string"
+					}
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:5000"
+		},
+		{
+			"key": "admin_token",
+			"value": "YOUR_ADMIN_JWT_TOKEN_HERE"
+		}
+	]
+}
