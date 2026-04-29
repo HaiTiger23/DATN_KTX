@@ -1,528 +1,383 @@
 {
 	"info": {
-		"_postman_id": "ktx-management-system",
-		"name": "Ký túc xá thông minh API",
-		"description": "Bộ sưu tập API cho Hệ thống Quản lý Ký túc xá thông minh (Backend)",
+		"_postman_id": "ktx-management-system-v2",
+		"name": "KTX Quản lý Ký túc xá API v2",
+		"description": "Collection đầy đủ cho Hệ thống Quản lý Ký túc xá.\n\n**Hướng dẫn nhanh:**\n1. Gọi [Auth] Login → token tự động lưu vào biến `admin_token`\n2. Tất cả folder Admin đã cấu hình Bearer token từ `{{admin_token}}`\n3. Thay `:id` bằng MongoDB ObjectId thực tế\n\n**Base URL:** `http://localhost:5000`",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
-			"name": "Auth",
+			"name": "🔐 Auth",
 			"item": [
 				{
-					"name": "Login",
+					"name": "Login (Admin hoặc Student)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"if (res.token) {",
+									"    pm.collectionVariables.set('admin_token', res.token);",
+									"    pm.collectionVariables.set('user_id', res._id);",
+									"    console.log('✅ Token đã lưu tự động vào admin_token');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
-						"header": [],
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
 						"body": {
 							"mode": "raw",
 							"raw": "{\n    \"email\": \"admin@dorm.com\",\n    \"password\": \"admin123\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
+							"options": { "raw": { "language": "json" } }
 						},
 						"url": {
 							"raw": "{{base_url}}/api/auth/login",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"auth",
-								"login"
-							]
-						}
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "login"]
+						},
+						"description": "Đăng nhập cho Admin hoặc Student. Token JWT sẽ tự động được lưu vào biến `admin_token` qua Test script.\n\n**Request body:**\n- `email` (string, required)\n- `password` (string, required)\n\n**Response 200:**\n```json\n{\n  \"_id\": \"...\",\n  \"fullname\": \"System Admin\",\n  \"email\": \"admin@dorm.com\",\n  \"role\": \"Admin\",\n  \"token\": \"eyJhbGci...\"\n}\n```\n\n**Lỗi:**\n- 400: Thiếu email hoặc password\n- 401: Sai email/password\n- 403: Tài khoản bị vô hiệu hóa"
 					},
 					"response": []
 				}
 			]
 		},
 		{
-			"name": "Admin - Students",
+			"name": "👨‍🎓 Admin - Sinh viên",
+			"auth": {
+				"type": "bearer",
+				"bearer": [{ "key": "token", "value": "{{admin_token}}", "type": "string" }]
+			},
 			"item": [
 				{
-					"name": "Get All Students",
+					"name": "Lấy danh sách sinh viên",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/api/admin/students",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"admin",
-								"students"
-							]
-						}
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "students"]
+						},
+						"description": "Lấy toàn bộ danh sách sinh viên (role = Student). Password không được trả về.\n\n**Response 200:** Mảng các object Student\n```json\n[\n  {\n    \"_id\": \"...\",\n    \"email\": \"sv1@example.com\",\n    \"role\": \"Student\",\n    \"mssv\": \"SV001\",\n    \"fullname\": \"Nguyễn Văn A\",\n    \"cccd\": \"123456789012\",\n    \"phone\": \"0987654321\",\n    \"address\": \"Hà Nội\",\n    \"status\": \"Active\",\n    \"createdAt\": \"2025-01-01T00:00:00.000Z\"\n  }\n]\n```"
 					},
 					"response": []
 				},
 				{
-					"name": "Create Student",
+					"name": "Thêm sinh viên mới",
 					"request": {
 						"method": "POST",
-						"header": [],
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\": \"student1@example.com\",\n    \"password\": \"student123\",\n    \"mssv\": \"SV001\",\n    \"fullname\": \"Nguyễn Văn A\",\n    \"cccd\": \"123456789012\",\n    \"phone\": \"0987654321\",\n    \"address\": \"Hồ Chí Minh\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
+							"raw": "{\n    \"email\": \"sv001@example.com\",\n    \"password\": \"sv123456\",\n    \"mssv\": \"SV001\",\n    \"fullname\": \"Nguyễn Văn A\",\n    \"cccd\": \"123456789012\",\n    \"phone\": \"0987654321\",\n    \"address\": \"123 Đường ABC, Hà Nội\"\n}",
+							"options": { "raw": { "language": "json" } }
 						},
 						"url": {
 							"raw": "{{base_url}}/api/admin/students",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"admin",
-								"students"
-							]
-						}
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "students"]
+						},
+						"description": "Tạo tài khoản sinh viên mới. Password sẽ tự động được hash.\n\n**Required:** `email`, `password`, `fullname`\n**Optional:** `mssv`, `cccd`, `phone`, `address`\n\n**Lỗi:**\n- 400: Thiếu field bắt buộc\n- 400: email/mssv/cccd đã tồn tại\n\n**Response 201:** Object Student (không có password)"
 					},
 					"response": []
 				},
 				{
-					"name": "Update Student",
+					"name": "Cập nhật sinh viên",
 					"request": {
 						"method": "PUT",
-						"header": [],
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"fullname\": \"Nguyễn Văn A (Updated)\",\n    \"phone\": \"0123456789\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
+							"raw": "{\n    \"fullname\": \"Nguyễn Văn A (Đã cập nhật)\",\n    \"phone\": \"0123456789\",\n    \"address\": \"456 Đường XYZ, Hà Nội\",\n    \"status\": \"Active\"\n}",
+							"options": { "raw": { "language": "json" } }
 						},
 						"url": {
 							"raw": "{{base_url}}/api/admin/students/:id",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"admin",
-								"students",
-								":id"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "STUDENT_ID"
-								}
-							]
-						}
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "students", ":id"],
+							"variable": [{ "key": "id", "value": "STUDENT_OBJECTID_HERE" }]
+						},
+						"description": "Cập nhật thông tin sinh viên. Chỉ gửi các field cần thay đổi.\n\n**Các field có thể cập nhật:** `fullname`, `email`, `phone`, `address`, `status`, `password`\n**Không thể thay đổi:** `role`, `mssv`, `cccd`\n\n**status hợp lệ:** `Active`, `Inactive`"
 					},
 					"response": []
 				},
 				{
-					"name": "Delete Student",
+					"name": "Xóa sinh viên",
 					"request": {
 						"method": "DELETE",
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/api/admin/students/:id",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"admin",
-								"students",
-								":id"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "STUDENT_ID"
-								}
-							]
-						}
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "students", ":id"],
+							"variable": [{ "key": "id", "value": "STUDENT_OBJECTID_HERE" }]
+						},
+						"description": "Xóa sinh viên.\n\n**Tự động:** Xóa tất cả Pending requests của sinh viên đó.\n\n**Lỗi 400:** Sinh viên đang có hợp đồng Active → phải kết thúc hợp đồng trước\n\n**Response 200:**\n```json\n{ \"message\": \"Đã xóa sinh viên thành công\" }\n```"
 					},
 					"response": []
 				}
-			],
-			"auth": {
-				"type": "bearer",
-				"bearer": [
-					{
-						"key": "token",
-						"value": "{{admin_token}}",
-						"type": "string"
-					}
-				]
-			}
+			]
 		},
 		{
-			"name": "Admin - Rooms",
+			"name": "🏠 Admin - Phòng ở",
+			"auth": {
+				"type": "bearer",
+				"bearer": [{ "key": "token", "value": "{{admin_token}}", "type": "string" }]
+			},
 			"item": [
 				{
-					"name": "Get All Rooms",
+					"name": "Lấy danh sách phòng",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/api/admin/rooms",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"admin",
-								"rooms"
-							]
-						}
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "rooms"]
+						},
+						"description": "Lấy tất cả phòng.\n\n**Response 200:** Mảng Room\n```json\n[\n  {\n    \"_id\": \"...\",\n    \"room_code\": \"A101\",\n    \"building\": \"Tòa A\",\n    \"capacity\": 4,\n    \"current_people\": 2,\n    \"price\": 1200000,\n    \"status\": \"Available\"\n  }\n]\n```\n\n**Tip Frontend:** Tính `available = capacity - current_people` để hiển thị số chỗ trống."
 					},
 					"response": []
 				},
 				{
-					"name": "Create Room",
+					"name": "Tạo phòng mới",
 					"request": {
 						"method": "POST",
-						"header": [],
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
 						"body": {
 							"mode": "raw",
 							"raw": "{\n    \"room_code\": \"A101\",\n    \"building\": \"Tòa A\",\n    \"capacity\": 4,\n    \"price\": 1200000\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
+							"options": { "raw": { "language": "json" } }
 						},
 						"url": {
 							"raw": "{{base_url}}/api/admin/rooms",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"admin",
-								"rooms"
-							]
-						}
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "rooms"]
+						},
+						"description": "Tạo phòng mới. `current_people` tự động = 0, `status` tự động = `Available`.\n\n**Required:** `room_code`, `building`, `capacity`, `price`\n\n**Lỗi 400:** Mã phòng đã tồn tại"
 					},
 					"response": []
 				},
 				{
-					"name": "Update Room",
+					"name": "Cập nhật thông tin phòng",
 					"request": {
 						"method": "PUT",
-						"header": [],
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"price\": 1300000,\n    \"capacity\": 6\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
+							"raw": "{\n    \"price\": 1500000,\n    \"capacity\": 6,\n    \"building\": \"Tòa A Mới\"\n}",
+							"options": { "raw": { "language": "json" } }
 						},
 						"url": {
 							"raw": "{{base_url}}/api/admin/rooms/:id",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"admin",
-								"rooms",
-								":id"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "ROOM_ID"
-								}
-							]
-						}
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "rooms", ":id"],
+							"variable": [{ "key": "id", "value": "ROOM_OBJECTID_HERE" }]
+						},
+						"description": "Sửa giá, sức chứa, tên tòa nhà.\n\n**Lỗi 400:** `capacity` mới < `current_people` hiện tại"
 					},
 					"response": []
 				},
 				{
-					"name": "Update Room Status",
+					"name": "Đổi trạng thái phòng",
 					"request": {
 						"method": "PATCH",
-						"header": [],
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
 						"body": {
 							"mode": "raw",
 							"raw": "{\n    \"status\": \"Maintenance\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
+							"options": { "raw": { "language": "json" } }
 						},
 						"url": {
 							"raw": "{{base_url}}/api/admin/rooms/:id/status",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"admin",
-								"rooms",
-								":id",
-								"status"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "ROOM_ID"
-								}
-							]
-						}
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "rooms", ":id", "status"],
+							"variable": [{ "key": "id", "value": "ROOM_OBJECTID_HERE" }]
+						},
+						"description": "Chuyển trạng thái phòng.\n\n**status hợp lệ:** `Available` | `Maintenance`\n\n**Lỗi 400:** Không thể chuyển sang `Maintenance` khi `current_people > 0`"
+					},
+					"response": []
+				},
+				{
+					"name": "[Util] Đồng bộ số người ở",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/admin/rooms/sync-occupancy",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "rooms", "sync-occupancy"]
+						},
+						"description": "Tính lại `current_people` cho tất cả phòng dựa trên số Contract Active thực tế trong DB.\n\nDùng khi nghi ngờ data bị lệch (server crash giữa chừng...).\n\n**Response 200:**\n```json\n{ \"message\": \"Đã đồng bộ xong. Số phòng được cập nhật: 3\" }\n```"
 					},
 					"response": []
 				}
-			],
-			"auth": {
-				"type": "bearer",
-				"bearer": [
-					{
-						"key": "token",
-						"value": "{{admin_token}}",
-						"type": "string"
-					}
-				]
-			}
+			]
 		},
 		{
-			"name": "Admin - Requests",
+			"name": "📋 Admin - Đơn đăng ký",
+			"auth": {
+				"type": "bearer",
+				"bearer": [{ "key": "token", "value": "{{admin_token}}", "type": "string" }]
+			},
 			"item": [
 				{
-					"name": "Get Pending Requests",
+					"name": "Lấy danh sách đơn chờ duyệt",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/api/admin/requests",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"admin",
-								"requests"
-							]
-						}
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "requests"]
+						},
+						"description": "Lấy tất cả đơn có status = `Pending`.\n\n**Response 200:** Mảng Request (đã populate student và room)\n```json\n[\n  {\n    \"_id\": \"...\",\n    \"status\": \"Pending\",\n    \"student_id\": {\n      \"_id\": \"...\",\n      \"fullname\": \"Nguyễn Văn A\",\n      \"email\": \"sv1@example.com\",\n      \"mssv\": \"SV001\"\n    },\n    \"room_id\": {\n      \"_id\": \"...\",\n      \"room_code\": \"A101\",\n      \"building\": \"Tòa A\",\n      \"current_people\": 2,\n      \"capacity\": 4\n    },\n    \"createdAt\": \"2025-01-01T00:00:00.000Z\"\n  }\n]\n```"
 					},
 					"response": []
 				},
 				{
-					"name": "Approve Request",
+					"name": "Duyệt đơn đăng ký",
 					"request": {
 						"method": "POST",
-						"header": [],
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"start_date\": \"2025-09-01\",\n    \"end_date\": \"2026-03-01\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
 						"url": {
 							"raw": "{{base_url}}/api/admin/requests/:id/approve",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"admin",
-								"requests",
-								":id",
-								"approve"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "REQUEST_ID"
-								}
-							]
-						}
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "requests", ":id", "approve"],
+							"variable": [{ "key": "id", "value": "REQUEST_OBJECTID_HERE" }]
+						},
+						"description": "Duyệt đơn đăng ký ở.\n\n**Body (optional):** `start_date`, `end_date` — nếu không gửi, mặc định hôm nay + 6 tháng.\n\n**Tự động thực hiện:**\n1. Kiểm tra SV chưa có contract Active khác\n2. Atomic tăng `current_people` của phòng (chống race condition)\n3. Cập nhật request → `Approved`\n4. Tạo Contract mới → `Active`\n\n**Các lỗi 400:**\n- Đơn đã được xử lý rồi\n- Sinh viên đang có hợp đồng phòng khác\n- Phòng đang bảo trì\n- Phòng đã đầy\n- Ngày kết thúc ≤ ngày bắt đầu\n\n**Response 200:**\n```json\n{\n  \"message\": \"Đã duyệt đơn và tạo hợp đồng thành công\",\n  \"contract\": { \"_id\": \"...\", \"status\": \"Active\", ... }\n}\n```"
 					},
 					"response": []
 				},
 				{
-					"name": "Reject Request",
+					"name": "Từ chối đơn đăng ký",
 					"request": {
 						"method": "POST",
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/api/admin/requests/:id/reject",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"admin",
-								"requests",
-								":id",
-								"reject"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "REQUEST_ID"
-								}
-							]
-						}
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "requests", ":id", "reject"],
+							"variable": [{ "key": "id", "value": "REQUEST_OBJECTID_HERE" }]
+						},
+						"description": "Từ chối đơn. Không cần body.\n\n**Lỗi 400:** Đơn đã được xử lý rồi (không phải Pending)\n\n**Response 200:**\n```json\n{ \"message\": \"Đã từ chối đơn đăng ký\" }\n```"
 					},
 					"response": []
 				}
-			],
-			"auth": {
-				"type": "bearer",
-				"bearer": [
-					{
-						"key": "token",
-						"value": "{{admin_token}}",
-						"type": "string"
-					}
-				]
-			}
+			]
 		},
 		{
-			"name": "Admin - Contracts",
+			"name": "📄 Admin - Hợp đồng",
+			"auth": {
+				"type": "bearer",
+				"bearer": [{ "key": "token", "value": "{{admin_token}}", "type": "string" }]
+			},
 			"item": [
 				{
-					"name": "Get All Contracts",
+					"name": "Lấy danh sách hợp đồng",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/api/admin/contracts",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"admin",
-								"contracts"
-							]
-						}
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "contracts"]
+						},
+						"description": "Lấy tất cả hợp đồng (cả Active lẫn Ended).\n\n**Response 200:**\n```json\n[\n  {\n    \"_id\": \"...\",\n    \"status\": \"Active\",\n    \"start_date\": \"2025-09-01T00:00:00.000Z\",\n    \"end_date\": \"2026-03-01T00:00:00.000Z\",\n    \"student_id\": {\n      \"_id\": \"...\", \"fullname\": \"...\", \"email\": \"...\", \"mssv\": \"...\"\n    },\n    \"room_id\": {\n      \"_id\": \"...\", \"room_code\": \"A101\", \"building\": \"Tòa A\"\n    }\n  }\n]\n```\n\n**Tip Frontend:** Lọc `status === 'Active'` để hiện nút \"Kết thúc hợp đồng\"."
 					},
 					"response": []
 				},
 				{
-					"name": "End Contract",
+					"name": "Kết thúc hợp đồng",
 					"request": {
 						"method": "PATCH",
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/api/admin/contracts/:id/status",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"admin",
-								"contracts",
-								":id",
-								"status"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "CONTRACT_ID"
-								}
-							]
-						}
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "contracts", ":id", "status"],
+							"variable": [{ "key": "id", "value": "CONTRACT_OBJECTID_HERE" }]
+						},
+						"description": "Kết thúc hợp đồng (không cần body).\n\n**Tự động:** Giảm `current_people` của phòng đi 1 (atomic, không xuống dưới 0).\n\n**Lỗi 400:** Hợp đồng đã `Ended` rồi\n\n**Response 200:** Object contract đã cập nhật"
 					},
 					"response": []
 				}
-			],
-			"auth": {
-				"type": "bearer",
-				"bearer": [
-					{
-						"key": "token",
-						"value": "{{admin_token}}",
-						"type": "string"
-					}
-				]
-			}
+			]
 		},
 		{
-			"name": "Admin - Feedbacks",
+			"name": "💬 Admin - Phản ánh",
+			"auth": {
+				"type": "bearer",
+				"bearer": [{ "key": "token", "value": "{{admin_token}}", "type": "string" }]
+			},
 			"item": [
 				{
-					"name": "Get All Feedbacks",
+					"name": "Lấy danh sách phản ánh",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/api/admin/feedbacks",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"admin",
-								"feedbacks"
-							]
-						}
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "feedbacks"]
+						},
+						"description": "Lấy tất cả phản ánh (cả Pending lẫn Answered).\n\n**Response 200:**\n```json\n[\n  {\n    \"_id\": \"...\",\n    \"title\": \"Điều hòa phòng A101 bị hỏng\",\n    \"description\": \"Điều hòa không hoạt động từ hôm qua...\",\n    \"reply_content\": \"\",\n    \"status\": \"Pending\",\n    \"student_id\": { \"_id\": \"...\", \"fullname\": \"...\", \"mssv\": \"...\", \"email\": \"...\" },\n    \"createdAt\": \"2025-01-01T00:00:00.000Z\"\n  }\n]\n```\n\n**Tip Frontend:** Đếm `status === 'Pending'` cho Dashboard badge."
 					},
 					"response": []
 				},
 				{
-					"name": "Reply Feedback",
+					"name": "Trả lời phản ánh",
 					"request": {
 						"method": "POST",
-						"header": [],
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"reply_content\": \"Cảm ơn bạn đã đóng góp, chúng tôi sẽ xử lý sự cố này sớm.\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
+							"raw": "{\n    \"reply_content\": \"Cảm ơn bạn đã phản ánh. Chúng tôi đã ghi nhận và sẽ xử lý trong vòng 24h.\"\n}",
+							"options": { "raw": { "language": "json" } }
 						},
 						"url": {
 							"raw": "{{base_url}}/api/admin/feedbacks/:id/reply",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"admin",
-								"feedbacks",
-								":id",
-								"reply"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "FEEDBACK_ID"
-								}
-							]
-						}
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "feedbacks", ":id", "reply"],
+							"variable": [{ "key": "id", "value": "FEEDBACK_OBJECTID_HERE" }]
+						},
+						"description": "Gửi phản hồi cho phản ánh. Status tự động chuyển thành `Answered`.\n\n**Required:** `reply_content` (không được để trống)\n\n**Lỗi 400:** Phản ánh đã được trả lời rồi"
 					},
 					"response": []
 				}
-			],
-			"auth": {
-				"type": "bearer",
-				"bearer": [
-					{
-						"key": "token",
-						"value": "{{admin_token}}",
-						"type": "string"
-					}
-				]
-			}
+			]
 		}
 	],
 	"variable": [
 		{
 			"key": "base_url",
-			"value": "http://localhost:5000"
+			"value": "http://localhost:5000",
+			"type": "string"
 		},
 		{
 			"key": "admin_token",
-			"value": "YOUR_ADMIN_JWT_TOKEN_HERE"
+			"value": "",
+			"type": "string",
+			"description": "Tự động lưu sau khi gọi Login"
+		},
+		{
+			"key": "user_id",
+			"value": "",
+			"type": "string",
+			"description": "Tự động lưu sau khi gọi Login"
 		}
 	]
 }

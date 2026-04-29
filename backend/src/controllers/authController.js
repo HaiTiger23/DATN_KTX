@@ -11,20 +11,34 @@ const generateToken = (id) => {
 // @route   POST /api/auth/login
 // @access  Public
 const authUser = async (req, res) => {
-  const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-  const user = await User.findOne({ email });
+    // BUG FIX: Validate input trước khi query DB
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email và mật khẩu là bắt buộc' });
+    }
 
-  if (user && (await user.matchPassword(password))) {
-    res.json({
-      _id: user._id,
-      fullname: user.fullname,
-      email: user.email,
-      role: user.role,
-      token: generateToken(user._id),
-    });
-  } else {
-    res.status(401).json({ message: 'Invalid email or password' });
+    const user = await User.findOne({ email });
+
+    if (user && (await user.matchPassword(password))) {
+      // BUG FIX: Kiểm tra tài khoản bị khoá
+      if (user.status !== 'Active') {
+        return res.status(403).json({ message: 'Tài khoản của bạn đã bị vô hiệu hóa' });
+      }
+
+      res.json({
+        _id: user._id,
+        fullname: user.fullname,
+        email: user.email,
+        role: user.role,
+        token: generateToken(user._id),
+      });
+    } else {
+      res.status(401).json({ message: 'Email hoặc mật khẩu không đúng' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 

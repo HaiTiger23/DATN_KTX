@@ -10,20 +10,22 @@ const protect = async (req, res, next) => {
   ) {
     try {
       token = req.headers.authorization.split(' ')[1];
-
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
       req.user = await User.findById(decoded.id).select('-password');
+
+      if (!req.user) {
+        return res.status(401).json({ message: 'Not authorized, user not found' });
+      }
 
       next();
     } catch (error) {
       console.error(error);
-      res.status(401).json({ message: 'Not authorized, token failed' });
+      return res.status(401).json({ message: 'Not authorized, token failed' });
     }
-  }
-
-  if (!token) {
-    res.status(401).json({ message: 'Not authorized, no token' });
+  } else {
+    // BUG FIX: Trước đây dùng if(!token) ở cuối, nhưng nếu try-catch đã
+    // gọi res.status(401) rồi thì vẫn tiếp tục chạy xuống đây → gửi 2 response
+    return res.status(401).json({ message: 'Not authorized, no token' });
   }
 };
 

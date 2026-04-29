@@ -1,42 +1,56 @@
 import User from '../../models/User.js';
 import Contract from '../../models/Contract.js';
+import Request from '../../models/Request.js';
 
 // @desc    Get all students
 // @route   GET /api/admin/students
 // @access  Private/Admin
 const getStudents = async (req, res) => {
-  const students = await User.find({ role: 'Student' });
-  res.json(students);
+  try {
+    // BUG FIX: Thêm .select('-password') để không trả về mật khẩu
+    const students = await User.find({ role: 'Student' }).select('-password');
+    res.json(students);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 // @desc    Create student
 // @route   POST /api/admin/students
 // @access  Private/Admin
 const createStudent = async (req, res) => {
-  const { email, password, mssv, fullname, cccd, phone, address } = req.body;
+  try {
+    const { email, password, mssv, fullname, cccd, phone, address } = req.body;
 
-  const userExists = await User.findOne({ $or: [{ email }, { mssv }, { cccd }] });
+    // BUG FIX: Validate các field bắt buộc trước
+    if (!email || !password || !fullname) {
+      return res.status(400).json({ message: 'Email, password và fullname là bắt buộc' });
+    }
 
-  if (userExists) {
-    res.status(400).json({ message: 'User with this email, mssv, or cccd already exists' });
-    return;
-  }
+    const userExists = await User.findOne({ $or: [{ email }, { mssv }, { cccd }] });
 
-  const student = await User.create({
-    email,
-    password,
-    role: 'Student',
-    mssv,
-    fullname,
-    cccd,
-    phone,
-    address,
-  });
+    if (userExists) {
+      return res.status(400).json({ message: 'Sinh viên với email, mssv hoặc cccd này đã tồn tại' });
+    }
 
-  if (student) {
-    res.status(201).json(student);
-  } else {
-    res.status(400).json({ message: 'Invalid student data' });
+    const student = await User.create({
+      email,
+      password,
+      role: 'Student',
+      mssv,
+      fullname,
+      cccd,
+      phone,
+      address,
+    });
+
+    // BUG FIX: Không trả về password trong response
+    const studentResponse = student.toObject();
+    delete studentResponse.password;
+
+    res.status(201).json(studentResponse);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -44,9 +58,14 @@ const createStudent = async (req, res) => {
 // @route   PUT /api/admin/students/:id
 // @access  Private/Admin
 const updateStudent = async (req, res) => {
-  const student = await User.findById(req.params.id);
+  try {
+    const student = await User.findById(req.params.id);
 
-  if (student) {
+    if (!student) {
+      return res.status(404).json({ message: 'Không tìm thấy sinh viên' });
+    }
+
+    // BUG FIX: Không cho phép thay đổi role qua update
     student.fullname = req.body.fullname || student.fullname;
     student.email = req.body.email || student.email;
     student.phone = req.body.phone || student.phone;
@@ -57,10 +76,15 @@ const updateStudent = async (req, res) => {
       student.password = req.body.password;
     }
 
-    const updatedStudent = await student.save();
+    await student.save();
+
+    // BUG FIX: Không trả về password trong response
+    const updatedStudent = student.toObject();
+    delete updatedStudent.password;
+
     res.json(updatedStudent);
-  } else {
-    res.status(404).json({ message: 'Student not found' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -68,24 +92,31 @@ const updateStudent = async (req, res) => {
 // @route   DELETE /api/admin/students/:id
 // @access  Private/Admin
 const deleteStudent = async (req, res) => {
-  const student = await User.findById(req.params.id);
+  try {
+    const student = await User.findById(req.params.id);
 
-  if (student) {
-    // Check for active contracts
+    if (!student) {
+      return res.status(404).json({ message: 'Không tìm thấy sinh viên' });
+    }
+
+    // Chặn xóa nếu đang có hợp đồng Active
     const activeContract = await Contract.findOne({
       student_id: student._id,
       status: 'Active'
     });
 
     if (activeContract) {
-      res.status(400).json({ message: 'Cannot delete student with an active contract' });
-      return;
+      return res.status(400).json({ message: 'Không thể xóa sinh viên đang có hợp đồng hoạt động' });
     }
 
+    // FLOW FIX: Xóa toàn bộ Pending requests của SV để tránh orphaned data
+    // (nếu để lại, admin vào /requests sẽ thấy đơn có student_id = null → frontend crash)
+    await Request.deleteMany({ student_id: student._id, status: 'Pending' });
+
     await student.deleteOne();
-    res.json({ message: 'Student removed' });
-  } else {
-    res.status(404).json({ message: 'Student not found' });
+    res.json({ message: 'Đã xóa sinh viên thành công' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 

@@ -5,37 +5,44 @@ import Room from '../../models/Room.js';
 // @route   GET /api/admin/contracts
 // @access  Private/Admin
 const getContracts = async (req, res) => {
-  const contracts = await Contract.find({})
-    .populate('student_id', 'fullname email mssv')
-    .populate('room_id', 'room_code building');
-  res.json(contracts);
+  try {
+    const contracts = await Contract.find({})
+      .populate('student_id', 'fullname email mssv')
+      .populate('room_id', 'room_code building');
+    res.json(contracts);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 // @desc    End contract
 // @route   PATCH /api/admin/contracts/:id/status
 // @access  Private/Admin
 const endContract = async (req, res) => {
-  const contract = await Contract.findById(req.params.id);
+  try {
+    const contract = await Contract.findById(req.params.id);
 
-  if (contract) {
+    if (!contract) {
+      return res.status(404).json({ message: 'Không tìm thấy hợp đồng' });
+    }
+
     if (contract.status === 'Ended') {
-      res.status(400).json({ message: 'Contract already ended' });
-      return;
+      return res.status(400).json({ message: 'Hợp đồng này đã kết thúc rồi' });
     }
 
     contract.status = 'Ended';
     const updatedContract = await contract.save();
 
-    // Decrease room occupancy
-    const room = await Room.findById(contract.room_id);
-    if (room && room.current_people > 0) {
-      room.current_people -= 1;
-      await room.save();
-    }
+    // BUG FIX: Dùng $inc atomic thay vì read-modify-write để tránh race condition
+    // Đảm bảo current_people không xuống dưới 0
+    await Room.findOneAndUpdate(
+      { _id: contract.room_id, current_people: { $gt: 0 } },
+      { $inc: { current_people: -1 } }
+    );
 
     res.json(updatedContract);
-  } else {
-    res.status(404).json({ message: 'Contract not found' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
