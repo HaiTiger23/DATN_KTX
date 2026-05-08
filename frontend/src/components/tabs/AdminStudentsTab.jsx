@@ -1,51 +1,59 @@
+import { Button, Space, Table, Tag } from 'antd';
+import { useLanguage } from '../../context/LanguageContext';
+
+function statusColor(status) {
+  if (status === 'Active') return 'success';
+  if (status === 'Inactive') return 'default';
+  return 'processing';
+}
+
 export default function AdminStudentsTab({ students, onEdit, onDelete }) {
-  return (
-    <div className="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>MSSV</th>
-            <th>Họ Tên</th>
-            <th>Email</th>
-            <th>SĐT</th>
-            <th>Trạng thái</th>
-            <th>Thao tác</th>
-          </tr>
-        </thead>
-        <tbody>
-          {students.map((s) => (
-            <tr key={s._id}>
-              <td>
-                <strong>{s.mssv || 'N/A'}</strong>
-              </td>
-              <td>{s.fullname}</td>
-              <td>{s.email}</td>
-              <td>{s.phone || 'N/A'}</td>
-              <td>
-                <span className={`badge badge-${s.status}`}>{s.status}</span>
-              </td>
-              <td className="actions" style={{ display: 'flex', gap: '0.5rem' }}>
-                <button
-                  type="button"
-                  className="btn btn-outline"
-                  style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
-                  onClick={() => onEdit(s)}
-                >
-                  Sửa
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-outline"
-                  style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', color: 'var(--danger)' }}
-                  onClick={() => onDelete(s._id)}
-                >
-                  Xóa
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
+  const { t } = useLanguage();
+
+  const columns = [
+    {
+      title: t('students.mssv'),
+      dataIndex: 'mssv',
+      key: 'mssv',
+      render: (v) => <strong>{v || t('common.na')}</strong>,
+    },
+    {
+      title: t('students.name'),
+      dataIndex: 'fullname',
+      key: 'fullname',
+    },
+    {
+      title: t('students.email'),
+      dataIndex: 'email',
+      key: 'email',
+    },
+    {
+      title: t('students.phone'),
+      dataIndex: 'phone',
+      key: 'phone',
+      render: (v) => v || t('common.na'),
+    },
+    {
+      title: t('students.status'),
+      dataIndex: 'status',
+      key: 'status',
+      render: (status) => <Tag color={statusColor(status)}>{status}</Tag>,
+    },
+    {
+      title: t('students.actions'),
+      key: 'actions',
+      render: (_, record) => (
+        <Space>
+          <Button size="small" onClick={() => onEdit(record)}>
+            {t('students.edit')}
+          </Button>
+          <Button size="small" danger type="link" onClick={() => onDelete(record._id)}>
+            {t('students.delete')}
+          </Button>
+        </Space>
+      ),
+    },
+  ];
+
+  return <Table rowKey="_id" columns={columns} dataSource={students} pagination={{ pageSize: 10 }} />;
 }

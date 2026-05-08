@@ -1,31 +1,25 @@
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo } from 'react';
+import { message } from 'antd';
 
 const ToastContext = createContext(null);
 
 export function ToastProvider({ children }) {
-  const [toasts, setToasts] = useState([]);
+  const [messageApi, contextHolder] = message.useMessage();
 
-  const showToast = useCallback((message, type = 'success') => {
-    const id = `${Date.now()}-${Math.random()}`;
-    setToasts((prev) => [...prev, { id, message, type }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 3000);
-  }, []);
+  const showToast = useCallback(
+    (msg, type = 'success') => {
+      if (type === 'error') messageApi.error(msg);
+      else messageApi.success(msg);
+    },
+    [messageApi],
+  );
 
   const value = useMemo(() => ({ showToast }), [showToast]);
 
   return (
     <ToastContext.Provider value={value}>
+      {contextHolder}
       {children}
-      <div id="toast-container">
-        {toasts.map((t) => (
-          <div key={t.id} className={`toast ${t.type}`}>
-            <span>{t.type === 'success' ? '✅' : '❌'}</span>
-            <p style={{ fontWeight: 500, fontSize: '0.9rem', margin: 0 }}>{t.message}</p>
-          </div>
-        ))}
-      </div>
     </ToastContext.Provider>
   );
 }

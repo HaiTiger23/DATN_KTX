@@ -1,10 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useLanguage } from './LanguageContext';
 import { useToast } from './ToastContext';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const { showToast } = useToast();
+  const { t } = useLanguage();
   const [token, setToken] = useState(() => localStorage.getItem('token'));
   const [user, setUser] = useState(() => {
     try {
@@ -35,16 +37,16 @@ export function AuthProvider({ children }) {
     setUser(data);
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data));
-    showToast('Đăng nhập thành công');
-  }, [showToast]);
+    showToast(t('toast.loginOk'));
+  }, [showToast, t]);
 
   const registerSuccess = useCallback((data) => {
     setToken(data.token);
     setUser(data);
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data));
-    showToast('Đăng ký thành công');
-  }, [showToast]);
+    showToast(t('toast.registerOk'));
+  }, [showToast, t]);
 
   const updateUserLocal = useCallback((partial) => {
     setUser((prev) => {

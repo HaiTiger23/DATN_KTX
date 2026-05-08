@@ -1,36 +1,38 @@
+import { Button, Card, Form, Input } from 'antd';
+import { useLanguage } from '../../context/LanguageContext';
+
 export default function ProfileTab({ user, form, setForm, onSave }) {
+  const { t } = useLanguage();
   const isAdmin = user?.role === 'Admin';
 
   return (
-    <div className="card" style={{ maxWidth: 600, margin: '0 auto' }}>
-      <div className="card-header">
-        <div className="card-title">Cập nhật hồ sơ</div>
-      </div>
-      <div className="card-body">
-        <div className="form-group">
-          <label>Họ tên</label>
-          <input type="text" value={form.fullname} onChange={(e) => setForm((f) => ({ ...f, fullname: e.target.value }))} />
-        </div>
-        <div className="form-group">
-          <label>Email</label>
-          <input type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
-        </div>
-        <div className="form-group">
-          <label>SĐT</label>
-          <input type="text" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} disabled={isAdmin} />
-        </div>
-        <div className="form-group">
-          <label>Địa chỉ</label>
-          <input type="text" value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} disabled={isAdmin} />
-        </div>
-        <div className="form-group">
-          <label>Mật khẩu mới (Bỏ trống nếu không đổi)</label>
-          <input type="password" value={form.password} onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))} placeholder="Nhập pass mới..." />
-        </div>
-        <button type="button" className="btn btn-primary" onClick={onSave}>
-          Lưu thay đổi
-        </button>
-      </div>
-    </div>
+    <Card title={t('profile.title')} style={{ maxWidth: 560, margin: '0 auto' }}>
+      <Form layout="vertical">
+        <Form.Item label={t('profile.fullname')}>
+          <Input value={form.fullname} onChange={(e) => setForm((f) => ({ ...f, fullname: e.target.value }))} />
+        </Form.Item>
+        <Form.Item label={t('profile.email')}>
+          <Input type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
+        </Form.Item>
+        <Form.Item label={t('profile.phone')}>
+          <Input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} disabled={isAdmin} />
+        </Form.Item>
+        <Form.Item label={t('profile.address')}>
+          <Input value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} disabled={isAdmin} />
+        </Form.Item>
+        <Form.Item label={t('profile.passwordHint')}>
+          <Input.Password
+            value={form.password}
+            onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+            placeholder={t('profile.passwordPlaceholder')}
+          />
+        </Form.Item>
+        <Form.Item>
+          <Button type="primary" onClick={onSave}>
+            {t('profile.save')}
+          </Button>
+        </Form.Item>
+      </Form>
+    </Card>
   );
 }

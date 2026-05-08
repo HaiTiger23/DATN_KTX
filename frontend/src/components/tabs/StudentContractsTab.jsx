@@ -1,51 +1,59 @@
+import { Button, Empty, Table, Tag } from 'antd';
 import { formatDate } from '../../api';
+import { useLanguage } from '../../context/LanguageContext';
+
+function statusColor(status) {
+  if (status === 'Active') return 'success';
+  return 'default';
+}
 
 export default function StudentContractsTab({ contracts, onCancelContract }) {
+  const { t } = useLanguage();
+
   if (contracts.length === 0) {
-    return <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-light)' }}>Bạn chưa có hợp đồng nào</p>;
+    return <Empty description={t('studentContracts.empty')} />;
   }
 
-  return (
-    <div className="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>Mã phòng</th>
-            <th>Tòa nhà</th>
-            <th>Từ ngày</th>
-            <th>Đến ngày</th>
-            <th>Trạng thái</th>
-            <th>Thao tác</th>
-          </tr>
-        </thead>
-        <tbody>
-          {contracts.map((c) => (
-            <tr key={c._id}>
-              <td>
-                <strong>{c.room_id?.room_code || 'N/A'}</strong>
-              </td>
-              <td>{c.room_id?.building || 'N/A'}</td>
-              <td>{formatDate(c.start_date)}</td>
-              <td>{formatDate(c.end_date)}</td>
-              <td>
-                <span className={`badge badge-${c.status}`}>{c.status}</span>
-              </td>
-              <td className="actions">
-                {c.status === 'Active' ? (
-                  <button
-                    type="button"
-                    className="btn btn-outline"
-                    style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', color: 'var(--danger)' }}
-                    onClick={() => onCancelContract(c._id)}
-                  >
-                    Yêu cầu Hủy
-                  </button>
-                ) : null}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
+  const columns = [
+    {
+      title: t('studentRequests.roomCode'),
+      key: 'code',
+      render: (_, c) => <strong>{c.room_id?.room_code || t('common.na')}</strong>,
+    },
+    {
+      title: t('studentRequests.building'),
+      key: 'building',
+      render: (_, c) => c.room_id?.building || t('common.na'),
+    },
+    {
+      title: t('contracts.from'),
+      dataIndex: 'start_date',
+      key: 'start_date',
+      render: (d) => formatDate(d),
+    },
+    {
+      title: t('contracts.to'),
+      dataIndex: 'end_date',
+      key: 'end_date',
+      render: (d) => formatDate(d),
+    },
+    {
+      title: t('contracts.status'),
+      dataIndex: 'status',
+      key: 'status',
+      render: (status) => <Tag color={statusColor(status)}>{status}</Tag>,
+    },
+    {
+      title: t('contracts.actions'),
+      key: 'actions',
+      render: (_, c) =>
+        c.status === 'Active' ? (
+          <Button size="small" danger type="link" onClick={() => onCancelContract(c._id)}>
+            {t('studentContracts.cancelReq')}
+          </Button>
+        ) : null,
+    },
+  ];
+
+  return <Table rowKey="_id" columns={columns} dataSource={contracts} pagination={{ pageSize: 10 }} />;
 }

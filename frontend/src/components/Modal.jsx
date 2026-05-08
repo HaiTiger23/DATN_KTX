@@ -1,25 +1,23 @@
-export default function Modal({ open, title, children, onClose, onSave, saveLabel = 'Lưu' }) {
-  if (!open) return null;
+import { Modal as AntModal } from 'antd';
 
+/**
+ * Thin wrapper so screens share one modal config (width, mask, destroy).
+ * Parent `onSave` should reject/throw on validation errors so the modal stays open.
+ */
+export default function Modal({ open, title, children, onClose, onSave, cancelLabel = 'Cancel', saveLabel = 'Save' }) {
   return (
-    <div className="modal-overlay" role="presentation">
-      <div className="modal-content glass" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3>{title}</h3>
-          <button type="button" className="close-modal" onClick={onClose}>
-            &times;
-          </button>
-        </div>
-        <div className="modal-body">{children}</div>
-        <div className="modal-footer">
-          <button type="button" className="btn btn-outline close-modal" onClick={onClose}>
-            Hủy
-          </button>
-          <button type="button" className="btn btn-primary" onClick={onSave}>
-            {saveLabel}
-          </button>
-        </div>
-      </div>
-    </div>
+    <AntModal
+      title={title}
+      open={open}
+      onCancel={onClose}
+      okText={saveLabel}
+      cancelText={cancelLabel}
+      onOk={onSave}
+      destroyOnClose
+      width={560}
+      maskClosable={false}
+    >
+      {children}
+    </AntModal>
   );
 }

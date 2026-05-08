@@ -1,8 +1,24 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { TAB_TITLES } from '../constants';
+import {
+  App,
+  Avatar,
+  Button,
+  Empty,
+  Form,
+  Input,
+  InputNumber,
+  Layout,
+  Menu,
+  Space,
+  Spin,
+  Typography,
+} from 'antd';
+import { LogoutOutlined, ReloadOutlined, PlusOutlined } from '@ant-design/icons';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../context/ToastContext';
 import { useApi } from '../hooks/useApi';
+import LanguageSwitcher from './LanguageSwitcher';
 import Modal from './Modal';
 import AdminRoomsTab from './tabs/AdminRoomsTab';
 import AdminStudentsTab from './tabs/AdminStudentsTab';
@@ -18,28 +34,32 @@ import StudentFeedbacksTab from './tabs/StudentFeedbacksTab';
 import StudentChatbotTab from './tabs/StudentChatbotTab';
 import ProfileTab from './tabs/ProfileTab';
 
-const ADMIN_NAV = [
-  { target: 'rooms', label: '🛏️ Quản lý Phòng' },
-  { target: 'students', label: '👨‍🎓 Sinh viên' },
-  { target: 'requests', label: '📋 Đơn chờ duyệt' },
-  { target: 'contracts', label: '📄 Hợp đồng' },
-  { target: 'feedbacks', label: '💬 Phản ánh' },
-  { target: 'admin_knowledge', label: '📚 Tri thức (RAG)' },
-  { target: 'admin_settings', label: '⚙️ Cài đặt' },
-  { target: 'profile', label: '👤 Thông tin cá nhân' },
+const { Header, Sider, Content } = Layout;
+
+const ADMIN_TARGETS = [
+  'rooms',
+  'students',
+  'requests',
+  'contracts',
+  'feedbacks',
+  'admin_knowledge',
+  'admin_settings',
+  'profile',
 ];
 
-const STUDENT_NAV = [
-  { target: 'student_rooms', label: '🛏️ Đăng ký phòng' },
-  { target: 'student_requests', label: '📋 Đơn của tôi' },
-  { target: 'student_contracts', label: '📄 Hợp đồng của tôi' },
-  { target: 'student_feedbacks', label: '💬 Phản hồi của tôi' },
-  { target: 'student_chatbot', label: '🤖 Trợ lý AI' },
-  { target: 'profile', label: '👤 Thông tin cá nhân' },
+const STUDENT_TARGETS = [
+  'student_rooms',
+  'student_requests',
+  'student_contracts',
+  'student_feedbacks',
+  'student_chatbot',
+  'profile',
 ];
 
 export default function Dashboard() {
+  const { modal } = App.useApp();
   const { user, logout, updateUserLocal } = useAuth();
+  const { t } = useLanguage();
   const { showToast } = useToast();
   const api = useApi();
 
@@ -74,7 +94,19 @@ export default function Dashboard() {
     password: '',
   });
 
-  const navItems = user?.role === 'Admin' ? ADMIN_NAV : STUDENT_NAV;
+  const navItems = useMemo(() => {
+    const targets = user?.role === 'Admin' ? ADMIN_TARGETS : STUDENT_TARGETS;
+    return targets.map((target) => ({ target, label: t(`nav.${target}`) }));
+  }, [user?.role, t]);
+
+  const menuItems = useMemo(
+    () =>
+      navItems.map(({ target, label }) => ({
+        key: target,
+        label,
+      })),
+    [navItems],
+  );
 
   const loadTab = useCallback(async () => {
     const tab = currentTab;
@@ -191,228 +223,229 @@ export default function Dashboard() {
   };
 
   const handleModalSave = async () => {
-    try {
-      if (modalType === 'reply_feedback') {
-        if (!replyContent.trim()) return showToast('Vui lòng nhập nội dung', 'error');
-        await api(`/admin/feedbacks/${modalId}/reply`, 'POST', { reply_content: replyContent });
-        showToast('Đã gửi trả lời');
-        closeModal();
-        loadTab();
-        return;
+    if (modalType === 'reply_feedback') {
+      if (!replyContent.trim()) {
+        showToast(t('toast.replyRequired'), 'error');
+        throw new Error('validation');
       }
-      if (modalType === 'add_room') {
-        const body = {
-          room_code: roomForm.room_code,
-          building: roomForm.building,
-          capacity: Number(roomForm.capacity),
-          price: Number(roomForm.price),
-        };
-        if (!body.room_code || !body.building || !body.capacity || !body.price) return showToast('Điền đủ thông tin', 'error');
-        await api('/admin/rooms', 'POST', body);
-        showToast('Thêm phòng thành công');
-        closeModal();
-        loadTab();
-        return;
+      await api(`/admin/feedbacks/${modalId}/reply`, 'POST', { reply_content: replyContent });
+      showToast(t('toast.replySent'));
+      closeModal();
+      loadTab();
+      return;
+    }
+    if (modalType === 'add_room') {
+      const body = {
+        room_code: roomForm.room_code,
+        building: roomForm.building,
+        capacity: Number(roomForm.capacity),
+        price: Number(roomForm.price),
+      };
+      if (!body.room_code || !body.building || !body.capacity || !body.price) {
+        showToast(t('toast.fillAll'), 'error');
+        throw new Error('validation');
       }
-      if (modalType === 'add_student') {
-        const body = {
-          fullname: studentForm.fullname,
-          email: studentForm.email,
-          password: studentForm.password,
-          mssv: studentForm.mssv,
-          cccd: studentForm.cccd,
-        };
-        if (!body.fullname || !body.email || !body.password) return showToast('Điền đủ thông tin bắt buộc', 'error');
-        await api('/admin/students', 'POST', body);
-        showToast('Thêm sinh viên thành công');
-        closeModal();
-        loadTab();
-        return;
+      await api('/admin/rooms', 'POST', body);
+      showToast(t('toast.roomAdded'));
+      closeModal();
+      loadTab();
+      return;
+    }
+    if (modalType === 'add_student') {
+      const body = {
+        fullname: studentForm.fullname,
+        email: studentForm.email,
+        password: studentForm.password,
+        mssv: studentForm.mssv,
+        cccd: studentForm.cccd,
+      };
+      if (!body.fullname || !body.email || !body.password) {
+        showToast(t('toast.fillRequired'), 'error');
+        throw new Error('validation');
       }
-      if (modalType === 'edit_room') {
-        const body = {
-          building: roomForm.building,
-          capacity: Number(roomForm.capacity),
-          price: Number(roomForm.price),
-        };
-        await api(`/admin/rooms/${modalId}`, 'PUT', body);
-        showToast('Cập nhật phòng thành công');
-        closeModal();
-        loadTab();
-        return;
+      await api('/admin/students', 'POST', body);
+      showToast(t('toast.studentAdded'));
+      closeModal();
+      loadTab();
+      return;
+    }
+    if (modalType === 'edit_room') {
+      const body = {
+        building: roomForm.building,
+        capacity: Number(roomForm.capacity),
+        price: Number(roomForm.price),
+      };
+      await api(`/admin/rooms/${modalId}`, 'PUT', body);
+      showToast(t('toast.roomUpdated'));
+      closeModal();
+      loadTab();
+      return;
+    }
+    if (modalType === 'edit_student') {
+      const body = {
+        fullname: studentForm.fullname,
+        email: studentForm.email,
+        phone: studentForm.phone,
+        address: studentForm.address,
+      };
+      if (studentForm.password) body.password = studentForm.password;
+      await api(`/admin/students/${modalId}`, 'PUT', body);
+      showToast(t('toast.studentUpdated'));
+      closeModal();
+      loadTab();
+      return;
+    }
+    if (modalType === 'add_feedback') {
+      if (!feedbackForm.title || !feedbackForm.description) {
+        showToast(t('toast.feedbackTitleBody'), 'error');
+        throw new Error('validation');
       }
-      if (modalType === 'edit_student') {
-        const body = {
-          fullname: studentForm.fullname,
-          email: studentForm.email,
-          phone: studentForm.phone,
-          address: studentForm.address,
-        };
-        if (studentForm.password) body.password = studentForm.password;
-        await api(`/admin/students/${modalId}`, 'PUT', body);
-        showToast('Cập nhật sinh viên thành công');
-        closeModal();
-        loadTab();
-        return;
+      await api('/student/feedbacks', 'POST', feedbackForm);
+      showToast(t('toast.feedbackSent'));
+      closeModal();
+      loadTab();
+      return;
+    }
+    if (modalType === 'add_knowledge') {
+      if (!knowledgeForm.question || !knowledgeForm.answer) {
+        showToast(t('toast.knowledgeFill'), 'error');
+        throw new Error('validation');
       }
-      if (modalType === 'add_feedback') {
-        if (!feedbackForm.title || !feedbackForm.description) return showToast('Điền đủ tiêu đề và nội dung', 'error');
-        await api('/student/feedbacks', 'POST', feedbackForm);
-        showToast('Đã gửi phản hồi');
-        closeModal();
-        loadTab();
-        return;
-      }
-      if (modalType === 'add_knowledge') {
-        if (!knowledgeForm.question || !knowledgeForm.answer) return showToast('Vui lòng điền đủ câu hỏi và trả lời', 'error');
-        await api('/admin/knowledge', 'POST', knowledgeForm);
-        showToast('Thêm tri thức thành công');
-        closeModal();
-        loadTab();
-      }
-    } catch {
-      /* toast via api */
+      await api('/admin/knowledge', 'POST', knowledgeForm);
+      showToast(t('toast.knowledgeAdded'));
+      closeModal();
+      loadTab();
     }
   };
 
   const modalTitle = useMemo(() => {
-    const titles = {
-      reply_feedback: 'Trả lời phản ánh',
-      edit_room: 'Sửa thông tin phòng',
-      add_room: 'Thêm phòng mới',
-      add_student: 'Thêm sinh viên mới',
-      edit_student: 'Sửa thông tin sinh viên',
-      add_feedback: 'Gửi phản hồi cho Ban quản lý',
-      add_knowledge: 'Thêm Tri thức (Q&A)',
+    const keys = {
+      reply_feedback: 'modal.reply_feedback',
+      edit_room: 'modal.edit_room',
+      add_room: 'modal.add_room',
+      add_student: 'modal.add_student',
+      edit_student: 'modal.edit_student',
+      add_feedback: 'modal.add_feedback',
+      add_knowledge: 'modal.add_knowledge',
     };
-    return titles[modalType] || '';
-  }, [modalType]);
+    const key = keys[modalType];
+    return key ? t(key) : '';
+  }, [modalType, t]);
 
   const renderModalBody = () => {
     switch (modalType) {
       case 'reply_feedback':
         return (
-          <div className="form-group">
-            <label>Nội dung trả lời</label>
-            <textarea rows={4} required value={replyContent} onChange={(e) => setReplyContent(e.target.value)} />
-          </div>
+          <Form layout="vertical">
+            <Form.Item label={t('modal.replyContent')} required>
+              <Input.TextArea rows={4} value={replyContent} onChange={(e) => setReplyContent(e.target.value)} />
+            </Form.Item>
+          </Form>
         );
       case 'add_room':
       case 'edit_room':
         return (
-          <>
-            <div className="form-group">
-              <label>Mã phòng</label>
-              <input
-                type="text"
+          <Form layout="vertical">
+            <Form.Item label={t('modal.roomCode')}>
+              <Input
                 value={roomForm.room_code}
                 onChange={(e) => setRoomForm((f) => ({ ...f, room_code: e.target.value }))}
                 disabled={modalType === 'edit_room'}
-                style={modalType === 'edit_room' ? { background: '#eee' } : undefined}
               />
-            </div>
-            <div className="form-group">
-              <label>Tòa nhà</label>
-              <input type="text" value={roomForm.building} onChange={(e) => setRoomForm((f) => ({ ...f, building: e.target.value }))} />
-            </div>
-            <div className="form-group">
-              <label>Sức chứa</label>
-              <input
-                type="number"
+            </Form.Item>
+            <Form.Item label={t('modal.building')} required>
+              <Input value={roomForm.building} onChange={(e) => setRoomForm((f) => ({ ...f, building: e.target.value }))} />
+            </Form.Item>
+            <Form.Item label={t('modal.capacity')} required>
+              <InputNumber
+                style={{ width: '100%' }}
+                min={1}
                 value={roomForm.capacity}
-                onChange={(e) => setRoomForm((f) => ({ ...f, capacity: e.target.value }))}
+                onChange={(v) => setRoomForm((f) => ({ ...f, capacity: v }))}
               />
-            </div>
-            <div className="form-group">
-              <label>Giá/tháng</label>
-              <input type="number" value={roomForm.price} onChange={(e) => setRoomForm((f) => ({ ...f, price: e.target.value }))} />
-            </div>
-          </>
+            </Form.Item>
+            <Form.Item label={t('modal.priceMonth')} required>
+              <InputNumber
+                style={{ width: '100%' }}
+                min={0}
+                value={roomForm.price}
+                onChange={(v) => setRoomForm((f) => ({ ...f, price: v }))}
+              />
+            </Form.Item>
+          </Form>
         );
       case 'add_student':
       case 'edit_student':
         return (
-          <>
-            <div className="form-group">
-              <label>Họ tên (*)</label>
-              <input type="text" value={studentForm.fullname} onChange={(e) => setStudentForm((f) => ({ ...f, fullname: e.target.value }))} />
-            </div>
-            <div className="form-group">
-              <label>Email (*)</label>
-              <input type="email" value={studentForm.email} onChange={(e) => setStudentForm((f) => ({ ...f, email: e.target.value }))} />
-            </div>
-            <div className="form-group">
-              <label>{modalType === 'add_student' ? 'Mật khẩu (*)' : 'Mật khẩu mới (Bỏ trống nếu không đổi)'}</label>
-              <input
-                type="text"
+          <Form layout="vertical">
+            <Form.Item label={t('modal.fullname')} required>
+              <Input value={studentForm.fullname} onChange={(e) => setStudentForm((f) => ({ ...f, fullname: e.target.value }))} />
+            </Form.Item>
+            <Form.Item label={t('modal.email')} required>
+              <Input type="email" value={studentForm.email} onChange={(e) => setStudentForm((f) => ({ ...f, email: e.target.value }))} />
+            </Form.Item>
+            <Form.Item label={modalType === 'add_student' ? t('modal.passwordRequired') : t('modal.passwordNewOptional')}>
+              <Input.Password
                 value={studentForm.password}
                 onChange={(e) => setStudentForm((f) => ({ ...f, password: e.target.value }))}
-                placeholder={modalType === 'edit_student' ? 'Nhập pass mới...' : undefined}
+                placeholder={modalType === 'edit_student' ? t('modal.placeholderNewPass') : undefined}
               />
-            </div>
+            </Form.Item>
             {modalType === 'add_student' ? (
               <>
-                <div className="form-group">
-                  <label>MSSV</label>
-                  <input type="text" value={studentForm.mssv} onChange={(e) => setStudentForm((f) => ({ ...f, mssv: e.target.value }))} />
-                </div>
-                <div className="form-group">
-                  <label>CCCD</label>
-                  <input type="text" value={studentForm.cccd} onChange={(e) => setStudentForm((f) => ({ ...f, cccd: e.target.value }))} />
-                </div>
+                <Form.Item label={t('modal.mssv')}>
+                  <Input value={studentForm.mssv} onChange={(e) => setStudentForm((f) => ({ ...f, mssv: e.target.value }))} />
+                </Form.Item>
+                <Form.Item label={t('modal.cccd')}>
+                  <Input value={studentForm.cccd} onChange={(e) => setStudentForm((f) => ({ ...f, cccd: e.target.value }))} />
+                </Form.Item>
               </>
             ) : (
               <>
-                <div className="form-group">
-                  <label>SĐT</label>
-                  <input type="text" value={studentForm.phone} onChange={(e) => setStudentForm((f) => ({ ...f, phone: e.target.value }))} />
-                </div>
-                <div className="form-group">
-                  <label>Địa chỉ</label>
-                  <input type="text" value={studentForm.address} onChange={(e) => setStudentForm((f) => ({ ...f, address: e.target.value }))} />
-                </div>
+                <Form.Item label={t('modal.phone')}>
+                  <Input value={studentForm.phone} onChange={(e) => setStudentForm((f) => ({ ...f, phone: e.target.value }))} />
+                </Form.Item>
+                <Form.Item label={t('modal.address')}>
+                  <Input value={studentForm.address} onChange={(e) => setStudentForm((f) => ({ ...f, address: e.target.value }))} />
+                </Form.Item>
               </>
             )}
-          </>
+          </Form>
         );
       case 'add_feedback':
         return (
-          <>
-            <div className="form-group">
-              <label>Tiêu đề</label>
-              <input type="text" value={feedbackForm.title} onChange={(e) => setFeedbackForm((f) => ({ ...f, title: e.target.value }))} />
-            </div>
-            <div className="form-group">
-              <label>Nội dung</label>
-              <textarea rows={4} value={feedbackForm.description} onChange={(e) => setFeedbackForm((f) => ({ ...f, description: e.target.value }))} />
-            </div>
-          </>
+          <Form layout="vertical">
+            <Form.Item label={t('modal.feedbackTitle')} required>
+              <Input value={feedbackForm.title} onChange={(e) => setFeedbackForm((f) => ({ ...f, title: e.target.value }))} />
+            </Form.Item>
+            <Form.Item label={t('modal.feedbackDesc')} required>
+              <Input.TextArea rows={4} value={feedbackForm.description} onChange={(e) => setFeedbackForm((f) => ({ ...f, description: e.target.value }))} />
+            </Form.Item>
+          </Form>
         );
       case 'add_knowledge':
         return (
-          <>
-            <div className="form-group">
-              <label>Câu hỏi</label>
-              <input type="text" value={knowledgeForm.question} onChange={(e) => setKnowledgeForm((f) => ({ ...f, question: e.target.value }))} />
-            </div>
-            <div className="form-group">
-              <label>Trả lời</label>
-              <textarea rows={4} value={knowledgeForm.answer} onChange={(e) => setKnowledgeForm((f) => ({ ...f, answer: e.target.value }))} />
-            </div>
-          </>
+          <Form layout="vertical">
+            <Form.Item label={t('modal.question')} required>
+              <Input value={knowledgeForm.question} onChange={(e) => setKnowledgeForm((f) => ({ ...f, question: e.target.value }))} />
+            </Form.Item>
+            <Form.Item label={t('modal.answer')} required>
+              <Input.TextArea rows={4} value={knowledgeForm.answer} onChange={(e) => setKnowledgeForm((f) => ({ ...f, answer: e.target.value }))} />
+            </Form.Item>
+          </Form>
         );
       default:
         return null;
     }
   };
 
-  const pageTitle = TAB_TITLES[currentTab] || '';
+  const pageTitle = t(`tab.${currentTab}`);
 
   const showSync = currentTab === 'rooms';
   const showAdd = ['rooms', 'students', 'student_feedbacks', 'admin_knowledge'].includes(currentTab);
-  let addLabel = '+ Thêm mới';
-  if (currentTab === 'student_feedbacks') addLabel = '+ Tạo phản hồi mới';
-  if (currentTab === 'admin_knowledge') addLabel = '+ Thêm Tri thức';
+  let addLabel = t('dashboard.addNew');
+  if (currentTab === 'student_feedbacks') addLabel = t('dashboard.addFeedback');
+  if (currentTab === 'admin_knowledge') addLabel = t('dashboard.addKnowledge');
 
   const handleAddClick = () => {
     if (currentTab === 'rooms') openModal('add_room');
@@ -424,99 +457,130 @@ export default function Dashboard() {
   const handleSync = async () => {
     try {
       const res = await api('/admin/rooms/sync-occupancy', 'POST');
-      showToast(res.message || 'Đồng bộ thành công');
+      showToast(res.message || t('common.syncSuccess'));
       loadTab();
     } catch {
       /* handled */
     }
   };
 
-  const toggleRoomStatus = async (id, currentStatus) => {
-    if (!window.confirm('Xác nhận đổi trạng thái phòng này?')) return;
+  const toggleRoomStatus = (id, currentStatus) => {
     const newStatus = currentStatus === 'Available' ? 'Maintenance' : 'Available';
-    try {
-      await api(`/admin/rooms/${id}/status`, 'PATCH', { status: newStatus });
-      showToast('Đã đổi trạng thái phòng');
-      loadTab();
-    } catch {
-      /* handled */
-    }
+    modal.confirm({
+      title: t('confirm.toggleRoom'),
+      onOk: async () => {
+        await api(`/admin/rooms/${id}/status`, 'PATCH', { status: newStatus });
+        showToast(t('toast.roomStatus'));
+        loadTab();
+      },
+    });
   };
 
-  const deleteStudent = async (id) => {
-    if (!window.confirm('Xác nhận xóa sinh viên này?')) return;
-    try {
-      await api(`/admin/students/${id}`, 'DELETE');
-      showToast('Xóa sinh viên thành công');
-      loadTab();
-    } catch {
-      /* handled */
-    }
+  const deleteStudent = (id) => {
+    modal.confirm({
+      title: t('confirm.deleteStudent'),
+      okType: 'danger',
+      onOk: async () => {
+        await api(`/admin/students/${id}`, 'DELETE');
+        showToast(t('toast.studentDeleted'));
+        loadTab();
+      },
+    });
   };
 
-  const handleRequest = async (id, action) => {
-    if (!window.confirm(`Xác nhận ${action === 'approve' ? 'duyệt' : 'từ chối'} đơn này?`)) return;
-    try {
-      await api(`/admin/requests/${id}/${action}`, 'POST');
-      showToast('Xử lý đơn thành công');
-      loadTab();
-    } catch {
-      /* handled */
-    }
+  const handleRequest = (id, action) => {
+    const msg = action === 'approve' ? t('confirm.approveRequest') : t('confirm.rejectRequest');
+    modal.confirm({
+      title: msg,
+      okType: action === 'reject' ? 'danger' : 'primary',
+      onOk: async () => {
+        await api(`/admin/requests/${id}/${action}`, 'POST');
+        showToast(t('toast.requestHandled'));
+        loadTab();
+      },
+    });
   };
 
-  const endContract = async (id) => {
-    if (!window.confirm('Kết thúc hợp đồng này?')) return;
-    try {
-      await api(`/admin/contracts/${id}/status`, 'PATCH');
-      showToast('Đã kết thúc hợp đồng');
-      loadTab();
-    } catch {
-      /* handled */
-    }
+  const endContract = (id) => {
+    modal.confirm({
+      title: t('confirm.endContract'),
+      okType: 'danger',
+      onOk: async () => {
+        await api(`/admin/contracts/${id}/status`, 'PATCH');
+        showToast(t('toast.contractEnded'));
+        loadTab();
+      },
+    });
   };
 
-  const registerRoom = async (roomId) => {
-    const monthsStr = window.prompt('Nhập số tháng thuê bạn muốn (VD: 6, 12):', '6');
-    if (monthsStr === null) return;
-    const monthsNum = parseInt(monthsStr, 10);
-    if (Number.isNaN(monthsNum) || monthsNum <= 0) return showToast('Số tháng không hợp lệ', 'error');
-    if (!window.confirm(`Bạn có chắc chắn muốn đăng ký phòng này trong ${monthsNum} tháng?`)) return;
-    try {
-      await api('/student/requests', 'POST', { room_id: roomId, months: monthsNum });
-      showToast('Đã gửi đơn đăng ký. Vui lòng chờ admin duyệt.');
-      setCurrentTab('student_requests');
-    } catch {
-      /* handled */
-    }
+  const registerRoom = (roomId) => {
+    let monthsNum = 6;
+    modal.confirm({
+      title: t('prompt.rentMonths'),
+      icon: null,
+      content: (
+        <InputNumber
+          min={1}
+          style={{ width: '100%', marginTop: 8 }}
+          defaultValue={6}
+          onChange={(v) => {
+            monthsNum = typeof v === 'number' ? v : Number(v) || 1;
+          }}
+        />
+      ),
+      onOk: () => {
+        if (Number.isNaN(monthsNum) || monthsNum <= 0) {
+          showToast(t('toast.monthsInvalid'), 'error');
+          return Promise.reject(new Error('validation'));
+        }
+        return new Promise((resolve, reject) => {
+          modal.confirm({
+            title: t('confirm.registerRoom', { months: monthsNum }),
+            onOk: async () => {
+              try {
+                await api('/student/requests', 'POST', { room_id: roomId, months: monthsNum });
+                showToast(t('toast.requestSubmitted'));
+                setCurrentTab('student_requests');
+                resolve();
+              } catch {
+                reject(new Error('api'));
+              }
+            },
+            onCancel: () => reject(new Error('cancel')),
+          });
+        });
+      },
+    });
   };
 
-  const cancelStudentContract = async (id) => {
-    if (!window.confirm('Bạn có chắc chắn muốn gửi yêu cầu hủy hợp đồng này?')) return;
-    try {
-      const res = await api(`/student/contracts/${id}/cancel`, 'POST');
-      showToast(res.message || 'Đã gửi yêu cầu hủy hợp đồng');
-      setCurrentTab('student_requests');
-    } catch {
-      /* handled */
-    }
+  const cancelStudentContract = (id) => {
+    modal.confirm({
+      title: t('confirm.cancelContract'),
+      okType: 'danger',
+      onOk: async () => {
+        const res = await api(`/student/contracts/${id}/cancel`, 'POST');
+        showToast(res.message || t('toast.cancelContractSent'));
+        setCurrentTab('student_requests');
+      },
+    });
   };
 
-  const deleteKnowledge = async (id) => {
-    if (!window.confirm('Xác nhận xóa?')) return;
-    try {
-      await api(`/admin/knowledge/${id}`, 'DELETE');
-      showToast('Đã xóa tri thức');
-      loadTab();
-    } catch {
-      /* handled */
-    }
+  const deleteKnowledge = (id) => {
+    modal.confirm({
+      title: t('confirm.deleteKnowledge'),
+      okType: 'danger',
+      onOk: async () => {
+        await api(`/admin/knowledge/${id}`, 'DELETE');
+        showToast(t('toast.knowledgeDeleted'));
+        loadTab();
+      },
+    });
   };
 
   const saveSettings = async () => {
     try {
       await api('/admin/settings', 'POST', { geminiApiKey: geminiKey });
-      showToast('Đã lưu cài đặt');
+      showToast(t('toast.settingsSaved'));
     } catch {
       /* handled */
     }
@@ -532,7 +596,7 @@ export default function Dashboard() {
       };
       if (profileForm.password) body.password = profileForm.password;
       const res = await api('/auth/profile', 'PUT', body);
-      showToast('Cập nhật hồ sơ thành công');
+      showToast(t('toast.profileSaved'));
       updateUserLocal({ fullname: res.fullname });
       setProfileForm((f) => ({ ...f, password: '' }));
     } catch {
@@ -546,12 +610,17 @@ export default function Dashboard() {
     if (loading) {
       return (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
-          <div className="loader" style={{ borderTopColor: 'var(--primary)', width: 32, height: 32 }} />
+          <Spin size="large" />
         </div>
       );
     }
     if (data.error) {
-      return <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--danger)' }}>Lỗi tải dữ liệu</div>;
+      return (
+        <Empty
+          description={<Typography.Text type="danger">{t('dashboard.loadError')}</Typography.Text>}
+          style={{ padding: '2rem' }}
+        />
+      );
     }
 
     switch (currentTab) {
@@ -598,70 +667,96 @@ export default function Dashboard() {
     }
   };
 
-  const sidebarTitle = user?.role === 'Admin' ? 'KTX Admin' : 'Cổng Sinh viên';
-  const roleLabel = user?.role === 'Admin' ? 'Quản trị viên' : 'Sinh viên';
+  const sidebarTitle = user?.role === 'Admin' ? t('dashboard.sidebarAdmin') : t('dashboard.sidebarStudent');
+  const roleLabel = user?.role === 'Admin' ? t('dashboard.roleAdmin') : t('dashboard.roleStudent');
 
   return (
     <>
-      <div id="dashboard-screen" className="screen active">
-        <aside className="sidebar glass">
-          <div className="sidebar-header">
-            <div className="icon">🏢</div>
-            <h2>{sidebarTitle}</h2>
+      <Layout style={{ minHeight: '100vh' }}>
+        <Sider
+          theme="light"
+          width={260}
+          breakpoint="lg"
+          collapsedWidth={0}
+          style={{
+            borderRight: '1px solid rgba(0,0,0,0.06)',
+          }}
+        >
+          <div style={{ padding: '16px 16px 8px', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Typography.Title level={5} style={{ margin: 0, flex: 1 }}>
+              🏢 {sidebarTitle}
+            </Typography.Title>
           </div>
-          <nav className="sidebar-nav">
-            {navItems.map((item) => (
-              <a
-                key={item.target}
-                href="#"
-                className={`nav-item ${currentTab === item.target ? 'active' : ''}`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  setCurrentTab(item.target);
-                }}
-              >
-                {item.label}
-              </a>
-            ))}
-          </nav>
-          <div className="sidebar-footer">
-            <div className="user-info">
-              <div className="avatar">{(user?.fullname || 'U').charAt(0).toUpperCase()}</div>
-              <div>
-                <p className="name">{user?.fullname || 'User'}</p>
-                <p className="role">{roleLabel}</p>
-              </div>
-            </div>
-            <button type="button" id="logout-btn" className="btn btn-icon" title="Đăng xuất" onClick={logout}>
-              🚪
-            </button>
+          <Menu
+            mode="inline"
+            selectedKeys={[currentTab]}
+            items={menuItems}
+            onClick={({ key }) => setCurrentTab(key)}
+            style={{ borderInlineEnd: 'none' }}
+          />
+          <div style={{ padding: 16, borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+            <Space align="center" style={{ width: '100%', justifyContent: 'space-between' }}>
+              <Space>
+                <Avatar style={{ backgroundColor: '#4F46E5' }}>{(user?.fullname || 'U').charAt(0).toUpperCase()}</Avatar>
+                <div>
+                  <Typography.Text strong ellipsis style={{ maxWidth: 140, display: 'block' }}>
+                    {user?.fullname || 'User'}
+                  </Typography.Text>
+                  <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                    {roleLabel}
+                  </Typography.Text>
+                </div>
+              </Space>
+              <Button type="text" icon={<LogoutOutlined />} aria-label={t('dashboard.logoutTitle')} onClick={logout} />
+            </Space>
           </div>
-        </aside>
+        </Sider>
 
-        <main className="main-content">
-          <header className="top-header glass">
-            <h1 id="page-title">{pageTitle}</h1>
-            <div className="header-actions">
+        <Layout>
+          <Header
+            style={{
+              background: '#fff',
+              padding: '0 24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              borderBottom: '1px solid rgba(0,0,0,0.06)',
+              height: 'auto',
+              lineHeight: 1.4,
+              paddingTop: 12,
+              paddingBottom: 12,
+            }}
+          >
+            <Typography.Title level={4} style={{ margin: 0 }}>
+              {pageTitle}
+            </Typography.Title>
+            <Space wrap>
               {showSync ? (
-                <button type="button" className="btn btn-outline" id="sync-btn" onClick={handleSync}>
-                  🔄 Đồng bộ
-                </button>
+                <Button icon={<ReloadOutlined />} onClick={handleSync}>
+                  {t('dashboard.sync')}
+                </Button>
               ) : null}
               {showAdd ? (
-                <button type="button" className="btn btn-primary" id="add-btn" onClick={handleAddClick}>
+                <Button type="primary" icon={<PlusOutlined />} onClick={handleAddClick}>
                   {addLabel}
-                </button>
+                </Button>
               ) : null}
-            </div>
-          </header>
+              <LanguageSwitcher />
+            </Space>
+          </Header>
 
-          <div className="content-area" id="content-area">
-            {renderContent()}
-          </div>
-        </main>
-      </div>
+          <Content style={{ padding: 24, background: '#f5f5f5', minHeight: 280 }}>{renderContent()}</Content>
+        </Layout>
+      </Layout>
 
-      <Modal open={modalOpen} title={modalTitle} onClose={closeModal} onSave={handleModalSave}>
+      <Modal
+        open={modalOpen}
+        title={modalTitle}
+        onClose={closeModal}
+        onSave={handleModalSave}
+        cancelLabel={t('common.cancel')}
+        saveLabel={t('common.save')}
+      >
         {renderModalBody()}
       </Modal>
     </>

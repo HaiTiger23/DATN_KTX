@@ -1,55 +1,54 @@
+import { Button, Card, Col, Empty, Row, Tag, Typography } from 'antd';
+import { CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import { formatDate } from '../../api';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function AdminRequestsTab({ requests, onHandle }) {
+  const { t } = useLanguage();
+
   if (requests.length === 0) {
-    return <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-light)' }}>Không có đơn đăng ký chờ duyệt</p>;
+    return <Empty description={t('requests.empty')} />;
   }
 
   return (
-    <div className="grid-cards">
+    <Row gutter={[16, 16]}>
       {requests.map((r) => (
-        <div key={r._id} className="card">
-          <div className="card-header">
-            <div className="card-title">{r.type === 'Cancellation' ? 'Yêu cầu Hủy Hợp đồng' : 'Đơn đăng ký phòng'}</div>
-            <span className="badge badge-Pending">Chờ duyệt</span>
-          </div>
-          <div className="card-body">
-            <div>
-              👨‍🎓 SV:{' '}
-              <strong>
-                {r.student_id?.fullname || 'N/A'} ({r.student_id?.mssv || 'N/A'})
-              </strong>
-            </div>
-            <div>
-              🛏️ Phòng:{' '}
-              <strong>
-                {r.room_id?.room_code || 'N/A'} - {r.room_id?.building || 'N/A'}
-              </strong>
-            </div>
+        <Col xs={24} md={12} lg={8} key={r._id}>
+          <Card
+            title={r.type === 'Cancellation' ? t('requests.cancelContract') : t('requests.register')}
+            extra={<Tag color="processing">{t('requests.pending')}</Tag>}
+            actions={[
+              <Button key="reject" danger type="link" icon={<CloseOutlined />} onClick={() => onHandle(r._id, 'reject')}>
+                {t('requests.reject')}
+              </Button>,
+              <Button key="approve" type="link" icon={<CheckOutlined />} onClick={() => onHandle(r._id, 'approve')}>
+                {t('requests.approve')}
+              </Button>,
+            ]}
+          >
+            <Typography.Paragraph style={{ marginBottom: 8 }}>
+              {t('requests.student')}{' '}
+              <Typography.Text strong>
+                {r.student_id?.fullname || t('common.na')} ({r.student_id?.mssv || t('common.na')})
+              </Typography.Text>
+            </Typography.Paragraph>
+            <Typography.Paragraph style={{ marginBottom: 8 }}>
+              {t('requests.room')}{' '}
+              <Typography.Text strong>
+                {r.room_id?.room_code || t('common.na')} — {r.room_id?.building || t('common.na')}
+              </Typography.Text>
+            </Typography.Paragraph>
             {r.type !== 'Cancellation' ? (
-              <div>
-                ⏳ Thời hạn: <strong>{r.months || 6} tháng</strong>
-              </div>
+              <Typography.Paragraph style={{ marginBottom: 8 }}>
+                {t('requests.term')} <Typography.Text strong>{t('requests.months', { n: r.months || 6 })}</Typography.Text>
+              </Typography.Paragraph>
             ) : null}
-            <div>
-              📅 Ngày gửi: <strong>{formatDate(r.createdAt)}</strong>
-            </div>
-          </div>
-          <div className="card-footer">
-            <button
-              type="button"
-              className="btn btn-outline"
-              style={{ padding: '0.5rem', fontSize: '0.85rem', color: 'var(--danger)' }}
-              onClick={() => onHandle(r._id, 'reject')}
-            >
-              Từ chối
-            </button>
-            <button type="button" className="btn btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }} onClick={() => onHandle(r._id, 'approve')}>
-              Duyệt
-            </button>
-          </div>
-        </div>
+            <Typography.Paragraph style={{ marginBottom: 0 }}>
+              {t('requests.sentAt')} <Typography.Text strong>{formatDate(r.createdAt)}</Typography.Text>
+            </Typography.Paragraph>
+          </Card>
+        </Col>
       ))}
-    </div>
+    </Row>
   );
 }

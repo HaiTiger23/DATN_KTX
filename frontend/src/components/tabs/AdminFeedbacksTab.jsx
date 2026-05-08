@@ -1,43 +1,57 @@
+import { Button, Card, Col, Row, Tag, Typography } from 'antd';
+import { MessageOutlined } from '@ant-design/icons';
+import { useLanguage } from '../../context/LanguageContext';
+
+function statusColor(status) {
+  return status === 'Pending' ? 'processing' : 'success';
+}
+
 export default function AdminFeedbacksTab({ feedbacks, onReply }) {
+  const { t } = useLanguage();
+
   return (
-    <div className="grid-cards">
+    <Row gutter={[16, 16]}>
       {feedbacks.map((f) => (
-        <div key={f._id} className="card">
-          <div className="card-header">
-            <div className="card-title" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={f.title}>
-              {f.title}
-            </div>
-            <span className={`badge badge-${f.status}`}>{f.status === 'Pending' ? 'Chờ xử lý' : 'Đã phản hồi'}</span>
-          </div>
-          <div className="card-body">
-            <div>
-              👨‍🎓 Từ: <strong>{f.student_id?.fullname || 'N/A'}</strong>
-            </div>
-            <div style={{ marginTop: '0.5rem', background: 'rgba(0,0,0,0.02)', padding: '0.5rem', borderRadius: 4, fontSize: '0.85rem' }}>{f.description}</div>
+        <Col xs={24} md={12} key={f._id}>
+          <Card
+            title={
+              <Typography.Text ellipsis title={f.title}>
+                {f.title}
+              </Typography.Text>
+            }
+            extra={<Tag color={statusColor(f.status)}>{f.status === 'Pending' ? t('feedbacks.pending') : t('feedbacks.replied')}</Tag>}
+            actions={
+              f.status === 'Pending'
+                ? [
+                    <Button key="reply" type="link" icon={<MessageOutlined />} onClick={() => onReply(f._id)}>
+                      {t('feedbacks.reply')}
+                    </Button>,
+                  ]
+                : undefined
+            }
+          >
+            <Typography.Paragraph type="secondary" style={{ marginBottom: 8 }}>
+              {t('feedbacks.from')} <Typography.Text strong>{f.student_id?.fullname || t('common.na')}</Typography.Text>
+            </Typography.Paragraph>
+            <Typography.Paragraph style={{ marginBottom: f.reply_content ? 8 : 0, whiteSpace: 'pre-wrap' }}>
+              {f.description}
+            </Typography.Paragraph>
             {f.reply_content ? (
-              <div
+              <Typography.Paragraph
                 style={{
-                  marginTop: '0.5rem',
-                  background: 'rgba(79,70,229,0.05)',
-                  color: 'var(--primary)',
-                  padding: '0.5rem',
-                  borderRadius: 4,
-                  fontSize: '0.85rem',
+                  marginBottom: 0,
+                  padding: 8,
+                  borderRadius: 8,
+                  background: 'rgba(79, 70, 229, 0.06)',
+                  whiteSpace: 'pre-wrap',
                 }}
               >
-                <strong>Admin:</strong> {f.reply_content}
-              </div>
+                <Typography.Text strong>{t('feedbacks.adminReply')}</Typography.Text> {f.reply_content}
+              </Typography.Paragraph>
             ) : null}
-          </div>
-          {f.status === 'Pending' ? (
-            <div className="card-footer">
-              <button type="button" className="btn btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }} onClick={() => onReply(f._id)}>
-                Trả lời
-              </button>
-            </div>
-          ) : null}
-        </div>
+          </Card>
+        </Col>
       ))}
-    </div>
+    </Row>
   );
 }

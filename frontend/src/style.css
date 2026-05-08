@@ -447,3 +447,120 @@ tr:hover td {
     animation: spin 1s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* Settings page — danh sách chức năng cấu hình */
+.settings-layout {
+    max-width: 720px;
+    margin: 0 auto;
+    padding-bottom: 2rem;
+}
+.settings-hero {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+}
+.settings-hero-icon {
+    font-size: 2rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+.settings-hero-text h2 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 0.35rem;
+}
+.settings-hero-text p {
+    font-size: 0.95rem;
+    color: var(--text-light);
+    line-height: 1.55;
+    margin: 0;
+}
+.settings-blocks {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+.settings-block {
+    padding: 1.5rem 1.75rem;
+    position: relative;
+}
+.settings-block-head h3 {
+    font-size: 1.08rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+    color: var(--text-main);
+}
+.settings-block-lead {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    line-height: 1.5;
+    margin: 0;
+}
+.settings-field-label {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-main);
+    margin-bottom: 0.35rem;
+}
+.settings-field-hint {
+    font-size: 0.82rem;
+    color: var(--text-light);
+    margin-bottom: 0.65rem;
+    line-height: 1.45;
+}
+.settings-input-wrap {
+    display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
+}
+.settings-input-wrap input {
+    flex: 1;
+    min-width: 0;
+}
+.settings-input-wrap .btn-toggle-key {
+    flex-shrink: 0;
+    padding: 0 1rem;
+    font-size: 0.85rem;
+}
+.settings-active-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.65rem;
+}
+.settings-gemini-footnote {
+    font-size: 0.78rem;
+    color: var(--text-light);
+    margin: 0;
+    line-height: 1.45;
+    max-width: 42ch;
+}
+.settings-block--pending {
+    background: rgba(255,255,255,0.5);
+}
+.settings-pending-badge {
+    position: absolute;
+    top: 1.25rem;
+    right: 1.25rem;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-light);
+    background: rgba(0,0,0,0.06);
+    padding: 0.3rem 0.55rem;
+    border-radius: 6px;
+}
+.settings-block--pending .settings-block-head {
+    padding-right: 6.5rem;
+}
+.settings-pending-note {
+    font-size: 0.82rem;
+    color: var(--text-light);
+    margin: 0.75rem 0 0;
+    line-height: 1.5;
+    padding-top: 0.75rem;
+    border-top: 1px dashed rgba(0,0,0,0.08);
+}

@@ -1,51 +1,59 @@
-import { formatDate, formatMoney } from '../../api';
+import { Button, Card, Col, Row, Tag, Typography } from 'antd';
+import { EditOutlined, SwapOutlined } from '@ant-design/icons';
+import { formatMoney } from '../../api';
+import { useLanguage } from '../../context/LanguageContext';
+
+function statusTagColor(status) {
+  if (status === 'Available') return 'success';
+  if (status === 'Maintenance') return 'warning';
+  return 'default';
+}
 
 export default function AdminRoomsTab({ rooms, onToggleStatus, onEdit }) {
+  const { t } = useLanguage();
+
   return (
-    <div className="grid-cards">
+    <Row gutter={[16, 16]}>
       {rooms.map((r) => {
         const available = r.capacity - r.current_people;
         return (
-          <div key={r._id} className="card">
-            <div className="card-header">
-              <div className="card-title">Phòng {r.room_code}</div>
-              <span className={`badge badge-${r.status}`}>{r.status === 'Available' ? 'Khả dụng' : 'Bảo trì'}</span>
-            </div>
-            <div className="card-body">
-              <div>
-                🏢 Tòa nhà: <strong>{r.building}</strong>
-              </div>
-              <div>
-                👥 Chỗ trống:{' '}
-                <strong>
+          <Col xs={24} sm={12} lg={8} key={r._id}>
+            <Card
+              title={
+                <Typography.Text strong>
+                  {t('room.room')} {r.room_code}
+                </Typography.Text>
+              }
+              extra={<Tag color={statusTagColor(r.status)}>{r.status === 'Available' ? t('room.available') : t('room.maintenance')}</Tag>}
+              actions={[
+                <Button key="toggle" type="link" icon={<SwapOutlined />} onClick={() => onToggleStatus(r._id, r.status)}>
+                  {t('room.toggleStatus')}
+                </Button>,
+                <Button key="edit" type="link" icon={<EditOutlined />} onClick={() => onEdit(r)}>
+                  {t('room.edit')}
+                </Button>,
+              ]}
+            >
+              <Typography.Paragraph style={{ marginBottom: 8 }}>
+                {t('room.building')} <Typography.Text strong>{r.building}</Typography.Text>
+              </Typography.Paragraph>
+              <Typography.Paragraph style={{ marginBottom: 8 }}>
+                {t('room.seats')}{' '}
+                <Typography.Text strong>
                   {available}/{r.capacity}
-                </strong>
-              </div>
-              <div>
-                💰 Giá: <strong>{formatMoney(r.price)}/tháng</strong>
-              </div>
-            </div>
-            <div className="card-footer" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                className="btn btn-outline"
-                style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}
-                onClick={() => onToggleStatus(r._id, r.status)}
-              >
-                Đổi trạng thái
-              </button>
-              <button
-                type="button"
-                className="btn btn-outline"
-                style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}
-                onClick={() => onEdit(r)}
-              >
-                Sửa
-              </button>
-            </div>
-          </div>
+                </Typography.Text>
+              </Typography.Paragraph>
+              <Typography.Paragraph style={{ marginBottom: 0 }}>
+                {t('room.price')}{' '}
+                <Typography.Text strong>
+                  {formatMoney(r.price)}
+                  {t('room.perMonth')}
+                </Typography.Text>
+              </Typography.Paragraph>
+            </Card>
+          </Col>
         );
       })}
-    </div>
+    </Row>
   );
 }

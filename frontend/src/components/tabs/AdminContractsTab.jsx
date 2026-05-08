@@ -1,51 +1,64 @@
+import { Button, Table, Tag, Typography } from 'antd';
 import { formatDate } from '../../api';
+import { useLanguage } from '../../context/LanguageContext';
+
+function statusColor(status) {
+  if (status === 'Active') return 'success';
+  if (status === 'Ended') return 'default';
+  return 'processing';
+}
 
 export default function AdminContractsTab({ contracts, onEndContract }) {
-  return (
-    <div className="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>Sinh viên</th>
-            <th>Phòng</th>
-            <th>Từ ngày</th>
-            <th>Đến ngày</th>
-            <th>Trạng thái</th>
-            <th>Thao tác</th>
-          </tr>
-        </thead>
-        <tbody>
-          {contracts.map((c) => (
-            <tr key={c._id}>
-              <td>
-                <strong>{c.student_id?.fullname || 'N/A'}</strong>
-                <br />
-                <small>{c.student_id?.mssv || ''}</small>
-              </td>
-              <td>
-                <strong>{c.room_id?.room_code || 'N/A'}</strong>
-              </td>
-              <td>{formatDate(c.start_date)}</td>
-              <td>{formatDate(c.end_date)}</td>
-              <td>
-                <span className={`badge badge-${c.status}`}>{c.status}</span>
-              </td>
-              <td className="actions">
-                {c.status === 'Active' ? (
-                  <button
-                    type="button"
-                    className="btn btn-outline"
-                    style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', color: 'var(--danger)' }}
-                    onClick={() => onEndContract(c._id)}
-                  >
-                    Kết thúc
-                  </button>
-                ) : null}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
+  const { t } = useLanguage();
+
+  const columns = [
+    {
+      title: t('contracts.student'),
+      key: 'student',
+      render: (_, c) => (
+        <>
+          <strong>{c.student_id?.fullname || t('common.na')}</strong>
+          <br />
+          <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+            {c.student_id?.mssv || ''}
+          </Typography.Text>
+        </>
+      ),
+    },
+    {
+      title: t('contracts.room'),
+      key: 'room',
+      render: (_, c) => <strong>{c.room_id?.room_code || t('common.na')}</strong>,
+    },
+    {
+      title: t('contracts.from'),
+      dataIndex: 'start_date',
+      key: 'start_date',
+      render: (d) => formatDate(d),
+    },
+    {
+      title: t('contracts.to'),
+      dataIndex: 'end_date',
+      key: 'end_date',
+      render: (d) => formatDate(d),
+    },
+    {
+      title: t('contracts.status'),
+      dataIndex: 'status',
+      key: 'status',
+      render: (status) => <Tag color={statusColor(status)}>{status}</Tag>,
+    },
+    {
+      title: t('contracts.actions'),
+      key: 'actions',
+      render: (_, c) =>
+        c.status === 'Active' ? (
+          <Button size="small" danger type="link" onClick={() => onEndContract(c._id)}>
+            {t('contracts.end')}
+          </Button>
+        ) : null,
+    },
+  ];
+
+  return <Table rowKey="_id" columns={columns} dataSource={contracts} pagination={{ pageSize: 10 }} />;
 }

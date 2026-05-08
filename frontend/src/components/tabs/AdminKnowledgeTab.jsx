@@ -1,42 +1,42 @@
+import { Button, Table } from 'antd';
+import { useLanguage } from '../../context/LanguageContext';
+
 export default function AdminKnowledgeTab({ items, onDelete }) {
+  const { t } = useLanguage();
+
+  const columns = [
+    {
+      title: t('knowledge.question'),
+      dataIndex: 'question',
+      key: 'question',
+      ellipsis: true,
+      render: (text) => <strong>{text}</strong>,
+    },
+    {
+      title: t('knowledge.answer'),
+      dataIndex: 'answer',
+      key: 'answer',
+      ellipsis: true,
+    },
+    {
+      title: t('knowledge.actions'),
+      key: 'actions',
+      width: 120,
+      render: (_, record) => (
+        <Button size="small" danger type="link" onClick={() => onDelete(record._id)}>
+          {t('knowledge.delete')}
+        </Button>
+      ),
+    },
+  ];
+
   return (
-    <div className="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>Câu hỏi</th>
-            <th>Câu trả lời</th>
-            <th>Thao tác</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.length === 0 ? (
-            <tr>
-              <td colSpan={3} style={{ textAlign: 'center' }}>
-                Chưa có dữ liệu
-              </td>
-            </tr>
-          ) : null}
-          {items.map((item) => (
-            <tr key={item._id}>
-              <td style={{ maxWidth: 200 }}>
-                <strong>{item.question}</strong>
-              </td>
-              <td style={{ maxWidth: 300 }}>{item.answer}</td>
-              <td className="actions">
-                <button
-                  type="button"
-                  className="btn btn-outline"
-                  style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', color: 'var(--danger)' }}
-                  onClick={() => onDelete(item._id)}
-                >
-                  Xóa
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <Table
+      rowKey="_id"
+      columns={columns}
+      dataSource={items}
+      pagination={{ pageSize: 10 }}
+      locale={{ emptyText: t('knowledge.empty') }}
+    />
   );
 }
