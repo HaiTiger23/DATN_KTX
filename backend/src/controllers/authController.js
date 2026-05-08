@@ -79,4 +79,48 @@ const registerUser = async (req, res) => {
   }
 };
 
-export { authUser, registerUser };
+// @desc    Get user profile
+// @route   GET /api/auth/profile
+// @access  Private
+const getUserProfile = async (req, res) => {
+  const user = await User.findById(req.user._id).select('-password');
+  if (user) {
+    res.json(user);
+  } else {
+    res.status(404).json({ message: 'User not found' });
+  }
+};
+
+// @desc    Update user profile
+// @route   PUT /api/auth/profile
+// @access  Private
+const updateUserProfile = async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  if (user) {
+    user.fullname = req.body.fullname || user.fullname;
+    user.email = req.body.email || user.email;
+    if (user.role === 'Student') {
+      user.phone = req.body.phone !== undefined ? req.body.phone : user.phone;
+      user.address = req.body.address !== undefined ? req.body.address : user.address;
+    }
+    
+    if (req.body.password) {
+      user.password = req.body.password;
+    }
+
+    const updatedUser = await user.save();
+
+    res.json({
+      _id: updatedUser._id,
+      fullname: updatedUser.fullname,
+      email: updatedUser.email,
+      role: updatedUser.role,
+      token: generateToken(updatedUser._id),
+    });
+  } else {
+    res.status(404).json({ message: 'User not found' });
+  }
+};
+
+export { authUser, registerUser, getUserProfile, updateUserProfile };

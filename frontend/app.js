@@ -1,9 +1,12 @@
-const API_URL = 'https://datn-ktx.onrender.com/api';
+const API_URL = 'http://localhost:5556/api';
 let state = {
     token: localStorage.getItem('token') || null,
     user: JSON.parse(localStorage.getItem('user')) || null,
     currentTab: ''
 };
+let adminRooms = [];
+let adminStudents = [];
+let studentRooms = [];
 
 // DOM Elements
 const screens = {
@@ -57,6 +60,7 @@ function generateSidebar() {
             <a href="#" class="nav-item ${state.currentTab === 'feedbacks' ? 'active' : ''}" data-target="feedbacks">💬 Phản ánh</a>
             <a href="#" class="nav-item ${state.currentTab === 'admin_knowledge' ? 'active' : ''}" data-target="admin_knowledge">📚 Tri thức (RAG)</a>
             <a href="#" class="nav-item ${state.currentTab === 'admin_settings' ? 'active' : ''}" data-target="admin_settings">⚙️ Cài đặt</a>
+            <a href="#" class="nav-item ${state.currentTab === 'profile' ? 'active' : ''}" data-target="profile">👤 Thông tin cá nhân</a>
         `;
     } else {
         sidebarNav.innerHTML = `
@@ -65,6 +69,7 @@ function generateSidebar() {
             <a href="#" class="nav-item ${state.currentTab === 'student_contracts' ? 'active' : ''}" data-target="student_contracts">📄 Hợp đồng của tôi</a>
             <a href="#" class="nav-item ${state.currentTab === 'student_feedbacks' ? 'active' : ''}" data-target="student_feedbacks">💬 Phản hồi của tôi</a>
             <a href="#" class="nav-item ${state.currentTab === 'student_chatbot' ? 'active' : ''}" data-target="student_chatbot">🤖 Trợ lý AI</a>
+            <a href="#" class="nav-item ${state.currentTab === 'profile' ? 'active' : ''}" data-target="profile">👤 Thông tin cá nhân</a>
         `;
     }
 }
@@ -214,7 +219,8 @@ async function loadTab(tab) {
         student_requests: 'Đơn đăng ký của tôi',
         student_contracts: 'Hợp đồng của tôi',
         student_feedbacks: 'Gửi phản hồi cho BQL',
-        student_chatbot: 'Trợ lý Ảo AI (Gemini)'
+        student_chatbot: 'Trợ lý Ảo AI (Gemini)',
+        profile: 'Thông tin cá nhân'
     };
     pageTitle.textContent = titles[tab];
 
@@ -238,6 +244,8 @@ async function loadTab(tab) {
         if (tab === 'student_contracts') await renderStudentContracts();
         if (tab === 'student_feedbacks') await renderStudentFeedbacks();
         if (tab === 'student_chatbot') await renderStudentChatbot();
+        
+        if (tab === 'profile') await renderProfile();
     } catch (err) {
         contentArea.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--danger)">Lỗi tải dữ liệu</div>`;
     }
@@ -245,7 +253,8 @@ async function loadTab(tab) {
 
 // --- Admin Functions ---
 async function renderRooms() {
-    const rooms = await fetchAPI('/admin/rooms');
+    adminRooms = await fetchAPI('/admin/rooms');
+    const rooms = adminRooms;
     let html = '<div class="grid-cards">';
     rooms.forEach(r => {
         const available = r.capacity - r.current_people;
@@ -260,9 +269,12 @@ async function renderRooms() {
                 <div>👥 Chỗ trống: <strong>${available}/${r.capacity}</strong></div>
                 <div>💰 Giá: <strong>${formatMoney(r.price)}/tháng</strong></div>
             </div>
-            <div class="card-footer">
+            <div class="card-footer" style="display:flex;gap:0.5rem;flex-wrap:wrap">
                 <button class="btn btn-outline" style="padding:0.5rem 1rem;font-size:0.85rem" onclick="toggleRoomStatus('${r._id}', '${r.status}')">
                     Đổi trạng thái
+                </button>
+                <button class="btn btn-outline" style="padding:0.5rem 1rem;font-size:0.85rem" onclick="openEditRoomModal('${r._id}')">
+                    Sửa
                 </button>
             </div>
         </div>`;
@@ -282,7 +294,8 @@ window.toggleRoomStatus = async function (id, currentStatus) {
 };
 
 async function renderStudents() {
-    const students = await fetchAPI('/admin/students');
+    adminStudents = await fetchAPI('/admin/students');
+    const students = adminStudents;
     let html = `
     <div class="table-container">
         <table>
@@ -297,8 +310,9 @@ async function renderStudents() {
                 <td>${s.email}</td>
                 <td>${s.phone || 'N/A'}</td>
                 <td><span class="badge badge-${s.status}">${s.status}</span></td>
-                <td class="actions">
-                    <button class="btn btn-outline" style="padding:0.4rem 0.8rem;font-size:0.8rem" onclick="deleteStudent('${s._id}')">Xóa</button>
+                <td class="actions" style="display:flex;gap:0.5rem;">
+                    <button class="btn btn-outline" style="padding:0.4rem 0.8rem;font-size:0.8rem" onclick="openEditStudentModal('${s._id}')">Sửa</button>
+                    <button class="btn btn-outline" style="padding:0.4rem 0.8rem;font-size:0.8rem;color:var(--danger)" onclick="deleteStudent('${s._id}')">Xóa</button>
                 </td>
             </tr>
         `;
@@ -415,33 +429,64 @@ async function renderFeedbacks() {
 
 // --- Student Functions ---
 async function renderStudentRooms() {
-    const rooms = await fetchAPI('/student/rooms');
-    let html = '<div class="grid-cards">';
-    rooms.forEach(r => {
+    studentRooms = await fetchAPI('/student/rooms');
+    let html = `
+        <div style="display:flex; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap;">
+            <input type="text" id="room-search" placeholder="🔍 Tìm kiếm mã phòng, tòa nhà..." style="flex:1; min-width:200px; padding:0.6rem 1rem; border-radius:8px; border:1px solid rgba(0,0,0,0.1); outline:none;">
+            <select id="room-sort" style="padding:0.6rem 1rem; border-radius:8px; border:1px solid rgba(0,0,0,0.1); outline:none; background:white;">
+                <option value="default">Sắp xếp mặc định</option>
+                <option value="price_asc">Giá: Thấp đến cao</option>
+                <option value="price_desc">Giá: Cao đến thấp</option>
+            </select>
+        </div>
+        <div id="room-grid-container"></div>
+    `;
+    contentArea.innerHTML = html;
+    
+    document.getElementById('room-search').addEventListener('input', updateStudentRoomGrid);
+    document.getElementById('room-sort').addEventListener('change', updateStudentRoomGrid);
+    
+    updateStudentRoomGrid();
+}
+
+window.updateStudentRoomGrid = function() {
+    const search = document.getElementById('room-search').value.toLowerCase();
+    const sort = document.getElementById('room-sort').value;
+    
+    let filtered = studentRooms.filter(r => {
         const available = r.capacity - r.current_people;
-        if (available > 0) {
-            html += `
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title">Phòng ${r.room_code}</div>
-                    <span class="badge badge-Available">Khả dụng</span>
-                </div>
-                <div class="card-body">
-                    <div>🏢 Tòa nhà: <strong>${r.building}</strong></div>
-                    <div>👥 Chỗ trống: <strong style="color:var(--success)">${available}/${r.capacity}</strong></div>
-                    <div>💰 Giá: <strong>${formatMoney(r.price)}/tháng</strong></div>
-                </div>
-                <div class="card-footer">
-                    <button class="btn btn-primary" style="padding:0.5rem 1rem;font-size:0.85rem;width:100%" onclick="registerRoom('${r._id}')">
-                        Đăng ký ngay
-                    </button>
-                </div>
-            </div>`;
-        }
+        if (available <= 0) return false;
+        return r.room_code.toLowerCase().includes(search) || r.building.toLowerCase().includes(search);
+    });
+    
+    if (sort === 'price_asc') filtered.sort((a,b) => a.price - b.price);
+    else if (sort === 'price_desc') filtered.sort((a,b) => b.price - a.price);
+
+    let html = '<div class="grid-cards">';
+    filtered.forEach(r => {
+        const available = r.capacity - r.current_people;
+        html += `
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Phòng ${r.room_code}</div>
+                <span class="badge badge-Available">Khả dụng</span>
+            </div>
+            <div class="card-body">
+                <div>🏢 Tòa nhà: <strong>${r.building}</strong></div>
+                <div>👥 Chỗ trống: <strong style="color:var(--success)">${available}/${r.capacity}</strong></div>
+                <div>💰 Giá: <strong>${formatMoney(r.price)}/tháng</strong></div>
+            </div>
+            <div class="card-footer">
+                <button class="btn btn-primary" style="padding:0.5rem 1rem;font-size:0.85rem;width:100%" onclick="registerRoom('${r._id}')">
+                    Đăng ký ngay
+                </button>
+            </div>
+        </div>`;
     });
     html += '</div>';
-    if (html === '<div class="grid-cards"></div>') html = '<p style="text-align:center;padding:2rem;">Hiện không có phòng trống</p>';
-    contentArea.innerHTML = html;
+    if (filtered.length === 0) html = '<p style="text-align:center;padding:2rem;">Không tìm thấy phòng phù hợp</p>';
+    
+    document.getElementById('room-grid-container').innerHTML = html;
 }
 
 window.registerRoom = async function (roomId) {
@@ -570,6 +615,37 @@ window.openReplyModal = function (feedbackId) {
     modal.classList.remove('hidden');
 };
 
+window.openEditRoomModal = function (id) {
+    const room = adminRooms.find(r => r._id === id);
+    if (!room) return;
+    currentModalAction = 'edit_room';
+    currentModalId = id;
+    document.getElementById('modal-title').textContent = 'Sửa thông tin phòng';
+    document.getElementById('modal-body').innerHTML = `
+        <div class="form-group"><label>Mã phòng</label><input type="text" id="room_code" value="${room.room_code}" disabled style="background:#eee"></div>
+        <div class="form-group"><label>Tòa nhà</label><input type="text" id="building" value="${room.building}"></div>
+        <div class="form-group"><label>Sức chứa</label><input type="number" id="capacity" value="${room.capacity}"></div>
+        <div class="form-group"><label>Giá/tháng</label><input type="number" id="price" value="${room.price}"></div>
+    `;
+    modal.classList.remove('hidden');
+};
+
+window.openEditStudentModal = function (id) {
+    const student = adminStudents.find(s => s._id === id);
+    if (!student) return;
+    currentModalAction = 'edit_student';
+    currentModalId = id;
+    document.getElementById('modal-title').textContent = 'Sửa thông tin sinh viên';
+    document.getElementById('modal-body').innerHTML = `
+        <div class="form-group"><label>Họ tên (*)</label><input type="text" id="fullname" value="${student.fullname}"></div>
+        <div class="form-group"><label>Email (*)</label><input type="email" id="email_add" value="${student.email}"></div>
+        <div class="form-group"><label>Mật khẩu mới (Bỏ trống nếu không đổi)</label><input type="text" id="password_add" placeholder="Nhập pass mới..."></div>
+        <div class="form-group"><label>SĐT</label><input type="text" id="phone" value="${student.phone || ''}"></div>
+        <div class="form-group"><label>Địa chỉ</label><input type="text" id="address" value="${student.address || ''}"></div>
+    `;
+    modal.classList.remove('hidden');
+};
+
 document.getElementById('add-btn').addEventListener('click', () => {
     if (state.currentTab === 'rooms') {
         currentModalAction = 'add_room';
@@ -580,6 +656,10 @@ document.getElementById('add-btn').addEventListener('click', () => {
             <div class="form-group"><label>Sức chứa</label><input type="number" id="capacity" value="4"></div>
             <div class="form-group"><label>Giá/tháng</label><input type="number" id="price" value="1200000"></div>
         `;
+        document.getElementById('room_code').value = '';
+        document.getElementById('building').value = '';
+        document.getElementById('capacity').value = '4';
+        document.getElementById('price').value = '1200000';
         modal.classList.remove('hidden');
     } else if (state.currentTab === 'students') {
         currentModalAction = 'add_student';
@@ -591,6 +671,11 @@ document.getElementById('add-btn').addEventListener('click', () => {
             <div class="form-group"><label>MSSV</label><input type="text" id="mssv"></div>
             <div class="form-group"><label>CCCD</label><input type="text" id="cccd"></div>
         `;
+        document.getElementById('fullname').value = '';
+        document.getElementById('email_add').value = '';
+        document.getElementById('password_add').value = '123456';
+        document.getElementById('mssv').value = '';
+        document.getElementById('cccd').value = '';
         modal.classList.remove('hidden');
     } else if (state.currentTab === 'student_feedbacks') {
         currentModalAction = 'add_feedback';
@@ -599,6 +684,8 @@ document.getElementById('add-btn').addEventListener('click', () => {
             <div class="form-group"><label>Tiêu đề</label><input type="text" id="feedback_title"></div>
             <div class="form-group"><label>Nội dung</label><textarea id="feedback_desc" rows="4"></textarea></div>
         `;
+        document.getElementById('feedback_title').value = '';
+        document.getElementById('feedback_desc').value = '';
         modal.classList.remove('hidden');
     } else if (state.currentTab === 'admin_knowledge') {
         currentModalAction = 'add_knowledge';
@@ -607,6 +694,8 @@ document.getElementById('add-btn').addEventListener('click', () => {
             <div class="form-group"><label>Câu hỏi</label><input type="text" id="knowledge_q"></div>
             <div class="form-group"><label>Trả lời</label><textarea id="knowledge_a" rows="4"></textarea></div>
         `;
+        document.getElementById('knowledge_q').value = '';
+        document.getElementById('knowledge_a').value = '';
         modal.classList.remove('hidden');
     }
 });
@@ -645,6 +734,32 @@ document.getElementById('modal-save-btn').addEventListener('click', async () => 
             if (!body.fullname || !body.email || !body.password) return showToast('Điền đủ thông tin bắt buộc', 'error');
             await fetchAPI('/admin/students', 'POST', body);
             showToast('Thêm sinh viên thành công');
+            modal.classList.add('hidden');
+            loadTab('students');
+        }
+        else if (currentModalAction === 'edit_room') {
+            const body = {
+                building: document.getElementById('building').value,
+                capacity: Number(document.getElementById('capacity').value),
+                price: Number(document.getElementById('price').value)
+            };
+            await fetchAPI(`/admin/rooms/${currentModalId}`, 'PUT', body);
+            showToast('Cập nhật phòng thành công');
+            modal.classList.add('hidden');
+            loadTab('rooms');
+        }
+        else if (currentModalAction === 'edit_student') {
+            const body = {
+                fullname: document.getElementById('fullname').value,
+                email: document.getElementById('email_add').value,
+                phone: document.getElementById('phone').value,
+                address: document.getElementById('address').value
+            };
+            const pass = document.getElementById('password_add').value;
+            if (pass) body.password = pass;
+
+            await fetchAPI(`/admin/students/${currentModalId}`, 'PUT', body);
+            showToast('Cập nhật sinh viên thành công');
             modal.classList.add('hidden');
             loadTab('students');
         }
@@ -740,9 +855,16 @@ async function renderStudentChatbot() {
                     Xin chào! Tôi là trợ lý ảo KTX. Tôi có thể giúp gì cho bạn dựa trên Cơ sở tri thức?
                 </div>
             </div>
-            <div style="padding: 1rem; border-top: 1px solid rgba(0,0,0,0.05); display:flex; gap: 0.5rem; background: rgba(255,255,255,0.5);">
-                <input type="text" id="chat-input" placeholder="Nhập câu hỏi của bạn..." style="flex:1; padding: 0.75rem 1rem; border-radius: 99px; border: 1px solid rgba(0,0,0,0.1); outline: none;">
-                <button class="btn btn-primary" style="border-radius: 99px;" onclick="sendChatMessage()">Gửi</button>
+            <div style="padding: 1rem; border-top: 1px solid rgba(0,0,0,0.05); display:flex; flex-direction:column; gap: 0.5rem; background: rgba(255,255,255,0.5);">
+                <div style="display:flex; gap:0.5rem; flex-wrap:wrap; font-size:0.8rem;">
+                    <span class="badge badge-Available" style="cursor:pointer; background:rgba(79,70,229,0.1); color:var(--primary);" onclick="document.getElementById('chat-input').value='Ký túc xá có những tiện ích gì?'; sendChatMessage()">Ký túc xá có tiện ích gì?</span>
+                    <span class="badge badge-Available" style="cursor:pointer; background:rgba(79,70,229,0.1); color:var(--primary);" onclick="document.getElementById('chat-input').value='Quy định giờ giấc ra vào thế nào?'; sendChatMessage()">Quy định giờ giấc?</span>
+                    <span class="badge badge-Available" style="cursor:pointer; background:rgba(79,70,229,0.1); color:var(--primary);" onclick="document.getElementById('chat-input').value='Có được nấu ăn trong phòng không?'; sendChatMessage()">Được nấu ăn không?</span>
+                </div>
+                <div style="display:flex; gap: 0.5rem;">
+                    <input type="text" id="chat-input" placeholder="Nhập câu hỏi của bạn..." style="flex:1; padding: 0.75rem 1rem; border-radius: 99px; border: 1px solid rgba(0,0,0,0.1); outline: none;">
+                    <button class="btn btn-primary" style="border-radius: 99px;" onclick="sendChatMessage()">Gửi</button>
+                </div>
             </div>
         </div>
     `;
@@ -794,6 +916,47 @@ window.sendChatMessage = async function () {
         `;
     }
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
+};
+
+async function renderProfile() {
+    const user = await fetchAPI('/auth/profile');
+    contentArea.innerHTML = `
+        <div class="card" style="max-width: 600px; margin: 0 auto;">
+            <div class="card-header">
+                <div class="card-title">Cập nhật hồ sơ</div>
+            </div>
+            <div class="card-body">
+                <div class="form-group"><label>Họ tên</label><input type="text" id="prof_fullname" value="${user.fullname || ''}"></div>
+                <div class="form-group"><label>Email</label><input type="email" id="prof_email" value="${user.email || ''}"></div>
+                <div class="form-group"><label>SĐT</label><input type="text" id="prof_phone" value="${user.phone || ''}" ${user.role==='Admin'?'disabled':''}></div>
+                <div class="form-group"><label>Địa chỉ</label><input type="text" id="prof_address" value="${user.address || ''}" ${user.role==='Admin'?'disabled':''}></div>
+                <div class="form-group"><label>Mật khẩu mới (Bỏ trống nếu không đổi)</label><input type="password" id="prof_password" placeholder="Nhập pass mới..."></div>
+                <button class="btn btn-primary" onclick="saveProfile()">Lưu thay đổi</button>
+            </div>
+        </div>
+    `;
+}
+
+window.saveProfile = async function() {
+    try {
+        const body = {
+            fullname: document.getElementById('prof_fullname').value,
+            email: document.getElementById('prof_email').value,
+            phone: document.getElementById('prof_phone').value,
+            address: document.getElementById('prof_address').value
+        };
+        const pass = document.getElementById('prof_password').value;
+        if (pass) body.password = pass;
+
+        const res = await fetchAPI('/auth/profile', 'PUT', body);
+        showToast('Cập nhật hồ sơ thành công');
+        
+        // Update local state if needed
+        state.user.fullname = res.fullname;
+        localStorage.setItem('user', JSON.stringify(state.user));
+        document.getElementById('user-name').textContent = res.fullname;
+        document.getElementById('prof_password').value = '';
+    } catch(err){}
 };
 
 // Boot
