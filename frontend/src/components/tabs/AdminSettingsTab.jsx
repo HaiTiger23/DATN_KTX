@@ -1,4 +1,4 @@
-import { Button, Card, Col, Input, Row, Space, Typography } from 'antd';
+import { Button, Card, Col, Input, Row, Space, Tag, Typography } from 'antd';
 import { SettingOutlined } from '@ant-design/icons';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -52,7 +52,7 @@ export default function AdminSettingsTab({ geminiKey, setGeminiKey, onSave }) {
           <Col xs={24} md={8} key={block.id}>
             <Card title={t(block.titleKey)}>
               <Typography.Paragraph type="secondary">{t(block.leadKey)}</Typography.Paragraph>
-              <Typography.Tag>{t('settings.pendingBadge')}</Typography.Tag>
+              <Tag>{t('settings.pendingBadge')}</Tag>
               <Typography.Paragraph style={{ marginTop: 12, marginBottom: 0 }}>{t('settings.pendingNote')}</Typography.Paragraph>
             </Card>
           </Col>
