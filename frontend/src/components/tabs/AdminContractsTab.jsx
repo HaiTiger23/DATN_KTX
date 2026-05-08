@@ -1,0 +1,51 @@
+import { formatDate } from '../../api';
+
+export default function AdminContractsTab({ contracts, onEndContract }) {
+  return (
+    <div className="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Sinh viên</th>
+            <th>Phòng</th>
+            <th>Từ ngày</th>
+            <th>Đến ngày</th>
+            <th>Trạng thái</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          {contracts.map((c) => (
+            <tr key={c._id}>
+              <td>
+                <strong>{c.student_id?.fullname || 'N/A'}</strong>
+                <br />
+                <small>{c.student_id?.mssv || ''}</small>
+              </td>
+              <td>
+                <strong>{c.room_id?.room_code || 'N/A'}</strong>
+              </td>
+              <td>{formatDate(c.start_date)}</td>
+              <td>{formatDate(c.end_date)}</td>
+              <td>
+                <span className={`badge badge-${c.status}`}>{c.status}</span>
+              </td>
+              <td className="actions">
+                {c.status === 'Active' ? (
+                  <button
+                    type="button"
+                    className="btn btn-outline"
+                    style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', color: 'var(--danger)' }}
+                    onClick={() => onEndContract(c._id)}
+                  >
+                    Kết thúc
+                  </button>
+                ) : null}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
