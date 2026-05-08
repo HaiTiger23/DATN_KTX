@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:5556/api';
+const API_URL = 'https://datn-ktx.onrender.com/api';
 let state = {
     token: localStorage.getItem('token') || null,
     user: JSON.parse(localStorage.getItem('user')) || null,
@@ -23,13 +23,13 @@ function init() {
         document.getElementById('user-name').textContent = state.user?.fullname || 'User';
         document.querySelector('.sidebar-footer .role').textContent = state.user?.role || 'Sinh viên';
         document.querySelector('.sidebar-header h2').textContent = state.user?.role === 'Admin' ? 'KTX Admin' : 'Cổng Sinh viên';
-        
+
         generateSidebar();
-        
+
         if (!state.currentTab) {
             state.currentTab = state.user.role === 'Admin' ? 'rooms' : 'student_rooms';
         }
-        
+
         // Setup nav events
         document.querySelectorAll('.nav-item').forEach(item => {
             item.addEventListener('click', (e) => {
@@ -40,7 +40,7 @@ function init() {
                 loadTab(state.currentTab);
             });
         });
-        
+
         loadTab(state.currentTab);
     } else {
         showScreen('login');
@@ -101,7 +101,7 @@ function formatDate(dateStr) {
 async function fetchAPI(endpoint, method = 'GET', body = null) {
     const headers = { 'Content-Type': 'application/json' };
     if (state.token) headers['Authorization'] = `Bearer ${state.token}`;
-    
+
     try {
         const res = await fetch(`${API_URL}${endpoint}`, {
             method,
@@ -201,7 +201,7 @@ function logout() {
 
 async function loadTab(tab) {
     contentArea.innerHTML = '<div style="display:flex;justify-content:center;padding:3rem;"><div class="loader" style="border-top-color:var(--primary);width:32px;height:32px;"></div></div>';
-    
+
     const titles = {
         rooms: 'Quản lý Phòng ở',
         students: 'Danh sách Sinh viên',
@@ -217,11 +217,11 @@ async function loadTab(tab) {
         student_chatbot: 'Trợ lý Ảo AI (Gemini)'
     };
     pageTitle.textContent = titles[tab];
-    
+
     document.getElementById('sync-btn').style.display = tab === 'rooms' ? 'flex' : 'none';
     document.getElementById('add-btn').style.display = ['rooms', 'students', 'student_feedbacks', 'admin_knowledge'].includes(tab) ? 'flex' : 'none';
-    if(tab === 'student_feedbacks') document.getElementById('add-btn').textContent = '+ Tạo phản hồi mới';
-    else if(tab === 'admin_knowledge') document.getElementById('add-btn').textContent = '+ Thêm Tri thức';
+    if (tab === 'student_feedbacks') document.getElementById('add-btn').textContent = '+ Tạo phản hồi mới';
+    else if (tab === 'admin_knowledge') document.getElementById('add-btn').textContent = '+ Thêm Tri thức';
     else document.getElementById('add-btn').textContent = '+ Thêm mới';
 
     try {
@@ -232,7 +232,7 @@ async function loadTab(tab) {
         if (tab === 'feedbacks') await renderFeedbacks();
         if (tab === 'admin_knowledge') await renderAdminKnowledge();
         if (tab === 'admin_settings') await renderAdminSettings();
-        
+
         if (tab === 'student_rooms') await renderStudentRooms();
         if (tab === 'student_requests') await renderStudentRequests();
         if (tab === 'student_contracts') await renderStudentContracts();
@@ -419,7 +419,7 @@ async function renderStudentRooms() {
     let html = '<div class="grid-cards">';
     rooms.forEach(r => {
         const available = r.capacity - r.current_people;
-        if(available > 0) {
+        if (available > 0) {
             html += `
             <div class="card">
                 <div class="card-header">
@@ -440,7 +440,7 @@ async function renderStudentRooms() {
         }
     });
     html += '</div>';
-    if(html === '<div class="grid-cards"></div>') html = '<p style="text-align:center;padding:2rem;">Hiện không có phòng trống</p>';
+    if (html === '<div class="grid-cards"></div>') html = '<p style="text-align:center;padding:2rem;">Hiện không có phòng trống</p>';
     contentArea.innerHTML = html;
 }
 
@@ -537,7 +537,7 @@ async function renderStudentFeedbacks() {
         </div>`;
     });
     html += '</div>';
-    if(html === '<div class="grid-cards"></div>') html = '<p style="text-align:center;padding:2rem;">Bạn chưa gửi phản hồi nào</p>';
+    if (html === '<div class="grid-cards"></div>') html = '<p style="text-align:center;padding:2rem;">Bạn chưa gửi phản hồi nào</p>';
     contentArea.innerHTML = html;
 }
 
@@ -691,12 +691,12 @@ async function renderAdminSettings() {
     `;
 }
 
-window.saveSettings = async function() {
+window.saveSettings = async function () {
     try {
         const key = document.getElementById('gemini-key').value;
         await fetchAPI('/admin/settings', 'POST', { geminiApiKey: key });
         showToast('Đã lưu cài đặt');
-    } catch(err){}
+    } catch (err) { }
 };
 
 async function renderAdminKnowledge() {
@@ -707,7 +707,7 @@ async function renderAdminKnowledge() {
             <thead><tr><th>Câu hỏi</th><th>Câu trả lời</th><th>Thao tác</th></tr></thead>
             <tbody>
     `;
-    if(data.length === 0) html += '<tr><td colspan="3" style="text-align:center">Chưa có dữ liệu</td></tr>';
+    if (data.length === 0) html += '<tr><td colspan="3" style="text-align:center">Chưa có dữ liệu</td></tr>';
     data.forEach(item => {
         html += `
             <tr>
@@ -723,13 +723,13 @@ async function renderAdminKnowledge() {
     contentArea.innerHTML = html;
 }
 
-window.deleteKnowledge = async function(id) {
-    if(!confirm('Xác nhận xóa?')) return;
+window.deleteKnowledge = async function (id) {
+    if (!confirm('Xác nhận xóa?')) return;
     try {
         await fetchAPI(`/admin/knowledge/${id}`, 'DELETE');
         showToast('Đã xóa tri thức');
         loadTab('admin_knowledge');
-    } catch(err){}
+    } catch (err) { }
 };
 
 async function renderStudentChatbot() {
@@ -746,19 +746,19 @@ async function renderStudentChatbot() {
             </div>
         </div>
     `;
-    
+
     document.getElementById('chat-input').addEventListener('keypress', (e) => {
-        if(e.key === 'Enter') sendChatMessage();
+        if (e.key === 'Enter') sendChatMessage();
     });
 }
 
-window.sendChatMessage = async function() {
+window.sendChatMessage = async function () {
     const input = document.getElementById('chat-input');
     const msg = input.value.trim();
-    if(!msg) return;
-    
+    if (!msg) return;
+
     const messagesDiv = document.getElementById('chat-messages');
-    
+
     // Add user message
     messagesDiv.innerHTML += `
         <div style="background: var(--primary); color: white; padding: 1rem; border-radius: 8px; align-self: flex-end; max-width: 80%; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
@@ -767,7 +767,7 @@ window.sendChatMessage = async function() {
     `;
     input.value = '';
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    
+
     // Add typing indicator
     const typingId = 'typing-' + Date.now();
     messagesDiv.innerHTML += `
@@ -785,7 +785,7 @@ window.sendChatMessage = async function() {
                 ${res.reply}
             </div>
         `;
-    } catch(err) {
+    } catch (err) {
         document.getElementById(typingId).remove();
         messagesDiv.innerHTML += `
             <div style="background: #FEE2E2; color: #991B1B; padding: 1rem; border-radius: 8px; align-self: flex-start; max-width: 80%; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
