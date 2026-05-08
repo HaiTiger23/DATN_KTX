@@ -42,4 +42,41 @@ const authUser = async (req, res) => {
   }
 };
 
-export { authUser };
+// @desc    Register a new student
+// @route   POST /api/auth/register
+// @access  Public
+const registerUser = async (req, res) => {
+  try {
+    const { fullname, email, password, mssv, cccd } = req.body;
+
+    if (!fullname || !email || !password) {
+      return res.status(400).json({ message: 'Vui lòng điền đủ họ tên, email và mật khẩu' });
+    }
+
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+      return res.status(400).json({ message: 'Email đã được sử dụng' });
+    }
+
+    const user = await User.create({
+      fullname,
+      email,
+      password,
+      mssv,
+      cccd,
+      role: 'Student'
+    });
+
+    res.status(201).json({
+      _id: user._id,
+      fullname: user.fullname,
+      email: user.email,
+      role: user.role,
+      token: generateToken(user._id),
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export { authUser, registerUser };

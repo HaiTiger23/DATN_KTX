@@ -32,6 +32,26 @@ const approveRequest = async (req, res) => {
       return res.status(400).json({ message: `Đơn này đã được xử lý (${request.status})` });
     }
 
+    if (request.type === 'Cancellation') {
+      // Logic for Cancellation
+      const contract = await Contract.findOne({
+        student_id: request.student_id,
+        room_id: request.room_id,
+        status: 'Active'
+      });
+      if (contract) {
+        contract.status = 'Ended';
+        await contract.save();
+        
+        // Decrease room capacity safely
+        await Room.findByIdAndUpdate(request.room_id, { $inc: { current_people: -1 } });
+      }
+      
+      request.status = 'Approved';
+      await request.save();
+      return res.json({ message: 'Đã duyệt đơn hủy hợp đồng' });
+    }
+
     // FLOW FIX: Chặn duyệt nếu sinh viên đã có hợp đồng Active (1 SV chỉ ở 1 phòng)
     const existingContract = await Contract.findOne({
       student_id: request.student_id,
@@ -71,19 +91,10 @@ const approveRequest = async (req, res) => {
     request.status = 'Approved';
     await request.save();
 
-    // BUG FIX: Nhận start_date/end_date từ body nếu có, không hardcode 6 tháng
-    const startDate = req.body.start_date ? new Date(req.body.start_date) : new Date();
-    const endDate = req.body.end_date
-      ? new Date(req.body.end_date)
-      : new Date(new Date().setMonth(new Date().getMonth() + 6));
-
-    if (endDate <= startDate) {
-      // Rollback: giảm lại current_people nếu date không hợp lệ
-      await Room.findByIdAndUpdate(room._id, { $inc: { current_people: -1 } });
-      request.status = 'Pending';
-      await request.save();
-      return res.status(400).json({ message: 'Ngày kết thúc phải sau ngày bắt đầu' });
-    }
+    // Use request.months to determine end date
+    const startDate = new Date();
+    const months = request.months || 6;
+    const endDate = new Date(new Date().setMonth(startDate.getMonth() + months));
 
     const contract = await Contract.create({
       student_id: request.student_id,

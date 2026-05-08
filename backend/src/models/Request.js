@@ -11,6 +11,15 @@ const requestSchema = new mongoose.Schema({
     ref: 'Room',
     required: true,
   },
+  type: {
+    type: String,
+    enum: ['Registration', 'Cancellation'],
+    default: 'Registration',
+  },
+  months: {
+    type: Number,
+    default: 6,
+  },
   status: {
     type: String,
     enum: ['Pending', 'Approved', 'Rejected'],

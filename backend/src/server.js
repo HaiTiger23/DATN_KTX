@@ -10,6 +10,9 @@ import roomRoutes from './routes/admin/roomRoutes.js';
 import requestRoutes from './routes/admin/requestRoutes.js';
 import contractRoutes from './routes/admin/contractRoutes.js';
 import feedbackRoutes from './routes/admin/feedbackRoutes.js';
+import settingRoutes from './routes/admin/settingRoutes.js';
+import knowledgeRoutes from './routes/admin/knowledgeRoutes.js';
+import studentPortalRoutes from './routes/studentRoutes.js';
 
 dotenv.config();
 
@@ -27,6 +30,9 @@ app.use('/api/admin/rooms', roomRoutes);
 app.use('/api/admin/requests', requestRoutes);
 app.use('/api/admin/contracts', contractRoutes);
 app.use('/api/admin/feedbacks', feedbackRoutes);
+app.use('/api/admin/settings', settingRoutes);
+app.use('/api/admin/knowledge', knowledgeRoutes);
+app.use('/api/student', studentPortalRoutes);
 
 app.get('/', (req, res) => {
   res.send('Dorm Management API is running...');
