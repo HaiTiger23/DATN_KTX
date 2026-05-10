@@ -5,9 +5,18 @@ import Feedback from '../../models/Feedback.js';
 // @access  Private/Admin
 const getFeedbacks = async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
     const feedbacks = await Feedback.find({})
-      .populate('student_id', 'fullname mssv email');
-    res.json(feedbacks);
+      .populate('student_id', 'fullname mssv email').skip(skip).limit(limit);
+    const total = await Feedback.countDocuments({});
+
+    res.json({
+      data: feedbacks,
+      pagination: { current: page, pageSize: limit, total }
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

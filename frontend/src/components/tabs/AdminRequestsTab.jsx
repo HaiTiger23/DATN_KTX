@@ -3,7 +3,7 @@ import { CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import { formatDate } from '../../api';
 import { useLanguage } from '../../context/LanguageContext';
 
-export default function AdminRequestsTab({ requests, onHandle }) {
+export default function AdminRequestsTab({ requests, onHandle, pagination }) {
   const { t } = useLanguage();
 
   if (requests.length === 0) {
@@ -15,7 +15,7 @@ export default function AdminRequestsTab({ requests, onHandle }) {
       {requests.map((r) => (
         <Col xs={24} md={12} lg={8} key={r._id}>
           <Card
-            title={r.type === 'Cancellation' ? t('requests.cancelContract') : t('requests.register')}
+            title={r.type === 'Cancellation' ? t('requests.cancelContract') : r.type === 'Maintenance' ? 'Yêu cầu sửa chữa' : t('requests.register')}
             extra={<Tag color="processing">{t('requests.pending')}</Tag>}
             actions={[
               <Button key="reject" danger type="link" icon={<CloseOutlined />} onClick={() => onHandle(r._id, 'reject')}>
@@ -38,11 +38,16 @@ export default function AdminRequestsTab({ requests, onHandle }) {
                 {r.room_id?.room_code || t('common.na')} — {r.room_id?.building || t('common.na')}
               </Typography.Text>
             </Typography.Paragraph>
-            {r.type !== 'Cancellation' ? (
+            {r.type === 'Maintenance' && (
+              <Typography.Paragraph className="ktx-tab-p-sm">
+                Mô tả: <Typography.Text strong>{r.description || t('common.na')}</Typography.Text>
+              </Typography.Paragraph>
+            )}
+            {r.type === 'Registration' && (
               <Typography.Paragraph className="ktx-tab-p-sm">
                 {t('requests.term')} <Typography.Text strong>{t('requests.months', { n: r.months || 6 })}</Typography.Text>
               </Typography.Paragraph>
-            ) : null}
+            )}
             <Typography.Paragraph className="ktx-tab-p-last">
               {t('requests.sentAt')} <Typography.Text strong>{formatDate(r.createdAt)}</Typography.Text>
             </Typography.Paragraph>

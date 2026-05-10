@@ -7,7 +7,7 @@ function statusColor(status) {
   return 'processing';
 }
 
-export default function AdminStudentsTab({ students, onEdit, onDelete }) {
+export default function AdminStudentsTab({ students, onEdit, onDelete, onResetPassword, pagination }) {
   const { t } = useLanguage();
 
   const columns = [
@@ -47,6 +47,9 @@ export default function AdminStudentsTab({ students, onEdit, onDelete }) {
           <Button size="small" onClick={() => onEdit(record)}>
             {t('students.edit')}
           </Button>
+          <Button size="small" onClick={() => onResetPassword(record._id)}>
+            Reset Pass
+          </Button>
           <Button size="small" danger type="link" onClick={() => onDelete(record._id)}>
             {t('students.delete')}
           </Button>
@@ -55,5 +58,5 @@ export default function AdminStudentsTab({ students, onEdit, onDelete }) {
     },
   ];
 
-  return <Table rowKey="_id" columns={columns} dataSource={students} pagination={{ pageSize: 10 }} />;
+  return <Table rowKey="_id" columns={columns} dataSource={students} pagination={pagination} />;
 }

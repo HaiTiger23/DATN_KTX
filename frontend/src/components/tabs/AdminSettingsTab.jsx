@@ -1,4 +1,4 @@
-import { Button, Card, Col, Input, Row, Space, Tag, Typography } from 'antd';
+import { Button, Card, Col, Input, Row, Space, Tag, Typography, Switch } from 'antd';
 import { SettingOutlined } from '@ant-design/icons';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -8,7 +8,7 @@ const PENDING_BLOCKS = [
   { id: 'limits', titleKey: 'settings.blockLimitsTitle', leadKey: 'settings.blockLimitsLead' },
 ];
 
-export default function AdminSettingsTab({ geminiKey, setGeminiKey, onSave }) {
+export default function AdminSettingsTab({ geminiKey, setGeminiKey, agentSettings, setAgentSettings, onSave }) {
   const { t } = useLanguage();
 
   return (
@@ -37,6 +37,28 @@ export default function AdminSettingsTab({ geminiKey, setGeminiKey, onSave }) {
           placeholder={t('settings.geminiPlaceholder')}
           className="ktx-settings-gemini-input"
         />
+
+        <div style={{ marginTop: 24, marginBottom: 16 }}>
+          <Typography.Title level={5}>Cấu hình Quyền của AI Agent</Typography.Title>
+          <Typography.Paragraph type="secondary" style={{ fontSize: 13 }}>
+            Bật/Tắt các công cụ mà AI Agent có thể sử dụng thay mặt cho sinh viên.
+          </Typography.Paragraph>
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#f5f5f5', borderRadius: 6 }}>
+              <Typography.Text>Tra cứu phòng trống</Typography.Text>
+              <Switch checked={agentSettings?.agentAllowCheckRoom} onChange={v => setAgentSettings(prev => ({ ...prev, agentAllowCheckRoom: v }))} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#f5f5f5', borderRadius: 6 }}>
+              <Typography.Text>Tra cứu hợp đồng</Typography.Text>
+              <Switch checked={agentSettings?.agentAllowCheckContract} onChange={v => setAgentSettings(prev => ({ ...prev, agentAllowCheckContract: v }))} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#f5f5f5', borderRadius: 6 }}>
+              <Typography.Text>Tạo đơn báo hỏng cơ sở vật chất</Typography.Text>
+              <Switch checked={agentSettings?.agentAllowCreateMaintenance} onChange={v => setAgentSettings(prev => ({ ...prev, agentAllowCreateMaintenance: v }))} />
+            </div>
+          </Space>
+        </div>
+
         <Space direction="vertical" size="small">
           <Button type="primary" onClick={onSave}>
             {t('settings.saveGemini')}

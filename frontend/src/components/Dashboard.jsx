@@ -12,8 +12,11 @@ import {
   Space,
   Spin,
   Typography,
+  Badge,
+  Modal as AntdModal,
+  Select,
 } from 'antd';
-import { LogoutOutlined, ReloadOutlined, PlusOutlined } from '@ant-design/icons';
+import { LogoutOutlined, ReloadOutlined, PlusOutlined, BellOutlined } from '@ant-design/icons';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../context/ToastContext';
@@ -33,6 +36,8 @@ import StudentRequestsTab from './tabs/StudentRequestsTab';
 import StudentContractsTab from './tabs/StudentContractsTab';
 import StudentFeedbacksTab from './tabs/StudentFeedbacksTab';
 import StudentChatbotTab from './tabs/StudentChatbotTab';
+import AdminNotificationsTab from './tabs/AdminNotificationsTab';
+import StudentNotificationsTab from './tabs/StudentNotificationsTab';
 import ProfileTab from './tabs/ProfileTab';
 import RichTextEditor from './RichTextEditor';
 
@@ -45,6 +50,7 @@ const ADMIN_TARGETS = [
   'contracts',
   'feedbacks',
   'admin_knowledge',
+  'admin_notifications',
   'admin_settings',
   'profile',
 ];
@@ -75,7 +81,10 @@ export default function Dashboard() {
   const [modalId, setModalId] = useState(null);
 
   const [replyContent, setReplyContent] = useState('');
-  const [roomForm, setRoomForm] = useState({ room_code: '', building: '', capacity: 4, price: 1200000 });
+  const [roomForm, setRoomForm] = useState({ 
+    room_code: '', building: '', floor: 1, capacity: 4, price: 1200000,
+    description: '', images: [], amenities: [], roomType: 'Standard'
+  });
   const [studentForm, setStudentForm] = useState({
     fullname: '',
     email: '',
@@ -87,7 +96,13 @@ export default function Dashboard() {
   });
   const [feedbackForm, setFeedbackForm] = useState({ title: '', description: '' });
   const [knowledgeForm, setKnowledgeForm] = useState({ question: '', answer: '' });
+  const [notificationForm, setNotificationForm] = useState({ title: '', content: '' });
   const [geminiKey, setGeminiKey] = useState('');
+  const [agentSettings, setAgentSettings] = useState({
+    agentAllowCheckRoom: true,
+    agentAllowCreateMaintenance: false,
+    agentAllowCheckContract: true,
+  });
   const [profileForm, setProfileForm] = useState({
     fullname: '',
     email: '',
@@ -95,6 +110,21 @@ export default function Dashboard() {
     address: '',
     password: '',
   });
+
+  const [allNotifs, setAllNotifs] = useState([]);
+  const [unreadList, setUnreadList] = useState([]);
+  const [showUnreadModal, setShowUnreadModal] = useState(false);
+  const [showAllNotifsModal, setShowAllNotifsModal] = useState(false);
+
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [total, setTotal] = useState(0);
+
+  const [roomFilters, setRoomFilters] = useState({ search: '', floor: '', roomType: '', sort: 'default' });
+
+  useEffect(() => {
+    setPage(1);
+  }, [currentTab]);
 
   const navItems = useMemo(() => {
     const targets = user?.role === 'Admin' ? ADMIN_TARGETS : STUDENT_TARGETS;
@@ -115,49 +145,100 @@ export default function Dashboard() {
     setLoading(true);
     setData({});
     try {
+      const q = `?page=${page}&limit=${limit}`;
       switch (tab) {
-        case 'rooms':
-          setData({ rooms: await api('/admin/rooms') });
+        case 'rooms': {
+          const res = await api(`/admin/rooms${q}`);
+          setData({ rooms: res.data });
+          setTotal(res.pagination.total);
           break;
-        case 'students':
-          setData({ students: await api('/admin/students') });
+        }
+        case 'students': {
+          const res = await api(`/admin/students${q}`);
+          setData({ students: res.data });
+          setTotal(res.pagination.total);
           break;
-        case 'requests':
-          setData({ requests: await api('/admin/requests') });
+        }
+        case 'requests': {
+          const res = await api(`/admin/requests${q}`);
+          setData({ requests: res.data });
+          setTotal(res.pagination.total);
           break;
-        case 'contracts':
-          setData({ contracts: await api('/admin/contracts') });
+        }
+        case 'contracts': {
+          const res = await api(`/admin/contracts${q}`);
+          setData({ contracts: res.data });
+          setTotal(res.pagination.total);
           break;
-        case 'feedbacks':
-          setData({ feedbacks: await api('/admin/feedbacks') });
+        }
+        case 'feedbacks': {
+          const res = await api(`/admin/feedbacks${q}`);
+          setData({ feedbacks: res.data });
+          setTotal(res.pagination.total);
           break;
-        case 'admin_knowledge':
-          setData({ knowledge: await api('/admin/knowledge') });
+        }
+        case 'admin_knowledge': {
+          const res = await api(`/admin/knowledge${q}`);
+          setData({ knowledge: res.data });
+          setTotal(res.pagination.total);
           break;
+        }
+        case 'admin_notifications': {
+          const res = await api(`/admin/notifications${q}`);
+          setData({ notifications: res.data });
+          setTotal(res.pagination.total);
+          break;
+        }
         case 'admin_settings': {
           const settings = await api('/admin/settings');
           setGeminiKey(settings.geminiApiKey || '');
+          setAgentSettings({
+            agentAllowCheckRoom: settings.agentAllowCheckRoom ?? true,
+            agentAllowCreateMaintenance: settings.agentAllowCreateMaintenance ?? false,
+            agentAllowCheckContract: settings.agentAllowCheckContract ?? true,
+          });
           setData({ settings });
           break;
         }
         case 'student_rooms': {
-          const [rooms, studentContracts, studentRequests] = await Promise.all([
-            api('/student/rooms'),
-            api('/student/contracts'),
-            api('/student/requests'),
+          let extraQuery = '';
+          if (roomFilters.search) extraQuery += `&search=${encodeURIComponent(roomFilters.search)}`;
+          if (roomFilters.floor) extraQuery += `&floor=${encodeURIComponent(roomFilters.floor)}`;
+          if (roomFilters.roomType) extraQuery += `&roomType=${encodeURIComponent(roomFilters.roomType)}`;
+          if (roomFilters.sort) extraQuery += `&sort=${encodeURIComponent(roomFilters.sort)}`;
+
+          // Pass limit=100 for contracts and requests to ensure we get active ones
+          const [roomsRes, studentContractsRes, studentRequestsRes] = await Promise.all([
+            api(`/student/rooms${q}${extraQuery}`),
+            api('/student/contracts?limit=100'),
+            api('/student/requests?limit=100'),
           ]);
-          setData({ rooms, studentContracts, studentRequests });
+          setData({ 
+            rooms: roomsRes.data, 
+            studentContracts: studentContractsRes.data, 
+            studentRequests: studentRequestsRes.data 
+          });
+          setTotal(roomsRes.pagination.total);
           break;
         }
-        case 'student_requests':
-          setData({ requests: await api('/student/requests') });
+        case 'student_requests': {
+          const res = await api(`/student/requests${q}`);
+          setData({ requests: res.data });
+          setTotal(res.pagination.total);
           break;
-        case 'student_contracts':
-          setData({ contracts: await api('/student/contracts') });
+        }
+        case 'student_contracts': {
+          const res = await api(`/student/contracts${q}`);
+          setData({ contracts: res.data });
+          setTotal(res.pagination.total);
           break;
-        case 'student_feedbacks':
-          setData({ feedbacks: await api('/student/feedbacks') });
+        }
+        case 'student_feedbacks': {
+          const res = await api(`/student/feedbacks${q}`);
+          setData({ feedbacks: res.data });
+          setTotal(res.pagination.total);
           break;
+        }
         case 'student_chatbot':
           setData({});
           break;
@@ -181,11 +262,24 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
-  }, [currentTab, api]);
+  }, [currentTab, api, page, limit, roomFilters]);
 
   useEffect(() => {
     loadTab();
   }, [loadTab]);
+
+  useEffect(() => {
+    if (user?.role === 'Student') {
+      api('/student/notifications?limit=100').then((res) => {
+        setAllNotifs(res.data || []);
+        const unread = (res.data || []).filter((n) => !n.isRead);
+        if (unread.length > 0) {
+          setUnreadList(unread);
+          setShowUnreadModal(true);
+        }
+      }).catch(() => {});
+    }
+  }, [user, api]);
 
   /** Làm mới danh sách phòng khi quay lại tab/cửa sổ (sau khi admin duyệt, số chỗ trên server đã đổi). */
   useEffect(() => {
@@ -215,7 +309,10 @@ export default function Dashboard() {
     setModalId(id);
     setModalOpen(true);
     if (type === 'reply_feedback') setReplyContent('');
-    if (type === 'add_room') setRoomForm({ room_code: '', building: '', capacity: 4, price: 1200000 });
+    if (type === 'add_room') setRoomForm({ 
+      room_code: '', building: '', floor: 1, capacity: 4, price: 1200000,
+      description: '', images: [], amenities: [], roomType: 'Standard'
+    });
     if (type === 'add_student')
       setStudentForm({
         fullname: '',
@@ -228,9 +325,20 @@ export default function Dashboard() {
       });
     if (type === 'add_feedback') setFeedbackForm({ title: '', description: '' });
     if (type === 'add_knowledge') setKnowledgeForm({ question: '', answer: '' });
+    if (type === 'add_notification') setNotificationForm({ title: '', content: '' });
     if (type === 'edit_room' && id) {
       const r = data.rooms?.find((x) => x._id === id);
-      if (r) setRoomForm({ room_code: r.room_code, building: r.building, capacity: r.capacity, price: r.price });
+      if (r) setRoomForm({ 
+        room_code: r.room_code, 
+        building: r.building, 
+        floor: r.floor || 1,
+        capacity: r.capacity, 
+        price: r.price,
+        description: r.description || '',
+        images: r.images || [],
+        amenities: r.amenities || [],
+        roomType: r.roomType || 'Standard'
+      });
     }
     if (type === 'edit_student' && id) {
       const s = data.students?.find((x) => x._id === id);
@@ -269,10 +377,15 @@ export default function Dashboard() {
       const body = {
         room_code: roomForm.room_code,
         building: roomForm.building,
+        floor: Number(roomForm.floor),
         capacity: Number(roomForm.capacity),
         price: Number(roomForm.price),
+        description: roomForm.description,
+        images: roomForm.images,
+        amenities: roomForm.amenities,
+        roomType: roomForm.roomType,
       };
-      if (!body.room_code || !body.building || !body.capacity || !body.price) {
+      if (!body.room_code || !body.building || !body.capacity || !body.price || !body.floor) {
         showToast(t('toast.fillAll'), 'error');
         throw new Error('validation');
       }
@@ -303,8 +416,13 @@ export default function Dashboard() {
     if (modalType === 'edit_room') {
       const body = {
         building: roomForm.building,
+        floor: Number(roomForm.floor),
         capacity: Number(roomForm.capacity),
         price: Number(roomForm.price),
+        description: roomForm.description,
+        images: roomForm.images,
+        amenities: roomForm.amenities,
+        roomType: roomForm.roomType,
       };
       await api(`/admin/rooms/${modalId}`, 'PUT', body);
       showToast(t('toast.roomUpdated'));
@@ -346,6 +464,17 @@ export default function Dashboard() {
       showToast(t('toast.knowledgeAdded'));
       closeModal();
       loadTab();
+      return;
+    }
+    if (modalType === 'add_notification') {
+      if (!notificationForm.title?.trim() || isRichTextEmpty(notificationForm.content)) {
+        showToast(t('toast.knowledgeFill'), 'error');
+        throw new Error('validation');
+      }
+      await api('/admin/notifications', 'POST', notificationForm);
+      showToast(t('toast.notificationAdded'));
+      closeModal();
+      loadTab();
     }
   };
 
@@ -358,6 +487,7 @@ export default function Dashboard() {
       edit_student: 'modal.edit_student',
       add_feedback: 'modal.add_feedback',
       add_knowledge: 'modal.add_knowledge',
+      add_notification: 'modal.add_notification',
     };
     const key = keys[modalType];
     return key ? t(key) : '';
@@ -387,6 +517,21 @@ export default function Dashboard() {
             <Form.Item label={t('modal.building')} required>
               <Input value={roomForm.building} onChange={(e) => setRoomForm((f) => ({ ...f, building: e.target.value }))} />
             </Form.Item>
+            <Form.Item label={t('modal.floor')} required>
+              <InputNumber
+                className="ktx-input-block"
+                min={1}
+                value={roomForm.floor}
+                onChange={(v) => setRoomForm((f) => ({ ...f, floor: v }))}
+              />
+            </Form.Item>
+            <Form.Item label={t('modal.roomType')}>
+              <Select value={roomForm.roomType} onChange={(v) => setRoomForm((f) => ({ ...f, roomType: v }))}>
+                <Select.Option value="Standard">Tiêu chuẩn</Select.Option>
+                <Select.Option value="Service">Dịch vụ</Select.Option>
+                <Select.Option value="VIP">VIP</Select.Option>
+              </Select>
+            </Form.Item>
             <Form.Item label={t('modal.capacity')} required>
               <InputNumber
                 className="ktx-input-block"
@@ -404,6 +549,25 @@ export default function Dashboard() {
                 formatter={formatVndInput}
                 parser={parseVndInput}
                 onChange={(v) => setRoomForm((f) => ({ ...f, price: v }))}
+              />
+            </Form.Item>
+            <Form.Item label={t('modal.description')}>
+              <Input.TextArea value={roomForm.description} onChange={(e) => setRoomForm((f) => ({ ...f, description: e.target.value }))} />
+            </Form.Item>
+            <Form.Item label={t('modal.amenities')}>
+              <Select 
+                mode="tags" 
+                placeholder="Nhập và nhấn Enter (VD: Điều hòa, Máy giặt)" 
+                value={roomForm.amenities} 
+                onChange={(v) => setRoomForm((f) => ({ ...f, amenities: v }))} 
+              />
+            </Form.Item>
+            <Form.Item label={t('modal.images')}>
+              <Select 
+                mode="tags" 
+                placeholder="Nhập URL ảnh và nhấn Enter" 
+                value={roomForm.images} 
+                onChange={(v) => setRoomForm((f) => ({ ...f, images: v }))} 
               />
             </Form.Item>
           </Form>
@@ -472,6 +636,20 @@ export default function Dashboard() {
             </Form.Item>
           </Form>
         );
+      case 'add_notification':
+        return (
+          <Form layout="vertical">
+            <Form.Item label={t('modal.notificationTitle')} required>
+              <Input value={notificationForm.title} onChange={(e) => setNotificationForm((f) => ({ ...f, title: e.target.value }))} />
+            </Form.Item>
+            <Form.Item label={t('modal.notificationContent')} required>
+              <RichTextEditor
+                value={notificationForm.content}
+                onChange={(html) => setNotificationForm((f) => ({ ...f, content: html }))}
+              />
+            </Form.Item>
+          </Form>
+        );
       default:
         return null;
     }
@@ -480,16 +658,18 @@ export default function Dashboard() {
   const pageTitle = t(`tab.${currentTab}`);
 
   const showSync = currentTab === 'rooms';
-  const showAdd = ['rooms', 'students', 'student_feedbacks', 'admin_knowledge'].includes(currentTab);
+  const showAdd = ['rooms', 'students', 'student_feedbacks', 'admin_knowledge', 'admin_notifications'].includes(currentTab);
   let addLabel = t('dashboard.addNew');
   if (currentTab === 'student_feedbacks') addLabel = t('dashboard.addFeedback');
   if (currentTab === 'admin_knowledge') addLabel = t('dashboard.addKnowledge');
+  if (currentTab === 'admin_notifications') addLabel = t('modal.add_notification');
 
   const handleAddClick = () => {
     if (currentTab === 'rooms') openModal('add_room');
     else if (currentTab === 'students') openModal('add_student');
     else if (currentTab === 'student_feedbacks') openModal('add_feedback');
     else if (currentTab === 'admin_knowledge') openModal('add_knowledge');
+    else if (currentTab === 'admin_notifications') openModal('add_notification');
   };
 
   const handleSync = async () => {
@@ -522,6 +702,17 @@ export default function Dashboard() {
         await api(`/admin/students/${id}`, 'DELETE');
         showToast(t('toast.studentDeleted'));
         loadTab();
+      },
+    });
+  };
+
+  const resetStudentPassword = (id) => {
+    modal.confirm({
+      title: 'Xác nhận reset mật khẩu?',
+      content: 'Mật khẩu của sinh viên sẽ được đặt lại thành 123456.',
+      onOk: async () => {
+        const res = await api(`/admin/students/${id}/reset-password`, 'POST');
+        showToast(res.message || 'Đã đặt lại mật khẩu thành 123456');
       },
     });
   };
@@ -615,9 +806,51 @@ export default function Dashboard() {
     });
   };
 
+  const deleteNotification = (id) => {
+    modal.confirm({
+      title: t('confirm.deleteNotification'),
+      okType: 'danger',
+      onOk: async () => {
+        await api(`/admin/notifications/${id}`, 'DELETE');
+        showToast(t('toast.notificationDeleted'));
+        loadTab();
+      },
+    });
+  };
+
+  const readNotification = async (id) => {
+    try {
+      await api(`/student/notifications/${id}/read`, 'POST');
+      setAllNotifs(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleMarkAsReadSeq = async () => {
+    if (unreadList.length === 0) return;
+    const current = unreadList[0];
+    try {
+      await api(`/student/notifications/${current._id}/read`, 'POST');
+      setAllNotifs(prev => prev.map(n => n._id === current._id ? { ...n, isRead: true } : n));
+      const nextList = unreadList.slice(1);
+      if (nextList.length > 0) {
+        setUnreadList(nextList);
+      } else {
+        setShowUnreadModal(false);
+        setUnreadList([]);
+      }
+    } catch {
+      // ignore
+    }
+  };
+
   const saveSettings = async () => {
     try {
-      await api('/admin/settings', 'POST', { geminiApiKey: geminiKey });
+      await api('/admin/settings', 'POST', { 
+        geminiApiKey: geminiKey,
+        ...agentSettings
+      });
       showToast(t('toast.settingsSaved'));
     } catch {
       /* handled */
@@ -642,7 +875,7 @@ export default function Dashboard() {
     }
   };
 
-  const sendChatMessage = (msg) => api('/student/chat', 'POST', { message: msg });
+  const sendChatMessage = (msg, history) => api('/student/chat', 'POST', { message: msg, history });
 
   const renderContent = () => {
     if (loading) {
@@ -661,6 +894,17 @@ export default function Dashboard() {
       );
     }
 
+    const paginationProps = {
+      current: page,
+      pageSize: limit,
+      total,
+      onChange: (p, s) => {
+        setPage(p);
+        setLimit(s);
+      },
+      showSizeChanger: true,
+    };
+
     switch (currentTab) {
       case 'rooms':
         return (
@@ -668,6 +912,7 @@ export default function Dashboard() {
             rooms={data.rooms || []}
             onToggleStatus={toggleRoomStatus}
             onEdit={(r) => openModal('edit_room', r._id)}
+            pagination={paginationProps}
           />
         );
       case 'students':
@@ -676,18 +921,22 @@ export default function Dashboard() {
             students={data.students || []}
             onEdit={(s) => openModal('edit_student', s._id)}
             onDelete={deleteStudent}
+            onResetPassword={resetStudentPassword}
+            pagination={paginationProps}
           />
         );
       case 'requests':
-        return <AdminRequestsTab requests={data.requests || []} onHandle={handleRequest} />;
+        return <AdminRequestsTab requests={data.requests || []} onHandle={handleRequest} pagination={paginationProps} />;
       case 'contracts':
-        return <AdminContractsTab contracts={data.contracts || []} onEndContract={endContract} />;
+        return <AdminContractsTab contracts={data.contracts || []} onEndContract={endContract} pagination={paginationProps} />;
       case 'feedbacks':
-        return <AdminFeedbacksTab feedbacks={data.feedbacks || []} onReply={(id) => openModal('reply_feedback', id)} />;
+        return <AdminFeedbacksTab feedbacks={data.feedbacks || []} onReply={(id) => openModal('reply_feedback', id)} pagination={paginationProps} />;
       case 'admin_knowledge':
-        return <AdminKnowledgeTab items={data.knowledge || []} onDelete={deleteKnowledge} />;
+        return <AdminKnowledgeTab items={data.knowledge || []} onDelete={deleteKnowledge} pagination={paginationProps} />;
+      case 'admin_notifications':
+        return <AdminNotificationsTab notifications={data.notifications || []} onDelete={deleteNotification} pagination={paginationProps} />;
       case 'admin_settings':
-        return <AdminSettingsTab geminiKey={geminiKey} setGeminiKey={setGeminiKey} onSave={saveSettings} />;
+        return <AdminSettingsTab geminiKey={geminiKey} setGeminiKey={setGeminiKey} agentSettings={agentSettings} setAgentSettings={setAgentSettings} onSave={saveSettings} />;
       case 'student_rooms': {
         const contracts = data.studentContracts || [];
         const requests = data.studentRequests || [];
@@ -701,15 +950,21 @@ export default function Dashboard() {
             activeRoomId={activeRoomId}
             pendingRoomId={pendingRoomId}
             onRegister={registerRoom}
+            pagination={paginationProps}
+            filters={roomFilters}
+            onFiltersChange={(newFilters) => {
+              setRoomFilters(prev => ({ ...prev, ...newFilters }));
+              setPage(1); // Reset page on filter change
+            }}
           />
         );
       }
       case 'student_requests':
-        return <StudentRequestsTab requests={data.requests || []} />;
+        return <StudentRequestsTab requests={data.requests || []} pagination={paginationProps} />;
       case 'student_contracts':
-        return <StudentContractsTab contracts={data.contracts || []} onCancelContract={cancelStudentContract} />;
+        return <StudentContractsTab contracts={data.contracts || []} onCancelContract={cancelStudentContract} pagination={paginationProps} />;
       case 'student_feedbacks':
-        return <StudentFeedbacksTab feedbacks={data.feedbacks || []} />;
+        return <StudentFeedbacksTab feedbacks={data.feedbacks || []} pagination={paginationProps} />;
       case 'student_chatbot':
         return <StudentChatbotTab sendMessage={sendChatMessage} />;
       case 'profile':
@@ -768,6 +1023,11 @@ export default function Dashboard() {
               {pageTitle}
             </Typography.Title>
             <Space wrap>
+              {user?.role === 'Student' && (
+                <Badge count={unreadList.length} overflowCount={99}>
+                  <Button icon={<BellOutlined />} onClick={() => setShowAllNotifsModal(true)} />
+                </Badge>
+              )}
               {showSync ? (
                 <Button onClick={handleSync}>
                   {t('dashboard.sync')}
@@ -796,6 +1056,46 @@ export default function Dashboard() {
       >
         {renderModalBody()}
       </Modal>
+
+      {/* MODAL 1: Auto Popup Unread Notifications */}
+      <AntdModal
+        title={unreadList.length > 0 ? unreadList[0].title : ''}
+        open={showUnreadModal}
+        onCancel={() => setShowUnreadModal(false)}
+        onOk={handleMarkAsReadSeq}
+        okText={t('notifications.read')}
+        cancelText={t('common.cancel')}
+        width={600}
+        closable={false}
+        maskClosable={false}
+      >
+        {unreadList.length > 0 && (
+          <div style={{ marginTop: 16 }}>
+            <Typography.Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
+              {t('notifications.date')}: {new Date(unreadList[0].createdAt).toLocaleString()}
+            </Typography.Text>
+            <div
+              className="ql-editor"
+              style={{ padding: 0 }}
+              dangerouslySetInnerHTML={{ __html: unreadList[0].content || '' }}
+            />
+          </div>
+        )}
+      </AntdModal>
+
+      {/* MODAL 2: All Notifications Archive */}
+      <AntdModal
+        title={t('tab.student_notifications')}
+        open={showAllNotifsModal}
+        onCancel={() => setShowAllNotifsModal(false)}
+        footer={null}
+        width={800}
+        destroyOnClose
+      >
+        <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+          <StudentNotificationsTab notifications={allNotifs} onRead={readNotification} />
+        </div>
+      </AntdModal>
     </>
   );
 }

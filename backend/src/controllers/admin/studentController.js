@@ -7,9 +7,18 @@ import Request from '../../models/Request.js';
 // @access  Private/Admin
 const getStudents = async (req, res) => {
   try {
-    // BUG FIX: Thêm .select('-password') để không trả về mật khẩu
-    const students = await User.find({ role: 'Student' }).select('-password');
-    res.json(students);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const filter = { role: 'Student' };
+    const students = await User.find(filter).select('-password').skip(skip).limit(limit);
+    const total = await User.countDocuments(filter);
+
+    res.json({
+      data: students,
+      pagination: { current: page, pageSize: limit, total }
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -88,6 +97,26 @@ const updateStudent = async (req, res) => {
   }
 };
 
+// @desc    Reset student password
+// @route   POST /api/admin/students/:id/reset-password
+// @access  Private/Admin
+const resetStudentPassword = async (req, res) => {
+  try {
+    const student = await User.findById(req.params.id);
+
+    if (!student || student.role !== 'Student') {
+      return res.status(404).json({ message: 'Không tìm thấy sinh viên' });
+    }
+
+    student.password = '123456';
+    await student.save();
+
+    res.json({ message: 'Mật khẩu đã được đặt lại thành 123456' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Delete student
 // @route   DELETE /api/admin/students/:id
 // @access  Private/Admin
@@ -120,4 +149,4 @@ const deleteStudent = async (req, res) => {
   }
 };
 
-export { getStudents, createStudent, updateStudent, deleteStudent };
+export { getStudents, createStudent, updateStudent, resetStudentPassword, deleteStudent };

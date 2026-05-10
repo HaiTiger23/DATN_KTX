@@ -5,7 +5,7 @@ function statusColor(status) {
   return status === 'Pending' ? 'processing' : 'success';
 }
 
-export default function StudentFeedbacksTab({ feedbacks }) {
+export default function StudentFeedbacksTab({ feedbacks, pagination }) {
   const { t } = useLanguage();
 
   if (feedbacks.length === 0) {

@@ -8,7 +8,7 @@ function statusColor(status) {
   return 'processing';
 }
 
-export default function AdminContractsTab({ contracts, onEndContract }) {
+export default function AdminContractsTab({ contracts, onEndContract, pagination }) {
   const { t } = useLanguage();
 
   const columns = [
@@ -60,5 +60,5 @@ export default function AdminContractsTab({ contracts, onEndContract }) {
     },
   ];
 
-  return <Table rowKey="_id" columns={columns} dataSource={contracts} pagination={{ pageSize: 10 }} />;
+  return <Table rowKey="_id" columns={columns} dataSource={contracts} pagination={pagination} />;
 }

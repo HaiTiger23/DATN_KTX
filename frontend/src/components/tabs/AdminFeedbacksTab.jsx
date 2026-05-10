@@ -6,7 +6,7 @@ function statusColor(status) {
   return status === 'Pending' ? 'processing' : 'success';
 }
 
-export default function AdminFeedbacksTab({ feedbacks, onReply }) {
+export default function AdminFeedbacksTab({ feedbacks, onReply, pagination }) {
   const { t } = useLanguage();
 
   return (

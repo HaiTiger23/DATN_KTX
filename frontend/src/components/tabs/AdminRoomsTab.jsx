@@ -1,4 +1,4 @@
-import { Button, Card, Col, Row, Tag, Typography } from 'antd';
+import { Button, Card, Col, Row, Tag, Typography, Pagination } from 'antd';
 import { EditOutlined, SwapOutlined } from '@ant-design/icons';
 import { formatMoney } from '../../api';
 import { useLanguage } from '../../context/LanguageContext';
@@ -9,11 +9,12 @@ function statusTagColor(status) {
   return 'default';
 }
 
-export default function AdminRoomsTab({ rooms, onToggleStatus, onEdit }) {
+export default function AdminRoomsTab({ rooms, onToggleStatus, onEdit, pagination }) {
   const { t } = useLanguage();
 
   return (
-    <Row gutter={[16, 16]}>
+    <>
+      <Row gutter={[16, 16]}>
       {rooms.map((r) => {
         const available = r.capacity - r.current_people;
         return (
@@ -34,11 +35,17 @@ export default function AdminRoomsTab({ rooms, onToggleStatus, onEdit }) {
                 </Button>,
               ]}
             >
-              <Typography.Paragraph className="ktx-tab-p-sm">
-                {t('room.building')} <Typography.Text strong>{r.building}</Typography.Text>
+              <Typography.Paragraph className="ktx-tab-p-sm" style={{ marginBottom: 4 }}>
+                {t('room.building')}: <Typography.Text strong>{r.building}</Typography.Text>
               </Typography.Paragraph>
-              <Typography.Paragraph className="ktx-tab-p-sm">
-                {t('room.seats')}{' '}
+              <Typography.Paragraph className="ktx-tab-p-sm" style={{ marginBottom: 4 }}>
+                Tầng: <Typography.Text strong>{r.floor || 1}</Typography.Text>
+              </Typography.Paragraph>
+              <Typography.Paragraph className="ktx-tab-p-sm" style={{ marginBottom: 4 }}>
+                Loại phòng: <Tag color={r.roomType === 'VIP' ? 'gold' : r.roomType === 'Service' ? 'geekblue' : 'default'}>{r.roomType || 'Standard'}</Tag>
+              </Typography.Paragraph>
+              <Typography.Paragraph className="ktx-tab-p-sm" style={{ marginBottom: 4 }}>
+                {t('room.seats')}:{' '}
                 <Typography.Text strong>
                   {available}/{r.capacity}
                 </Typography.Text>
@@ -54,6 +61,10 @@ export default function AdminRoomsTab({ rooms, onToggleStatus, onEdit }) {
           </Col>
         );
       })}
-    </Row>
+      </Row>
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
+        <Pagination {...pagination} />
+      </div>
+    </>
   );
 }

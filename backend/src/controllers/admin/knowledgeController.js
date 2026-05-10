@@ -1,10 +1,19 @@
 import Knowledge from '../../models/Knowledge.js';
 
 export const getKnowledge = async (req, res) => {
-    try {
-        const data = await Knowledge.find().sort('-createdAt');
-        res.json(data);
-    } catch (error) {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const data = await Knowledge.find({}).sort('-createdAt').skip(skip).limit(limit);
+    const total = await Knowledge.countDocuments({});
+
+    res.json({
+      data: data,
+      pagination: { current: page, pageSize: limit, total }
+    });
+  } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };

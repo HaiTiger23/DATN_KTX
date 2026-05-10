@@ -6,8 +6,17 @@ import Contract from '../../models/Contract.js';
 // @access  Private/Admin
 const getRooms = async (req, res) => {
   try {
-    const rooms = await Room.find({});
-    res.json(rooms);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const rooms = await Room.find({}).skip(skip).limit(limit);
+    const total = await Room.countDocuments({});
+
+    res.json({
+      data: rooms,
+      pagination: { current: page, pageSize: limit, total }
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -18,10 +27,10 @@ const getRooms = async (req, res) => {
 // @access  Private/Admin
 const createRoom = async (req, res) => {
   try {
-    const { room_code, building, capacity, price } = req.body;
+    const { room_code, building, floor, capacity, price, description, images, amenities, roomType } = req.body;
 
-    if (!room_code || !building || !capacity || !price) {
-      return res.status(400).json({ message: 'room_code, building, capacity và price là bắt buộc' });
+    if (!room_code || !building || floor === undefined || !capacity || !price) {
+      return res.status(400).json({ message: 'room_code, building, floor, capacity và price là bắt buộc' });
     }
 
     const roomExists = await Room.findOne({ room_code });
@@ -29,7 +38,13 @@ const createRoom = async (req, res) => {
       return res.status(400).json({ message: 'Mã phòng đã tồn tại' });
     }
 
-    const room = await Room.create({ room_code, building, capacity, price });
+    const room = await Room.create({ 
+      room_code, building, floor, capacity, price, 
+      description: description || '',
+      images: images || [],
+      amenities: amenities || [],
+      roomType: roomType || 'Standard'
+    });
     res.status(201).json(room);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -50,6 +65,11 @@ const updateRoom = async (req, res) => {
     room.price = req.body.price ?? room.price;
     room.capacity = req.body.capacity ?? room.capacity;
     room.building = req.body.building ?? room.building;
+    room.floor = req.body.floor ?? room.floor;
+    room.description = req.body.description ?? room.description;
+    room.images = req.body.images ?? room.images;
+    room.amenities = req.body.amenities ?? room.amenities;
+    room.roomType = req.body.roomType ?? room.roomType;
 
     if (room.capacity < room.current_people) {
       return res.status(400).json({

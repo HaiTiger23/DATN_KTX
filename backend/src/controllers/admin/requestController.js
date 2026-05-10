@@ -7,10 +7,19 @@ import Contract from '../../models/Contract.js';
 // @access  Private/Admin
 const getRequests = async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
     const requests = await Request.find({ status: 'Pending' })
       .populate('student_id', 'fullname email mssv')
-      .populate('room_id', 'room_code building current_people capacity');
-    res.json(requests);
+      .populate('room_id', 'room_code building current_people capacity').skip(skip).limit(limit);
+    const total = await Request.countDocuments({ status: 'Pending' });
+
+    res.json({
+      data: requests,
+      pagination: { current: page, pageSize: limit, total }
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

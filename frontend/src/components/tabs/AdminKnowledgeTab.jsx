@@ -2,7 +2,7 @@ import { Button, Table, Typography } from 'antd';
 import { htmlToPlainText } from '../../api';
 import { useLanguage } from '../../context/LanguageContext';
 
-export default function AdminKnowledgeTab({ items, onDelete }) {
+export default function AdminKnowledgeTab({ items, onDelete, pagination }) {
   const { t } = useLanguage();
 
   const columns = [

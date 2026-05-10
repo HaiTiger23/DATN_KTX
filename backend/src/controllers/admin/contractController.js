@@ -6,10 +6,19 @@ import Room from '../../models/Room.js';
 // @access  Private/Admin
 const getContracts = async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
     const contracts = await Contract.find({})
       .populate('student_id', 'fullname email mssv')
-      .populate('room_id', 'room_code building');
-    res.json(contracts);
+      .populate('room_id', 'room_code building').skip(skip).limit(limit);
+    const total = await Contract.countDocuments({});
+
+    res.json({
+      data: contracts,
+      pagination: { current: page, pageSize: limit, total }
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

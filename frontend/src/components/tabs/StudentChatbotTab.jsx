@@ -35,9 +35,18 @@ export default function StudentChatbotTab({ sendMessage }) {
       scrollToBottom();
 
       try {
-        const res = await sendMessage(msg);
+        const history = messages
+          .filter(m => m.role === 'user' || m.role === 'bot')
+          .map(m => ({ role: m.role, text: m.text }));
+          
+        const res = await sendMessage(msg, history);
         setMessages((prev) => prev.filter((m) => m.id !== tid));
-        setMessages((prev) => [...prev, { id: `b-${Date.now()}`, role: 'bot', text: res.reply }]);
+        setMessages((prev) => [...prev, { 
+          id: `b-${Date.now()}`, 
+          role: 'bot', 
+          text: res.reply,
+          actions: res.actions 
+        }]);
       } catch (err) {
         const message = err instanceof Error ? err.message : t('chat.error');
         setMessages((prev) => prev.filter((m) => m.id !== tid));
@@ -54,7 +63,7 @@ export default function StudentChatbotTab({ sendMessage }) {
         <div className="ktx-chat-scroll">
           <Space direction="vertical" size="middle" className="ktx-chat-messages">
             {messages.map((m) => (
-              <Bubble key={m.id} role={m.role} text={m.text} />
+              <Bubble key={m.id} role={m.role} text={m.text} actions={m.actions} />
             ))}
             <div ref={bottomRef} />
           </Space>
@@ -88,7 +97,10 @@ export default function StudentChatbotTab({ sendMessage }) {
   );
 }
 
-function Bubble({ role, text }) {
+import { DatabaseOutlined } from '@ant-design/icons';
+import { Tag } from 'antd';
+
+function Bubble({ role, text, actions }) {
   const isUser = role === 'user';
   const isError = role === 'error';
   const isTyping = role === 'typing';
@@ -101,9 +113,25 @@ function Bubble({ role, text }) {
     if (isTyping) bubbleClass += ' ktx-chat-bubble--typing';
   }
 
+  const getActionLabel = (name) => {
+    if (name === 'checkRoomAvailability') return 'Tra cứu phòng trống';
+    if (name === 'checkContractStatus') return 'Kiểm tra hợp đồng';
+    if (name === 'createMaintenanceRequest') return 'Gửi yêu cầu sửa chữa';
+    return name;
+  };
+
   return (
     <div className={`ktx-chat-row ${isUser ? 'ktx-chat-row--end' : 'ktx-chat-row--start'}`}>
-      <Typography.Text className={bubbleClass}>{text}</Typography.Text>
+      <div className={isUser ? '' : 'ktx-chat-bot-wrap'}>
+        {actions && actions.length > 0 && (
+          <div className="ktx-chat-action-badge">
+            <Tag color="blue" icon={<DatabaseOutlined />}>
+              Hệ thống: {actions.map(a => getActionLabel(a)).join(', ')}
+            </Tag>
+          </div>
+        )}
+        <Typography.Text className={bubbleClass}>{text}</Typography.Text>
+      </div>
     </div>
   );
 }

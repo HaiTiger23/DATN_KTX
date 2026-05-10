@@ -7,7 +7,9 @@ import {
     getMyContracts,
     getMyFeedbacks,
     submitFeedback,
-    cancelContract
+    cancelContract,
+    getMyNotifications,
+    markNotificationAsRead
 } from '../controllers/studentController.js';
 import { chatWithBot } from '../controllers/chatController.js';
 
@@ -25,5 +27,8 @@ router.route('/feedbacks')
     .get(getMyFeedbacks)
     .post(submitFeedback);
 router.post('/chat', chatWithBot);
+
+router.get('/notifications', getMyNotifications);
+router.post('/notifications/:id/read', markNotificationAsRead);
 
 export default router;

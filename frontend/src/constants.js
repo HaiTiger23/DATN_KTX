@@ -3,4 +3,4 @@
  */
 export const API_URL =
   import.meta.env.VITE_API_URL ||
-  (import.meta.env.DEV ? 'https://datn-ktx.onrender.com/api' : 'https://datn-ktx.onrender.com/api');
+  (import.meta.env.DEV ? 'http://localhost:5556/api' : 'http://localhost:5556/api');

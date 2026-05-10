@@ -12,6 +12,7 @@ import contractRoutes from './routes/admin/contractRoutes.js';
 import feedbackRoutes from './routes/admin/feedbackRoutes.js';
 import settingRoutes from './routes/admin/settingRoutes.js';
 import knowledgeRoutes from './routes/admin/knowledgeRoutes.js';
+import notificationRoutes from './routes/admin/notificationRoutes.js';
 import studentPortalRoutes from './routes/studentRoutes.js';
 
 dotenv.config();
@@ -32,6 +33,7 @@ app.use('/api/admin/contracts', contractRoutes);
 app.use('/api/admin/feedbacks', feedbackRoutes);
 app.use('/api/admin/settings', settingRoutes);
 app.use('/api/admin/knowledge', knowledgeRoutes);
+app.use('/api/admin/notifications', notificationRoutes);
 app.use('/api/student', studentPortalRoutes);
 
 app.get('/', (req, res) => {

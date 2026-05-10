@@ -18,7 +18,11 @@ export const updateSettings = async (req, res) => {
         if (!setting) {
             setting = await Setting.create({});
         }
-        setting.geminiApiKey = req.body.geminiApiKey || setting.geminiApiKey;
+        if (req.body.geminiApiKey !== undefined) setting.geminiApiKey = req.body.geminiApiKey;
+        if (req.body.agentAllowCheckRoom !== undefined) setting.agentAllowCheckRoom = req.body.agentAllowCheckRoom;
+        if (req.body.agentAllowCreateMaintenance !== undefined) setting.agentAllowCreateMaintenance = req.body.agentAllowCreateMaintenance;
+        if (req.body.agentAllowCheckContract !== undefined) setting.agentAllowCheckContract = req.body.agentAllowCheckContract;
+        
         await setting.save();
         res.json(setting);
     } catch (error) {

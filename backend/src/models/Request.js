@@ -13,8 +13,12 @@ const requestSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['Registration', 'Cancellation'],
+    enum: ['Registration', 'Cancellation', 'Maintenance'],
     default: 'Registration',
+  },
+  description: {
+    type: String,
+    default: '',
   },
   months: {
     type: Number,

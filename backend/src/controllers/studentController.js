@@ -6,10 +6,35 @@ import Feedback from '../models/Feedback.js';
 // @desc Get available rooms
 // @route GET /api/student/rooms
 export const getAvailableRooms = async (req, res) => {
-    try {
-        const rooms = await Room.find({ status: 'Available' });
-        res.json(rooms);
-    } catch (error) {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const query = { status: 'Available' };
+    
+    if (req.query.search) {
+      query.$or = [
+        { room_code: { $regex: req.query.search, $options: 'i' } },
+        { building: { $regex: req.query.search, $options: 'i' } }
+      ];
+    }
+    if (req.query.floor) query.floor = parseInt(req.query.floor);
+    if (req.query.roomType) query.roomType = req.query.roomType;
+
+    const sortConfig = {};
+    if (req.query.sort === 'price_asc') sortConfig.price = 1;
+    else if (req.query.sort === 'price_desc') sortConfig.price = -1;
+    else sortConfig.createdAt = -1;
+
+    const rooms = await Room.find(query).sort(sortConfig).skip(skip).limit(limit);
+    const total = await Room.countDocuments(query);
+
+    res.json({
+      data: rooms,
+      pagination: { current: page, pageSize: limit, total }
+    });
+  } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
@@ -48,10 +73,19 @@ export const submitRequest = async (req, res) => {
 // @desc Get my requests
 // @route GET /api/student/requests
 export const getMyRequests = async (req, res) => {
-    try {
-        const requests = await Request.find({ student_id: req.user._id }).populate('room_id');
-        res.json(requests);
-    } catch (error) {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const requests = await Request.find({ student_id: req.user._id }).populate('room_id').skip(skip).limit(limit);
+    const total = await Request.countDocuments({ student_id: req.user._id });
+
+    res.json({
+      data: requests,
+      pagination: { current: page, pageSize: limit, total }
+    });
+  } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
@@ -59,10 +93,19 @@ export const getMyRequests = async (req, res) => {
 // @desc Get my contract
 // @route GET /api/student/contracts
 export const getMyContracts = async (req, res) => {
-    try {
-        const contracts = await Contract.find({ student_id: req.user._id }).populate('room_id');
-        res.json(contracts);
-    } catch (error) {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const contracts = await Contract.find({ student_id: req.user._id }).populate('room_id').skip(skip).limit(limit);
+    const total = await Contract.countDocuments({ student_id: req.user._id });
+
+    res.json({
+      data: contracts,
+      pagination: { current: page, pageSize: limit, total }
+    });
+  } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
@@ -105,10 +148,19 @@ export const cancelContract = async (req, res) => {
 // @desc Get my feedbacks
 // @route GET /api/student/feedbacks
 export const getMyFeedbacks = async (req, res) => {
-    try {
-        const feedbacks = await Feedback.find({ student_id: req.user._id }).sort('-createdAt');
-        res.json(feedbacks);
-    } catch (error) {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const feedbacks = await Feedback.find({ student_id: req.user._id }).sort('-createdAt').skip(skip).limit(limit);
+    const total = await Feedback.countDocuments({ student_id: req.user._id });
+
+    res.json({
+      data: feedbacks,
+      pagination: { current: page, pageSize: limit, total }
+    });
+  } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
@@ -124,6 +176,58 @@ export const submitFeedback = async (req, res) => {
             description
         });
         res.status(201).json(feedback);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+import Notification from '../models/Notification.js';
+
+// @desc Get my notifications
+// @route GET /api/student/notifications
+export const getMyNotifications = async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
+        const notifications = await Notification.find({}).sort({ createdAt: -1 }).skip(skip).limit(limit);
+        const total = await Notification.countDocuments({});
+        
+        // Map to include an isRead flag
+        const mappedNotifications = notifications.map(notif => {
+            const isRead = notif.readBy.includes(req.user._id);
+            return {
+                ...notif._doc,
+                isRead
+            };
+        });
+
+        res.json({
+          data: mappedNotifications,
+          pagination: { current: page, pageSize: limit, total }
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc Mark notification as read
+// @route POST /api/student/notifications/:id/read
+export const markNotificationAsRead = async (req, res) => {
+    try {
+        const notification = await Notification.findById(req.params.id);
+        
+        if (!notification) {
+            return res.status(404).json({ message: 'Notification not found' });
+        }
+
+        if (!notification.readBy.includes(req.user._id)) {
+            notification.readBy.push(req.user._id);
+            await notification.save();
+        }
+
+        res.json({ message: 'Notification marked as read' });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

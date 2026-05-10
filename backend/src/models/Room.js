@@ -22,6 +22,26 @@ const roomSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  floor: {
+    type: Number,
+    required: true,
+    default: 1,
+  },
+  description: {
+    type: String,
+    default: '',
+  },
+  images: [{
+    type: String,
+  }],
+  amenities: [{
+    type: String,
+  }],
+  roomType: {
+    type: String,
+    enum: ['Standard', 'Service', 'VIP'],
+    default: 'Standard',
+  },
   status: {
     type: String,
     enum: ['Available', 'Maintenance'],

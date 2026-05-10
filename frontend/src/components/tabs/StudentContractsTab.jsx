@@ -7,7 +7,7 @@ function statusColor(status) {
   return 'default';
 }
 
-export default function StudentContractsTab({ contracts, onCancelContract }) {
+export default function StudentContractsTab({ contracts, onCancelContract, pagination }) {
   const { t } = useLanguage();
 
   if (contracts.length === 0) {
@@ -55,5 +55,5 @@ export default function StudentContractsTab({ contracts, onCancelContract }) {
     },
   ];
 
-  return <Table rowKey="_id" columns={columns} dataSource={contracts} pagination={{ pageSize: 10 }} />;
+  return <Table rowKey="_id" columns={columns} dataSource={contracts} pagination={pagination} />;
 }

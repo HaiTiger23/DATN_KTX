@@ -9,7 +9,7 @@ function statusColor(status) {
   return 'default';
 }
 
-export default function StudentRequestsTab({ requests }) {
+export default function StudentRequestsTab({ requests, pagination }) {
   const { t } = useLanguage();
 
   if (requests.length === 0) {
@@ -30,7 +30,7 @@ export default function StudentRequestsTab({ requests }) {
     {
       title: t('studentRequests.type'),
       key: 'type',
-      render: (_, r) => (r.type === 'Cancellation' ? t('studentRequests.typeCancel') : t('studentRequests.typeRegister')),
+      render: (_, r) => (r.type === 'Cancellation' ? t('studentRequests.typeCancel') : r.type === 'Maintenance' ? 'Sửa chữa' : t('studentRequests.typeRegister')),
     },
     {
       title: t('studentRequests.sentAt'),
@@ -46,5 +46,5 @@ export default function StudentRequestsTab({ requests }) {
     },
   ];
 
-  return <Table rowKey="_id" columns={columns} dataSource={requests} pagination={{ pageSize: 10 }} />;
+  return <Table rowKey="_id" columns={columns} dataSource={requests} pagination={pagination} />;
 }
