@@ -1,3 +1,22 @@
+/* Nội dung HTML đã sanitize (phản hồi, hiển thị sau editor) */
+.ktx-feedback-html-body {
+  white-space: normal;
+}
+
+.ktx-feedback-html-body p {
+  margin-bottom: 0.5em;
+}
+
+.ktx-feedback-html-body p:last-child {
+  margin-bottom: 0;
+}
+
+.ktx-feedback-html-body ul,
+.ktx-feedback-html-body ol {
+  margin: 0.35em 0 0.5em;
+  padding-left: 1.25rem;
+}
+
 /* react-quill — ô soạn trong modal / form */
 .ktx-rich-text-wrap .ql-toolbar.ql-snow {
   border-radius: 8px 8px 0 0;

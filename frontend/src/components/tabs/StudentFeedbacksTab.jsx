@@ -1,4 +1,5 @@
 import { Card, Col, Row, Tag, Typography } from 'antd';
+import FeedbackRichBody from '../FeedbackRichBody';
 import { useLanguage } from '../../context/LanguageContext';
 
 function statusColor(status) {
@@ -28,15 +29,16 @@ export default function StudentFeedbacksTab({ feedbacks, pagination }) {
             }
             extra={<Tag color={statusColor(f.status)}>{f.status === 'Pending' ? t('feedbacks.pending') : t('feedbacks.replied')}</Tag>}
           >
-            <Typography.Paragraph
-              className={`ktx-tab-pre-wrap ${f.reply_content ? 'ktx-tab-p-sm' : 'ktx-tab-p-last'}`}
-            >
-              {f.description}
-            </Typography.Paragraph>
+            <div className={f.reply_content ? 'ktx-tab-p-sm' : 'ktx-tab-p-last'}>
+              <FeedbackRichBody content={f.description} />
+            </div>
             {f.reply_content ? (
-              <Typography.Paragraph className="ktx-tab-reply-box">
-                <Typography.Text strong>{t('feedbacks.adminReply')}</Typography.Text> {f.reply_content}
-              </Typography.Paragraph>
+              <div className="ktx-tab-reply-box">
+                <div className="ktx-tab-reply-label">
+                  <Typography.Text strong>{t('feedbacks.adminReply')}</Typography.Text>
+                </div>
+                <FeedbackRichBody content={f.reply_content} />
+              </div>
             ) : null}
           </Card>
         </Col>

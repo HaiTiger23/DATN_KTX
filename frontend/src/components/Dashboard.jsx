@@ -445,7 +445,7 @@ export default function Dashboard() {
       return;
     }
     if (modalType === 'add_feedback') {
-      if (!feedbackForm.title || !feedbackForm.description) {
+      if (!feedbackForm.title?.trim() || isRichTextEmpty(feedbackForm.description)) {
         showToast(t('toast.feedbackTitleBody'), 'error');
         throw new Error('validation');
       }
@@ -617,7 +617,11 @@ export default function Dashboard() {
               <Input value={feedbackForm.title} onChange={(e) => setFeedbackForm((f) => ({ ...f, title: e.target.value }))} />
             </Form.Item>
             <Form.Item label={t('modal.feedbackDesc')} required>
-              <Input.TextArea rows={4} value={feedbackForm.description} onChange={(e) => setFeedbackForm((f) => ({ ...f, description: e.target.value }))} />
+              <RichTextEditor
+                value={feedbackForm.description}
+                onChange={(html) => setFeedbackForm((f) => ({ ...f, description: html }))}
+                placeholder={t('modal.feedbackDescPlaceholder')}
+              />
             </Form.Item>
           </Form>
         );
@@ -1017,7 +1021,7 @@ export default function Dashboard() {
           </div>
         </Sider>
 
-        <Layout>
+        <Layout className="ktx-dashboard-main">
           <Header className="ktx-dashboard-header">
             <Typography.Title level={4} className="ktx-dashboard-page-title">
               {pageTitle}

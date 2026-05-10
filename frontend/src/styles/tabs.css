@@ -30,7 +30,11 @@
   padding: 8px;
   border-radius: 8px;
   background: rgba(79, 70, 229, 0.06);
-  white-space: pre-wrap;
+  white-space: normal;
+}
+
+.ktx-tab-reply-label {
+  margin-bottom: 8px;
 }
 
 /* Admin settings */

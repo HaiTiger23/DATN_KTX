@@ -1,6 +1,19 @@
-/* Dashboard shell (Layout, Sider, Header, Content) */
+/* Dashboard shell (Layout, Sider, Header, Content)
+   — global style.css sets body { overflow: hidden }, nên cuộn phải nằm trong Content */
 .ktx-dashboard-layout {
   min-height: 100vh;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+}
+
+.ktx-dashboard-main.ant-layout {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .ktx-dashboard-sider.ant-layout-sider {
@@ -66,6 +79,7 @@
 }
 
 .ktx-dashboard-header {
+  flex-shrink: 0;
   background: #fff;
   padding: 12px 24px;
   display: flex;
@@ -81,9 +95,13 @@
 }
 
 .ktx-dashboard-content {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 24px;
   background: #f5f5f5;
-  min-height: 280px;
 }
 
 .ktx-dashboard-spin-wrap {
