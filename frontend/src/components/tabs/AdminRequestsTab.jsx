@@ -26,24 +26,24 @@ export default function AdminRequestsTab({ requests, onHandle }) {
               </Button>,
             ]}
           >
-            <Typography.Paragraph style={{ marginBottom: 8 }}>
+            <Typography.Paragraph className="ktx-tab-p-sm">
               {t('requests.student')}{' '}
               <Typography.Text strong>
                 {r.student_id?.fullname || t('common.na')} ({r.student_id?.mssv || t('common.na')})
               </Typography.Text>
             </Typography.Paragraph>
-            <Typography.Paragraph style={{ marginBottom: 8 }}>
+            <Typography.Paragraph className="ktx-tab-p-sm">
               {t('requests.room')}{' '}
               <Typography.Text strong>
                 {r.room_id?.room_code || t('common.na')} — {r.room_id?.building || t('common.na')}
               </Typography.Text>
             </Typography.Paragraph>
             {r.type !== 'Cancellation' ? (
-              <Typography.Paragraph style={{ marginBottom: 8 }}>
+              <Typography.Paragraph className="ktx-tab-p-sm">
                 {t('requests.term')} <Typography.Text strong>{t('requests.months', { n: r.months || 6 })}</Typography.Text>
               </Typography.Paragraph>
             ) : null}
-            <Typography.Paragraph style={{ marginBottom: 0 }}>
+            <Typography.Paragraph className="ktx-tab-p-last">
               {t('requests.sentAt')} <Typography.Text strong>{formatDate(r.createdAt)}</Typography.Text>
             </Typography.Paragraph>
           </Card>

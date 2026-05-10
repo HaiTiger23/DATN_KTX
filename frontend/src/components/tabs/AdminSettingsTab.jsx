@@ -12,13 +12,13 @@ export default function AdminSettingsTab({ geminiKey, setGeminiKey, onSave }) {
   const { t } = useLanguage();
 
   return (
-    <Space direction="vertical" size="large" style={{ width: '100%' }}>
+    <Space direction="vertical" size="large" className="ktx-settings-stack">
       <Card>
-        <Space direction="vertical" size="small" style={{ width: '100%' }}>
-          <Typography.Title level={3} style={{ margin: 0 }}>
+        <Space direction="vertical" size="small" className="ktx-settings-stack-tight">
+          <Typography.Title level={3} className="ktx-settings-hero-title">
             <SettingOutlined /> {t('settings.heroTitle')}
           </Typography.Title>
-          <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+          <Typography.Paragraph type="secondary" className="ktx-settings-hint">
             {t('settings.heroSubtitle')}
           </Typography.Paragraph>
         </Space>
@@ -27,7 +27,7 @@ export default function AdminSettingsTab({ geminiKey, setGeminiKey, onSave }) {
       <Card title={t('settings.blockGeminiTitle')}>
         <Typography.Paragraph type="secondary">{t('settings.blockGeminiLead')}</Typography.Paragraph>
         <Typography.Text>{t('settings.geminiKey')}</Typography.Text>
-        <Typography.Paragraph type="secondary" style={{ fontSize: 12 }}>
+        <Typography.Paragraph type="secondary" className="ktx-tab-text-secondary-xs">
           {t('settings.keyHint')}
         </Typography.Paragraph>
         <Input.Password
@@ -35,13 +35,13 @@ export default function AdminSettingsTab({ geminiKey, setGeminiKey, onSave }) {
           value={geminiKey}
           onChange={(e) => setGeminiKey(e.target.value)}
           placeholder={t('settings.geminiPlaceholder')}
-          style={{ marginBottom: 16, maxWidth: 560 }}
+          className="ktx-settings-gemini-input"
         />
         <Space direction="vertical" size="small">
           <Button type="primary" onClick={onSave}>
             {t('settings.saveGemini')}
           </Button>
-          <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+          <Typography.Text type="secondary" className="ktx-settings-footnote">
             {t('settings.geminiFootnote')}
           </Typography.Text>
         </Space>
@@ -53,7 +53,7 @@ export default function AdminSettingsTab({ geminiKey, setGeminiKey, onSave }) {
             <Card title={t(block.titleKey)}>
               <Typography.Paragraph type="secondary">{t(block.leadKey)}</Typography.Paragraph>
               <Tag>{t('settings.pendingBadge')}</Tag>
-              <Typography.Paragraph style={{ marginTop: 12, marginBottom: 0 }}>{t('settings.pendingNote')}</Typography.Paragraph>
+              <Typography.Paragraph className="ktx-settings-pending-note">{t('settings.pendingNote')}</Typography.Paragraph>
             </Card>
           </Col>
         ))}

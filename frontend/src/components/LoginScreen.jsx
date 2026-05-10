@@ -53,11 +53,11 @@ export default function LoginScreen() {
   return (
     <>
       <LanguageSwitcher variant="fixed" />
-      <div id="login-screen" className="screen active" style={{ alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-        <Card style={{ width: '100%', maxWidth: 420 }} bordered={false}>
-          <Space direction="vertical" size="large" style={{ width: '100%', textAlign: 'center' }}>
+      <div id="login-screen" className="screen active ktx-login-screen">
+        <Card className="ktx-login-card" bordered={false}>
+          <Space direction="vertical" size="large" className="ktx-login-stack">
             <div>
-              <Typography.Title level={3} style={{ marginBottom: 8 }}>
+              <Typography.Title level={3} className="ktx-login-brand-title">
                 🏢 {t('login.brand')}
               </Typography.Title>
               <Typography.Text type="secondary">{mode === 'login' ? t('login.subtitleLogin') : t('login.subtitleRegister')}</Typography.Text>
@@ -69,7 +69,7 @@ export default function LoginScreen() {
                 layout="vertical"
                 initialValues={{ email: 'admin@dorm.com', password: 'admin123' }}
                 onFinish={onLogin}
-                style={{ textAlign: 'left' }}
+                className="ktx-login-form"
               >
                 <Form.Item name="email" label={t('login.email')} rules={[{ required: true, type: 'email' }]}>
                   <Input placeholder="admin@dorm.com" />
@@ -84,13 +84,13 @@ export default function LoginScreen() {
                 </Form.Item>
                 <Typography.Text type="secondary">
                   {t('login.noAccount')}{' '}
-                  <Button type="link" onClick={() => setMode('register')} style={{ padding: 0 }}>
+                  <Button type="link" className="ktx-login-link-btn" onClick={() => setMode('register')}>
                     {t('login.registerStudent')}
                   </Button>
                 </Typography.Text>
               </Form>
             ) : (
-              <Form key="register" layout="vertical" onFinish={onRegister} style={{ textAlign: 'left' }}>
+              <Form key="register" layout="vertical" onFinish={onRegister} className="ktx-login-form">
                 <Form.Item name="fullname" label={t('login.fullname')} rules={[{ required: true }]}>
                   <Input placeholder="Nguyễn Văn A" />
                 </Form.Item>
@@ -110,7 +110,7 @@ export default function LoginScreen() {
                 </Form.Item>
                 <Typography.Text type="secondary">
                   {t('login.haveAccount')}{' '}
-                  <Button type="link" onClick={() => setMode('login')} style={{ padding: 0 }}>
+                  <Button type="link" className="ktx-login-link-btn" onClick={() => setMode('login')}>
                     {t('login.loginLink')}
                   </Button>
                 </Typography.Text>

@@ -1,0 +1,28 @@
+/* Login / Register screen */
+.ktx-login-screen {
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.ktx-login-card {
+  width: 100%;
+  max-width: 420px;
+}
+
+.ktx-login-stack {
+  width: 100%;
+  text-align: center;
+}
+
+.ktx-login-brand-title {
+  margin-bottom: 8px;
+}
+
+.ktx-login-form {
+  text-align: left;
+}
+
+.ktx-login-link-btn.ant-btn {
+  padding: 0;
+}

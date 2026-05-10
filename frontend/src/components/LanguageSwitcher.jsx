@@ -20,23 +20,7 @@ export default function LanguageSwitcher({ variant = 'inline' }) {
   );
 
   if (variant === 'fixed') {
-    return (
-      <div
-        style={{
-          position: 'fixed',
-          top: 16,
-          right: 16,
-          zIndex: 1000,
-          padding: 8,
-          borderRadius: 12,
-          background: 'rgba(255,255,255,0.85)',
-          backdropFilter: 'blur(8px)',
-          boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
-        }}
-      >
-        {segment}
-      </div>
-    );
+    return <div className="ktx-lang-switcher--fixed">{segment}</div>;
   }
 
   return segment;

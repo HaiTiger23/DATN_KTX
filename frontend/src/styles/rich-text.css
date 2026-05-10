@@ -1,0 +1,27 @@
+/* react-quill — ô soạn trong modal / form */
+.ktx-rich-text-wrap .ql-toolbar.ql-snow {
+  border-radius: 8px 8px 0 0;
+  border-color: rgba(5, 5, 5, 0.15);
+}
+
+.ktx-rich-text-wrap .ql-container.ql-snow {
+  border-radius: 0 0 8px 8px;
+  border-color: rgba(5, 5, 5, 0.15);
+  min-height: 200px;
+  font-size: 14px;
+}
+
+.ktx-rich-text-wrap .ql-editor {
+  min-height: 180px;
+}
+
+.ktx-rich-text-wrap .ql-editor.ql-blank::before {
+  font-style: normal;
+  color: rgba(0, 0, 0, 0.35);
+}
+
+/* Tooltip / picker không bị che bởi Modal Ant Design */
+.ktx-rich-text-wrap .ql-tooltip,
+.ktx-rich-text-wrap .ql-picker-options {
+  z-index: 1100;
+}

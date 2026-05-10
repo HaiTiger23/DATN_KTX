@@ -1,4 +1,5 @@
-import { Button, Table } from 'antd';
+import { Button, Table, Typography } from 'antd';
+import { htmlToPlainText } from '../../api';
 import { useLanguage } from '../../context/LanguageContext';
 
 export default function AdminKnowledgeTab({ items, onDelete }) {
@@ -17,6 +18,10 @@ export default function AdminKnowledgeTab({ items, onDelete }) {
       dataIndex: 'answer',
       key: 'answer',
       ellipsis: true,
+      render: (html) => {
+        const plain = htmlToPlainText(html);
+        return <Typography.Text ellipsis={{ tooltip: plain }}>{plain || '—'}</Typography.Text>;
+      },
     },
     {
       title: t('knowledge.actions'),

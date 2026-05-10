@@ -34,16 +34,16 @@ export default function AdminRoomsTab({ rooms, onToggleStatus, onEdit }) {
                 </Button>,
               ]}
             >
-              <Typography.Paragraph style={{ marginBottom: 8 }}>
+              <Typography.Paragraph className="ktx-tab-p-sm">
                 {t('room.building')} <Typography.Text strong>{r.building}</Typography.Text>
               </Typography.Paragraph>
-              <Typography.Paragraph style={{ marginBottom: 8 }}>
+              <Typography.Paragraph className="ktx-tab-p-sm">
                 {t('room.seats')}{' '}
                 <Typography.Text strong>
                   {available}/{r.capacity}
                 </Typography.Text>
               </Typography.Paragraph>
-              <Typography.Paragraph style={{ marginBottom: 0 }}>
+              <Typography.Paragraph className="ktx-tab-p-last">
                 {t('room.price')}{' '}
                 <Typography.Text strong>
                   {formatMoney(r.price)}

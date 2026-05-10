@@ -6,7 +6,7 @@ export default function ProfileTab({ user, form, setForm, onSave }) {
   const isAdmin = user?.role === 'Admin';
 
   return (
-    <Card title={t('profile.title')} style={{ maxWidth: 560, margin: '0 auto' }}>
+    <Card title={t('profile.title')} className="ktx-profile-card">
       <Form layout="vertical">
         <Form.Item label={t('profile.fullname')}>
           <Input value={form.fullname} onChange={(e) => setForm((f) => ({ ...f, fullname: e.target.value }))} />

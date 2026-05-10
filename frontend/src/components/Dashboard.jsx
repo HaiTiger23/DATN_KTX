@@ -18,6 +18,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../context/ToastContext';
 import { useApi } from '../hooks/useApi';
+import { formatVndInput, isRichTextEmpty, parseVndInput } from '../api';
 import LanguageSwitcher from './LanguageSwitcher';
 import Modal from './Modal';
 import AdminRoomsTab from './tabs/AdminRoomsTab';
@@ -33,6 +34,7 @@ import StudentContractsTab from './tabs/StudentContractsTab';
 import StudentFeedbacksTab from './tabs/StudentFeedbacksTab';
 import StudentChatbotTab from './tabs/StudentChatbotTab';
 import ProfileTab from './tabs/ProfileTab';
+import RichTextEditor from './RichTextEditor';
 
 const { Header, Sider, Content } = Layout;
 
@@ -138,9 +140,15 @@ export default function Dashboard() {
           setData({ settings });
           break;
         }
-        case 'student_rooms':
-          setData({ rooms: await api('/student/rooms') });
+        case 'student_rooms': {
+          const [rooms, studentContracts, studentRequests] = await Promise.all([
+            api('/student/rooms'),
+            api('/student/contracts'),
+            api('/student/requests'),
+          ]);
+          setData({ rooms, studentContracts, studentRequests });
           break;
+        }
         case 'student_requests':
           setData({ requests: await api('/student/requests') });
           break;
@@ -178,6 +186,29 @@ export default function Dashboard() {
   useEffect(() => {
     loadTab();
   }, [loadTab]);
+
+  /** Làm mới danh sách phòng khi quay lại tab/cửa sổ (sau khi admin duyệt, số chỗ trên server đã đổi). */
+  useEffect(() => {
+    if (currentTab !== 'student_rooms') return undefined;
+    let timeoutId;
+    const scheduleRefresh = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        loadTab();
+      }, 250);
+    };
+    const onFocus = () => scheduleRefresh();
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') scheduleRefresh();
+    };
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [currentTab, loadTab]);
 
   const openModal = (type, id = null) => {
     setModalType(type);
@@ -307,7 +338,7 @@ export default function Dashboard() {
       return;
     }
     if (modalType === 'add_knowledge') {
-      if (!knowledgeForm.question || !knowledgeForm.answer) {
+      if (!knowledgeForm.question?.trim() || isRichTextEmpty(knowledgeForm.answer)) {
         showToast(t('toast.knowledgeFill'), 'error');
         throw new Error('validation');
       }
@@ -358,7 +389,7 @@ export default function Dashboard() {
             </Form.Item>
             <Form.Item label={t('modal.capacity')} required>
               <InputNumber
-                style={{ width: '100%' }}
+                className="ktx-input-block"
                 min={1}
                 value={roomForm.capacity}
                 onChange={(v) => setRoomForm((f) => ({ ...f, capacity: v }))}
@@ -366,9 +397,12 @@ export default function Dashboard() {
             </Form.Item>
             <Form.Item label={t('modal.priceMonth')} required>
               <InputNumber
-                style={{ width: '100%' }}
+                className="ktx-input-block"
                 min={0}
+                step={1000}
                 value={roomForm.price}
+                formatter={formatVndInput}
+                parser={parseVndInput}
                 onChange={(v) => setRoomForm((f) => ({ ...f, price: v }))}
               />
             </Form.Item>
@@ -430,7 +464,11 @@ export default function Dashboard() {
               <Input value={knowledgeForm.question} onChange={(e) => setKnowledgeForm((f) => ({ ...f, question: e.target.value }))} />
             </Form.Item>
             <Form.Item label={t('modal.answer')} required>
-              <Input.TextArea rows={4} value={knowledgeForm.answer} onChange={(e) => setKnowledgeForm((f) => ({ ...f, answer: e.target.value }))} />
+              <RichTextEditor
+                value={knowledgeForm.answer}
+                onChange={(html) => setKnowledgeForm((f) => ({ ...f, answer: html }))}
+                placeholder={t('modal.knowledgeAnswerPlaceholder')}
+              />
             </Form.Item>
           </Form>
         );
@@ -521,7 +559,7 @@ export default function Dashboard() {
       content: (
         <InputNumber
           min={1}
-          style={{ width: '100%', marginTop: 8 }}
+          className="ktx-modal-months-input"
           defaultValue={6}
           onChange={(v) => {
             monthsNum = typeof v === 'number' ? v : Number(v) || 1;
@@ -609,7 +647,7 @@ export default function Dashboard() {
   const renderContent = () => {
     if (loading) {
       return (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
+        <div className="ktx-dashboard-spin-wrap">
           <Spin size="large" />
         </div>
       );
@@ -618,7 +656,7 @@ export default function Dashboard() {
       return (
         <Empty
           description={<Typography.Text type="danger">{t('dashboard.loadError')}</Typography.Text>}
-          style={{ padding: '2rem' }}
+          className="ktx-empty-state"
         />
       );
     }
@@ -650,8 +688,22 @@ export default function Dashboard() {
         return <AdminKnowledgeTab items={data.knowledge || []} onDelete={deleteKnowledge} />;
       case 'admin_settings':
         return <AdminSettingsTab geminiKey={geminiKey} setGeminiKey={setGeminiKey} onSave={saveSettings} />;
-      case 'student_rooms':
-        return <StudentRoomsTab rooms={data.rooms || []} onRegister={registerRoom} />;
+      case 'student_rooms': {
+        const contracts = data.studentContracts || [];
+        const requests = data.studentRequests || [];
+        const active = contracts.find((c) => c.status === 'Active');
+        const activeRoomId = active ? String(active.room_id?._id ?? active.room_id) : null;
+        const pendingReg = requests.find((r) => r.status === 'Pending' && r.type === 'Registration');
+        const pendingRoomId = pendingReg ? String(pendingReg.room_id?._id ?? pendingReg.room_id) : null;
+        return (
+          <StudentRoomsTab
+            rooms={data.rooms || []}
+            activeRoomId={activeRoomId}
+            pendingRoomId={pendingRoomId}
+            onRegister={registerRoom}
+          />
+        );
+      }
       case 'student_requests':
         return <StudentRequestsTab requests={data.requests || []} />;
       case 'student_contracts':
@@ -672,18 +724,16 @@ export default function Dashboard() {
 
   return (
     <>
-      <Layout style={{ minHeight: '100vh' }}>
+      <Layout className="ktx-dashboard-layout">
         <Sider
           theme="light"
           width={260}
           breakpoint="lg"
           collapsedWidth={0}
-          style={{
-            borderRight: '1px solid rgba(0,0,0,0.06)',
-          }}
+          className="ktx-dashboard-sider"
         >
-          <div style={{ padding: '16px 16px 8px', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Typography.Title level={5} style={{ margin: 0, flex: 1 }}>
+          <div className="ktx-dashboard-sider-brand">
+            <Typography.Title level={5} className="ktx-dashboard-sider-title">
               🏢 {sidebarTitle}
             </Typography.Title>
           </div>
@@ -692,17 +742,17 @@ export default function Dashboard() {
             selectedKeys={[currentTab]}
             items={menuItems}
             onClick={({ key }) => setCurrentTab(key)}
-            style={{ borderInlineEnd: 'none' }}
+            className="ktx-dashboard-menu"
           />
-          <div style={{ padding: 16, borderTop: '1px solid rgba(0,0,0,0.06)' }}>
-            <Space align="center" style={{ width: '100%', justifyContent: 'space-between' }}>
+          <div className="ktx-dashboard-user-footer">
+            <Space align="center" className="ktx-dashboard-user-row">
               <Space>
-                <Avatar style={{ backgroundColor: '#4F46E5' }}>{(user?.fullname || 'U').charAt(0).toUpperCase()}</Avatar>
-                <div>
-                  <Typography.Text strong ellipsis style={{ maxWidth: 140, display: 'block' }}>
+                <Avatar className="ktx-avatar-brand">{(user?.fullname || 'U').charAt(0).toUpperCase()}</Avatar>
+                <div className="ktx-dashboard-user-name-container">
+                  <Typography.Text strong ellipsis className="ktx-dashboard-user-name">
                     {user?.fullname || 'User'}
                   </Typography.Text>
-                  <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                  <Typography.Text type="secondary" className="ktx-dashboard-user-role">
                     {roleLabel}
                   </Typography.Text>
                 </div>
@@ -713,31 +763,18 @@ export default function Dashboard() {
         </Sider>
 
         <Layout>
-          <Header
-            style={{
-              background: '#fff',
-              padding: '0 24px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              borderBottom: '1px solid rgba(0,0,0,0.06)',
-              height: 'auto',
-              lineHeight: 1.4,
-              paddingTop: 12,
-              paddingBottom: 12,
-            }}
-          >
-            <Typography.Title level={4} style={{ margin: 0 }}>
+          <Header className="ktx-dashboard-header">
+            <Typography.Title level={4} className="ktx-dashboard-page-title">
               {pageTitle}
             </Typography.Title>
             <Space wrap>
               {showSync ? (
-                <Button icon={<ReloadOutlined />} onClick={handleSync}>
+                <Button onClick={handleSync}>
                   {t('dashboard.sync')}
                 </Button>
               ) : null}
               {showAdd ? (
-                <Button type="primary" icon={<PlusOutlined />} onClick={handleAddClick}>
+                <Button type="primary" onClick={handleAddClick}>
                   {addLabel}
                 </Button>
               ) : null}
@@ -745,7 +782,7 @@ export default function Dashboard() {
             </Space>
           </Header>
 
-          <Content style={{ padding: 24, background: '#f5f5f5', minHeight: 280 }}>{renderContent()}</Content>
+          <Content className="ktx-dashboard-content">{renderContent()}</Content>
         </Layout>
       </Layout>
 

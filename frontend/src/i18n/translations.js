@@ -64,7 +64,7 @@ export const translations = {
     'tab.student_rooms': 'Đăng ký phòng ở',
     'tab.student_requests': 'Đơn đăng ký của tôi',
     'tab.student_contracts': 'Hợp đồng của tôi',
-    'tab.student_feedbacks': 'Gửi phản hồi cho BQL',
+    'tab.student_feedbacks': 'Gửi phản hồi cho Ban Quản Lý',
     'tab.student_chatbot': 'Trợ lý Ảo AI (Gemini)',
     'tab.profile': 'Thông tin cá nhân',
 
@@ -93,6 +93,7 @@ export const translations = {
     'modal.feedbackDesc': 'Nội dung',
     'modal.question': 'Câu hỏi',
     'modal.answer': 'Trả lời',
+    'modal.knowledgeAnswerPlaceholder': 'Soạn nội dung: tiêu đề, in đậm, danh sách, liên kết...',
 
     'toast.replyRequired': 'Vui lòng nhập nội dung',
     'toast.fillAll': 'Điền đủ thông tin',
@@ -215,6 +216,10 @@ export const translations = {
     'studentRooms.sortPriceDesc': 'Giá: Cao đến thấp',
     'studentRooms.noMatch': 'Không tìm thấy phòng phù hợp',
     'studentRooms.registerNow': 'Đăng ký ngay',
+    'studentRooms.yourRoom': 'Phòng của bạn',
+    'studentRooms.pendingRoom': 'Đang chờ duyệt',
+    'studentRooms.yourRoomHint': 'Bạn đang có hợp đồng phòng này',
+    'studentRooms.pendingHint': 'Đơn đăng ký đang chờ quản trị viên duyệt',
 
     'studentRequests.empty': 'Bạn chưa có đơn đăng ký nào',
     'studentRequests.roomCode': 'Mã phòng',
@@ -344,6 +349,7 @@ export const translations = {
     'modal.feedbackDesc': 'Description',
     'modal.question': 'Question',
     'modal.answer': 'Answer',
+    'modal.knowledgeAnswerPlaceholder': 'Format content: headings, bold, lists, links...',
 
     'toast.replyRequired': 'Please enter content',
     'toast.fillAll': 'Please fill in all fields',
@@ -467,6 +473,10 @@ export const translations = {
     'studentRooms.sortPriceDesc': 'Price: High to low',
     'studentRooms.noMatch': 'No matching rooms',
     'studentRooms.registerNow': 'Register now',
+    'studentRooms.yourRoom': 'Your room',
+    'studentRooms.pendingRoom': 'Pending approval',
+    'studentRooms.yourRoomHint': 'You have an active contract for this room',
+    'studentRooms.pendingHint': 'Your registration is waiting for admin approval',
 
     'studentRequests.empty': 'You have no requests yet',
     'studentRequests.roomCode': 'Room',

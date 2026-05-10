@@ -10,7 +10,7 @@ export default function StudentFeedbacksTab({ feedbacks }) {
 
   if (feedbacks.length === 0) {
     return (
-      <Typography.Paragraph type="secondary" style={{ textAlign: 'center', padding: '2rem' }}>
+      <Typography.Paragraph type="secondary" className="ktx-tab-empty">
         {t('studentFeedbacks.empty')}
       </Typography.Paragraph>
     );
@@ -28,19 +28,13 @@ export default function StudentFeedbacksTab({ feedbacks }) {
             }
             extra={<Tag color={statusColor(f.status)}>{f.status === 'Pending' ? t('feedbacks.pending') : t('feedbacks.replied')}</Tag>}
           >
-            <Typography.Paragraph style={{ marginBottom: f.reply_content ? 8 : 0, whiteSpace: 'pre-wrap' }}>
+            <Typography.Paragraph
+              className={`ktx-tab-pre-wrap ${f.reply_content ? 'ktx-tab-p-sm' : 'ktx-tab-p-last'}`}
+            >
               {f.description}
             </Typography.Paragraph>
             {f.reply_content ? (
-              <Typography.Paragraph
-                style={{
-                  marginBottom: 0,
-                  padding: 8,
-                  borderRadius: 8,
-                  background: 'rgba(79, 70, 229, 0.06)',
-                  whiteSpace: 'pre-wrap',
-                }}
-              >
+              <Typography.Paragraph className="ktx-tab-reply-box">
                 <Typography.Text strong>{t('feedbacks.adminReply')}</Typography.Text> {f.reply_content}
               </Typography.Paragraph>
             ) : null}

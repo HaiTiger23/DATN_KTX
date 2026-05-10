@@ -19,7 +19,7 @@ export default function AdminContractsTab({ contracts, onEndContract }) {
         <>
           <strong>{c.student_id?.fullname || t('common.na')}</strong>
           <br />
-          <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+          <Typography.Text type="secondary" className="ktx-tab-text-secondary-xs">
             {c.student_id?.mssv || ''}
           </Typography.Text>
         </>

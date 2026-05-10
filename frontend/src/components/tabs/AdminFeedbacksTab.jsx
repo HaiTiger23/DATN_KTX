@@ -30,22 +30,16 @@ export default function AdminFeedbacksTab({ feedbacks, onReply }) {
                 : undefined
             }
           >
-            <Typography.Paragraph type="secondary" style={{ marginBottom: 8 }}>
+            <Typography.Paragraph type="secondary" className="ktx-tab-p-sm">
               {t('feedbacks.from')} <Typography.Text strong>{f.student_id?.fullname || t('common.na')}</Typography.Text>
             </Typography.Paragraph>
-            <Typography.Paragraph style={{ marginBottom: f.reply_content ? 8 : 0, whiteSpace: 'pre-wrap' }}>
+            <Typography.Paragraph
+              className={`ktx-tab-pre-wrap ${f.reply_content ? 'ktx-tab-p-sm' : 'ktx-tab-p-last'}`}
+            >
               {f.description}
             </Typography.Paragraph>
             {f.reply_content ? (
-              <Typography.Paragraph
-                style={{
-                  marginBottom: 0,
-                  padding: 8,
-                  borderRadius: 8,
-                  background: 'rgba(79, 70, 229, 0.06)',
-                  whiteSpace: 'pre-wrap',
-                }}
-              >
+              <Typography.Paragraph className="ktx-tab-reply-box">
                 <Typography.Text strong>{t('feedbacks.adminReply')}</Typography.Text> {f.reply_content}
               </Typography.Paragraph>
             ) : null}
