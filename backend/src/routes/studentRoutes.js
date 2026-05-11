@@ -12,6 +12,8 @@ import {
     markNotificationAsRead
 } from '../controllers/studentController.js';
 import { chatWithBot } from '../controllers/chatController.js';
+import { getMyRoomInvoices, payInvoice } from '../controllers/student/invoiceController.js';
+import { upload } from '../config/cloudinary.js';
 
 const router = express.Router();
 
@@ -30,5 +32,9 @@ router.post('/chat', chatWithBot);
 
 router.get('/notifications', getMyNotifications);
 router.post('/notifications/:id/read', markNotificationAsRead);
+
+// Invoices
+router.get('/invoices', getMyRoomInvoices);
+router.post('/invoices/:id/pay', upload.single('receipt'), payInvoice);
 
 export default router;

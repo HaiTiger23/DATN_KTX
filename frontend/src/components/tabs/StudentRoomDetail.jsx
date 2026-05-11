@@ -1,4 +1,4 @@
-import { Button, Col, Row, Space, Tag, Typography, Carousel, Divider } from 'antd';
+import { Button, Col, Row, Space, Tag, Typography, Carousel, Divider, Image } from 'antd';
 import { ArrowLeftOutlined, EnvironmentOutlined, InfoCircleOutlined, AppstoreOutlined } from '@ant-design/icons';
 import { formatMoney } from '../../api';
 import { useLanguage } from '../../context/LanguageContext';
@@ -28,13 +28,21 @@ export default function StudentRoomDetail({ room, activeRoomId, pendingRoomId, o
         <Col xs={24} md={14}>
           <div style={{ borderRadius: 12, overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
             {r.images && r.images.length > 0 ? (
-              <Carousel autoplay dotPosition="bottom">
-                {r.images.map((img, idx) => (
-                  <div key={idx} style={{ background: '#f0f2f5' }}>
-                    <img src={img} alt="Room" style={{ width: '100%', height: 400, objectFit: 'cover' }} />
-                  </div>
-                ))}
-              </Carousel>
+              <Image.PreviewGroup>
+                <Carousel autoplay arrows dotPosition="bottom">
+                  {r.images.map((img, idx) => (
+                    <div key={idx} style={{ background: '#f0f2f5' }}>
+                      <Image 
+                        src={img} 
+                        alt="Room" 
+                        height={450} 
+                        width="100%"
+                        style={{ objectFit: 'cover' }} 
+                      />
+                    </div>
+                  ))}
+                </Carousel>
+              </Image.PreviewGroup>
             ) : (
               <div style={{ background: '#f0f2f5', width: '100%', height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Typography.Text type="secondary" style={{ fontSize: 18 }}>{t('studentRooms.noImages')}</Typography.Text>
