@@ -8,6 +8,9 @@ export const translations = {
     'common.na': 'N/A',
     'common.month': 'tháng',
     'common.syncSuccess': 'Đồng bộ thành công',
+    'common.back': "Quay lại",
+    'common.detail': "Chi tiết",
+    'common.more': "thêm",
 
     'lang.vi': 'Tiếng Việt',
     'lang.en': 'English',
@@ -154,6 +157,7 @@ export const translations = {
     'notifications.unread': 'Chưa đọc',
 
     'room.room': 'Phòng',
+    'room.floor': 'Tầng',
     'room.available': 'Khả dụng',
     'room.maintenance': 'Bảo trì',
     'room.building': '🏢 Tòa nhà:',
@@ -244,6 +248,12 @@ export const translations = {
     'studentRooms.pendingRoom': 'Đang chờ duyệt',
     'studentRooms.yourRoomHint': 'Bạn đang có hợp đồng phòng này',
     'studentRooms.pendingHint': 'Đơn đăng ký đang chờ quản trị viên duyệt',
+    'studentRooms.noImages': 'Chưa có hình ảnh cho phòng này',
+    'studentRooms.availability': 'Tình trạng chỗ:',
+    'studentRooms.availableSeats': 'Còn {available} chỗ trống',
+    'studentRooms.totalSeats': '(Tổng {capacity} chỗ)',
+    'studentRooms.amenities': 'Tiện ích:',
+    'studentRooms.full': 'Đã hết chỗ',
 
     'studentRequests.empty': 'Bạn chưa có đơn đăng ký nào',
     'studentRequests.roomCode': 'Mã phòng',
@@ -288,6 +298,8 @@ export const translations = {
     'common.na': 'N/A',
     'common.month': 'months',
     'common.syncSuccess': 'Synced successfully',
+    'common.detail': 'Detail',
+    'common.more': 'more',
 
     'lang.vi': 'Tiếng Việt',
     'lang.en': 'English',
@@ -434,6 +446,7 @@ export const translations = {
     'notifications.unread': 'Unread',
 
     'room.room': 'Room',
+    'room.floor': 'Floor',
     'room.available': 'Available',
     'room.maintenance': 'Maintenance',
     'room.building': '🏢 Building:',
@@ -525,6 +538,12 @@ export const translations = {
     'studentRooms.pendingRoom': 'Pending approval',
     'studentRooms.yourRoomHint': 'You have an active contract for this room',
     'studentRooms.pendingHint': 'Your registration is waiting for admin approval',
+    'studentRooms.noImages': 'No images for this room',
+    'studentRooms.availability': 'Availability:',
+    'studentRooms.availableSeats': '{available} seats available',
+    'studentRooms.totalSeats': '(Total {capacity} seats)',
+    'studentRooms.amenities': 'Amenities:',
+    'studentRooms.full': 'Full',
 
     'studentRequests.empty': 'You have no requests yet',
     'studentRequests.roomCode': 'Room',

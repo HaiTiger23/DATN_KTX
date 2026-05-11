@@ -61,7 +61,7 @@ export default function StudentChatbotTab({ sendMessage }) {
     <Card className="ktx-chat-card">
       <div className="ktx-chat-flex-col">
         <div className="ktx-chat-scroll">
-          <Space direction="vertical" size="middle" className="ktx-chat-messages">
+          <Space orientation="vertical" size="middle" className="ktx-chat-messages">
             {messages.map((m) => (
               <Bubble key={m.id} role={m.role} text={m.text} actions={m.actions} />
             ))}

@@ -13,9 +13,9 @@ export default function Modal({ open, title, children, onClose, onSave, cancelLa
       okText={saveLabel}
       cancelText={cancelLabel}
       onOk={onSave}
-      destroyOnClose
+      destroyOnHidden
       width={560}
-      maskClosable={false}
+      mask={{ closable: false }}
     >
       {children}
     </AntModal>

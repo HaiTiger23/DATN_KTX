@@ -1071,7 +1071,7 @@ export default function Dashboard() {
         cancelText={t('common.cancel')}
         width={600}
         closable={false}
-        maskClosable={false}
+        mask={{ closable: false }}
       >
         {unreadList.length > 0 && (
           <div style={{ marginTop: 16 }}>
@@ -1094,7 +1094,7 @@ export default function Dashboard() {
         onCancel={() => setShowAllNotifsModal(false)}
         footer={null}
         width={800}
-        destroyOnClose
+        destroyOnHidden
       >
         <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
           <StudentNotificationsTab notifications={allNotifs} onRead={readNotification} />

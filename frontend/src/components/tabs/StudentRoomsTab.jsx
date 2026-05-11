@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import { Button, Card, Col, Input, Row, Select, Space, Tag, Tooltip, Typography, Carousel, Pagination } from 'antd';
-import { HomeOutlined } from '@ant-design/icons';
+import { HomeOutlined, EyeOutlined } from '@ant-design/icons';
 import { formatMoney } from '../../api';
 import { useLanguage } from '../../context/LanguageContext';
+import StudentRoomDetail from './StudentRoomDetail';
 
 /**
  * @param {object} props
@@ -16,6 +17,7 @@ export default function StudentRoomsTab({ rooms, activeRoomId, pendingRoomId, on
   
   // Local search state so we don't fetch on every keystroke
   const [localSearch, setLocalSearch] = useState(filters?.search || '');
+  const [selectedRoom, setSelectedRoom] = useState(null);
 
   // We can just use the rooms passed down from the API directly!
   // No need for local filtering anymore since the backend handles it.
@@ -28,6 +30,18 @@ export default function StudentRoomsTab({ rooms, activeRoomId, pendingRoomId, on
     { value: 'price_asc', label: t('studentRooms.sortPriceAsc') },
     { value: 'price_desc', label: t('studentRooms.sortPriceDesc') },
   ];
+
+  if (selectedRoom) {
+    return (
+      <StudentRoomDetail 
+        room={selectedRoom} 
+        activeRoomId={activeRoomId} 
+        pendingRoomId={pendingRoomId} 
+        onRegister={onRegister} 
+        onBack={() => setSelectedRoom(null)} 
+      />
+    );
+  }
 
   return (
     <>
@@ -92,12 +106,32 @@ export default function StudentRoomsTab({ rooms, activeRoomId, pendingRoomId, on
                   key="reg"
                   type="primary"
                   block
-                  disabled={registerDisabled}
-                  onClick={() => !registerDisabled && onRegister(r._id)}
+                  style={{ flex: 1 }}
+                  disabled={registerDisabled || available === 0}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!registerDisabled && available > 0) onRegister(r._id);
+                  }}
                 >
-                  {isMyRoom ? t('studentRooms.yourRoom') : isPending ? t('studentRooms.pendingRoom') : t('studentRooms.registerNow')}
+                  {isMyRoom ? t('studentRooms.yourRoom') : isPending ? t('studentRooms.pendingRoom') : available === 0 ? t('studentRooms.full') : t('studentRooms.registerNow')}
                 </Button>
               </Tooltip>
+            );
+
+            const detailButton = (
+              <Button
+                key="detail"
+                type="default"
+                block
+                style={{ flex: 1 }}
+                icon={<EyeOutlined />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedRoom(r);
+                }}
+              >
+                {t('common.detail')}
+              </Button>
             );
 
             const typeColor = r.roomType === 'VIP' ? 'gold' : r.roomType === 'Service' ? 'geekblue' : 'default';
@@ -105,6 +139,8 @@ export default function StudentRoomsTab({ rooms, activeRoomId, pendingRoomId, on
             return (
               <Col xs={24} sm={12} lg={8} key={r._id}>
                 <Card
+                  hoverable
+                  onClick={() => setSelectedRoom(r)}
                   className="ktx-student-room-card"
                   cover={
                     r.images && r.images.length > 0 ? (
@@ -117,12 +153,17 @@ export default function StudentRoomsTab({ rooms, activeRoomId, pendingRoomId, on
                       </Carousel>
                     ) : (
                       <div style={{ background: '#f0f2f5', width: '100%', height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Typography.Text type="secondary">Chưa có ảnh</Typography.Text>
+                        <Typography.Text type="secondary">{t('studentRooms.noImages')}</Typography.Text>
                       </div>
                     )
                   }
-                  actions={[actionButton]}
-                  bodyStyle={{ padding: 16 }}
+                  actions={[
+                    <div key="actions" style={{ display: 'flex', gap: 12, padding: '0 16px' }}>
+                      {detailButton}
+                      {actionButton}
+                    </div>
+                  ]}
+                  styles={{ body: { padding: 16 } }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                     <Typography.Title level={5} style={{ margin: 0 }}>
@@ -133,7 +174,7 @@ export default function StudentRoomsTab({ rooms, activeRoomId, pendingRoomId, on
                   
                   <Space wrap style={{ marginBottom: 12 }}>
                     <Tag color={typeColor}>{r.roomType || 'Standard'}</Tag>
-                    <Tag>Tầng {r.floor || 1}</Tag>
+                    <Tag>{t('room.floor')} {r.floor || 1}</Tag>
                   </Space>
 
                   <Typography.Paragraph className="ktx-tab-p-sm">
@@ -141,15 +182,15 @@ export default function StudentRoomsTab({ rooms, activeRoomId, pendingRoomId, on
                   </Typography.Paragraph>
 
                   {r.description && (
-                    <Typography.Paragraph className="ktx-tab-p-sm" ellipsis={{ rows: 2, expandable: true, symbol: 'thêm' }}>
+                    <Typography.Paragraph className="ktx-tab-p-sm" ellipsis={{ rows: 2, expandable: true, symbol: t('common.more') }}>
                       <Typography.Text type="secondary">{r.description}</Typography.Text>
                     </Typography.Paragraph>
                   )}
 
                   {r.amenities && r.amenities.length > 0 && (
                     <div style={{ marginBottom: 8 }}>
-                      <Typography.Text type="secondary" style={{ fontSize: 13 }}>Tiện nghi:</Typography.Text>
-                      <div style={{ marginTop: 4 }}>
+                      <Typography.Text type="secondary" style={{ fontSize: 13 }}>{t('studentRooms.amenities')}</Typography.Text>
+                      <div style={{ marginTop: 4, display: 'flex', gap: 5 }}>
                         {r.amenities.map(a => <Tag key={a} style={{ marginBottom: 4 }}>{a}</Tag>)}
                       </div>
                     </div>
@@ -180,3 +221,4 @@ export default function StudentRoomsTab({ rooms, activeRoomId, pendingRoomId, on
     </>
   );
 }
+

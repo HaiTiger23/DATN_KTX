@@ -12,9 +12,9 @@ export default function AdminSettingsTab({ geminiKey, setGeminiKey, agentSetting
   const { t } = useLanguage();
 
   return (
-    <Space direction="vertical" size="large" className="ktx-settings-stack">
+    <Space orientation="vertical" size="large" className="ktx-settings-stack">
       <Card>
-        <Space direction="vertical" size="small" className="ktx-settings-stack-tight">
+        <Space orientation="vertical" size="small" className="ktx-settings-stack-tight">
           <Typography.Title level={3} className="ktx-settings-hero-title">
             <SettingOutlined /> {t('settings.heroTitle')}
           </Typography.Title>
@@ -43,7 +43,7 @@ export default function AdminSettingsTab({ geminiKey, setGeminiKey, agentSetting
           <Typography.Paragraph type="secondary" style={{ fontSize: 13 }}>
             Bật/Tắt các công cụ mà AI Agent có thể sử dụng thay mặt cho sinh viên.
           </Typography.Paragraph>
-          <Space direction="vertical" style={{ width: '100%' }}>
+          <Space orientation="vertical" style={{ width: '100%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#f5f5f5', borderRadius: 6 }}>
               <Typography.Text>Tra cứu phòng trống</Typography.Text>
               <Switch checked={agentSettings?.agentAllowCheckRoom} onChange={v => setAgentSettings(prev => ({ ...prev, agentAllowCheckRoom: v }))} />
@@ -59,7 +59,7 @@ export default function AdminSettingsTab({ geminiKey, setGeminiKey, agentSetting
           </Space>
         </div>
 
-        <Space direction="vertical" size="small">
+        <Space orientation="vertical" size="small">
           <Button type="primary" onClick={onSave}>
             {t('settings.saveGemini')}
           </Button>

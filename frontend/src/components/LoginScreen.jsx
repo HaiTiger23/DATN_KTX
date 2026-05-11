@@ -55,7 +55,7 @@ export default function LoginScreen() {
       <LanguageSwitcher variant="fixed" />
       <div id="login-screen" className="screen active ktx-login-screen">
         <Card className="ktx-login-card" bordered={false}>
-          <Space direction="vertical" size="large" className="ktx-login-stack">
+          <Space orientation="vertical" size="large" className="ktx-login-stack">
             <div>
               <Typography.Title level={3} className="ktx-login-brand-title">
                 🏢 {t('login.brand')}
