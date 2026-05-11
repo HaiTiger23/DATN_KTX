@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Button, Card, Col, Input, Row, Select, Space, Tag, Tooltip, Typography, Carousel, Pagination } from 'antd';
+import { Button, Card, Col, Input, Row, Select, Space, Tag, Tooltip, Typography, Carousel, Pagination, Image } from 'antd';
 import { HomeOutlined, EyeOutlined } from '@ant-design/icons';
 import { formatMoney } from '../../api';
 import { useLanguage } from '../../context/LanguageContext';
@@ -144,13 +144,23 @@ export default function StudentRoomsTab({ rooms, activeRoomId, pendingRoomId, on
                   className="ktx-student-room-card"
                   cover={
                     r.images && r.images.length > 0 ? (
-                      <Carousel autoplay>
-                        {r.images.map((img, idx) => (
-                          <div key={idx} style={{ background: '#f0f2f5' }}>
-                            <img src={img} alt="Room" style={{ width: '100%', height: 200, objectFit: 'cover' }} />
-                          </div>
-                        ))}
-                      </Carousel>
+                      <div className="ktx-room-carousel-container" onClick={(e) => e.stopPropagation()}>
+                        <Image.PreviewGroup>
+                          <Carousel autoplay arrows dots={{ className: 'ktx-dots-custom' }}>
+                            {r.images.map((img, idx) => (
+                              <div key={idx} style={{ background: '#f0f2f5' }}>
+                                <Image
+                                  src={img}
+                                  alt="Room"
+                                  height={220}
+                                  width="100%"
+                                  style={{ objectFit: 'cover' }}
+                                />
+                              </div>
+                            ))}
+                          </Carousel>
+                        </Image.PreviewGroup>
+                      </div>
                     ) : (
                       <div style={{ background: '#f0f2f5', width: '100%', height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <Typography.Text type="secondary">{t('studentRooms.noImages')}</Typography.Text>

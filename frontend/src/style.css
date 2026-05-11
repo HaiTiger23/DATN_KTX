@@ -564,3 +564,31 @@ tr:hover td {
     padding-top: 0.75rem;
     border-top: 1px dashed rgba(0,0,0,0.08);
 }
+/* Custom Carousel */
+.ktx-room-carousel-container .ant-carousel .slick-prev,
+.ktx-room-carousel-container .ant-carousel .slick-next {
+    color: #fff;
+    font-size: 20px;
+    z-index: 2;
+}
+
+.ktx-room-carousel-container .ant-carousel .slick-prev { left: 10px; }
+.ktx-room-carousel-container .ant-carousel .slick-next { right: 10px; }
+
+.ktx-dots-custom li button {
+    background: #fff !important;
+    opacity: 0.5;
+}
+.ktx-dots-custom li.slick-active button {
+    background: #fff !important;
+    opacity: 1;
+}
+
+.ktx-student-room-card .ant-card-cover {
+    overflow: hidden;
+}
+
+.ktx-student-room-card:hover .ant-image-img {
+    transform: scale(1.05);
+    transition: transform 0.5s ease;
+}

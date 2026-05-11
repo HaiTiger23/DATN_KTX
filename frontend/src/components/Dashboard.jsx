@@ -15,6 +15,7 @@ import {
   Badge,
   Modal as AntdModal,
   Select,
+  Upload,
 } from 'antd';
 import { LogoutOutlined, ReloadOutlined, PlusOutlined, BellOutlined } from '@ant-design/icons';
 import { useAuth } from '../context/AuthContext';
@@ -38,6 +39,8 @@ import StudentFeedbacksTab from './tabs/StudentFeedbacksTab';
 import StudentChatbotTab from './tabs/StudentChatbotTab';
 import AdminNotificationsTab from './tabs/AdminNotificationsTab';
 import StudentNotificationsTab from './tabs/StudentNotificationsTab';
+import AdminInvoicesTab from './tabs/AdminInvoicesTab';
+import StudentInvoicesTab from './tabs/StudentInvoicesTab';
 import ProfileTab from './tabs/ProfileTab';
 import RichTextEditor from './RichTextEditor';
 
@@ -48,6 +51,7 @@ const ADMIN_TARGETS = [
   'students',
   'requests',
   'contracts',
+  'invoices',
   'feedbacks',
   'admin_knowledge',
   'admin_notifications',
@@ -59,6 +63,7 @@ const STUDENT_TARGETS = [
   'student_rooms',
   'student_requests',
   'student_contracts',
+  'student_invoices',
   'student_feedbacks',
   'student_chatbot',
   'profile',
@@ -97,6 +102,7 @@ export default function Dashboard() {
   const [feedbackForm, setFeedbackForm] = useState({ title: '', description: '' });
   const [knowledgeForm, setKnowledgeForm] = useState({ question: '', answer: '' });
   const [notificationForm, setNotificationForm] = useState({ title: '', content: '' });
+  const [invoiceForm, setInvoiceForm] = useState({ room_id: '', month: '', electricity_cost: 0, water_cost: 0, additional_cost: 0 });
   const [geminiKey, setGeminiKey] = useState('');
   const [agentSettings, setAgentSettings] = useState({
     agentAllowCheckRoom: true,
@@ -110,6 +116,7 @@ export default function Dashboard() {
     address: '',
     password: '',
   });
+  const [roomFiles, setRoomFiles] = useState([]); // Array of { uid, name, status, url }
 
   const [allNotifs, setAllNotifs] = useState([]);
   const [unreadList, setUnreadList] = useState([]);
@@ -239,9 +246,24 @@ export default function Dashboard() {
           setTotal(res.pagination.total);
           break;
         }
+        case 'student_invoices': {
+          const res = await api(`/student/invoices${q}`);
+          setData({ invoiceRoom: res.room, invoices: res.data });
+          setTotal(res.pagination?.total || 0);
+          break;
+        }
         case 'student_chatbot':
           setData({});
           break;
+        case 'invoices': {
+          const [res, roomsRes] = await Promise.all([
+            api(`/admin/invoices${q}`),
+            api('/admin/rooms?limit=1000'), // fetch all rooms for modal dropdown
+          ]);
+          setData({ invoices: res.data, adminRoomsForInvoice: roomsRes.data });
+          setTotal(res.pagination.total);
+          break;
+        }
         case 'profile': {
           const prof = await api('/auth/profile');
           setProfileForm({
@@ -309,10 +331,13 @@ export default function Dashboard() {
     setModalId(id);
     setModalOpen(true);
     if (type === 'reply_feedback') setReplyContent('');
-    if (type === 'add_room') setRoomForm({ 
-      room_code: '', building: '', floor: 1, capacity: 4, price: 1200000,
-      description: '', images: [], amenities: [], roomType: 'Standard'
-    });
+    if (type === 'add_room') {
+      setRoomForm({ 
+        room_code: '', building: '', floor: 1, capacity: 4, price: 1200000,
+        description: '', images: [], amenities: [], roomType: 'Standard'
+      });
+      setRoomFiles([]);
+    }
     if (type === 'add_student')
       setStudentForm({
         fullname: '',
@@ -326,19 +351,32 @@ export default function Dashboard() {
     if (type === 'add_feedback') setFeedbackForm({ title: '', description: '' });
     if (type === 'add_knowledge') setKnowledgeForm({ question: '', answer: '' });
     if (type === 'add_notification') setNotificationForm({ title: '', content: '' });
+    if (type === 'add_invoice') {
+      const now = new Date();
+      const month = `${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+      setInvoiceForm({ room_id: '', month, electricity_cost: 0, water_cost: 0, additional_cost: 0 });
+    }
     if (type === 'edit_room' && id) {
       const r = data.rooms?.find((x) => x._id === id);
-      if (r) setRoomForm({ 
-        room_code: r.room_code, 
-        building: r.building, 
-        floor: r.floor || 1,
-        capacity: r.capacity, 
-        price: r.price,
-        description: r.description || '',
-        images: r.images || [],
-        amenities: r.amenities || [],
-        roomType: r.roomType || 'Standard'
-      });
+      if (r) {
+        setRoomForm({ 
+          room_code: r.room_code, 
+          building: r.building, 
+          floor: r.floor || 1,
+          capacity: r.capacity, 
+          price: r.price,
+          description: r.description || '',
+          images: r.images || [],
+          amenities: r.amenities || [],
+          roomType: r.roomType || 'Standard'
+        });
+        setRoomFiles((r.images || []).map((url, i) => ({
+          uid: `-${i}`,
+          name: `image-${i}`,
+          status: 'done',
+          url: url,
+        })));
+      }
     }
     if (type === 'edit_student' && id) {
       const s = data.students?.find((x) => x._id === id);
@@ -373,7 +411,26 @@ export default function Dashboard() {
       loadTab();
       return;
     }
-    if (modalType === 'add_room') {
+    if (modalType === 'add_room' || modalType === 'edit_room') {
+      // 1. Upload new files if any
+      const newFiles = roomFiles.filter(f => f.originFileObj);
+      let finalImages = roomFiles.filter(f => f.url).map(f => f.url);
+
+      if (newFiles.length > 0) {
+        const formData = new FormData();
+        newFiles.forEach(f => formData.append('images', f.originFileObj));
+        
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/upload/multiple`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.message || 'Lỗi upload ảnh');
+        finalImages = [...finalImages, ...json.urls];
+      }
+
       const body = {
         room_code: roomForm.room_code,
         building: roomForm.building,
@@ -381,16 +438,23 @@ export default function Dashboard() {
         capacity: Number(roomForm.capacity),
         price: Number(roomForm.price),
         description: roomForm.description,
-        images: roomForm.images,
+        images: finalImages,
         amenities: roomForm.amenities,
         roomType: roomForm.roomType,
       };
-      if (!body.room_code || !body.building || !body.capacity || !body.price || !body.floor) {
-        showToast(t('toast.fillAll'), 'error');
-        throw new Error('validation');
+
+      if (modalType === 'add_room') {
+        if (!body.room_code || !body.building || !body.capacity || !body.price || !body.floor) {
+          showToast(t('toast.fillAll'), 'error');
+          throw new Error('validation');
+        }
+        await api('/admin/rooms', 'POST', body);
+        showToast(t('toast.roomAdded'));
+      } else {
+        await api(`/admin/rooms/${modalId}`, 'PUT', body);
+        showToast(t('toast.roomUpdated'));
       }
-      await api('/admin/rooms', 'POST', body);
-      showToast(t('toast.roomAdded'));
+
       closeModal();
       loadTab();
       return;
@@ -476,6 +540,16 @@ export default function Dashboard() {
       closeModal();
       loadTab();
     }
+    if (modalType === 'add_invoice') {
+      if (!invoiceForm.room_id || !invoiceForm.month) {
+        showToast('Vui lòng chọn phòng và nhập tháng', 'error');
+        throw new Error('validation');
+      }
+      await api('/admin/invoices', 'POST', invoiceForm);
+      showToast('Tạo hóa đơn thành công');
+      closeModal();
+      loadTab();
+    }
   };
 
   const modalTitle = useMemo(() => {
@@ -488,6 +562,7 @@ export default function Dashboard() {
       add_feedback: 'modal.add_feedback',
       add_knowledge: 'modal.add_knowledge',
       add_notification: 'modal.add_notification',
+      add_invoice: 'Tạo Hóa đơn tháng',
     };
     const key = keys[modalType];
     return key ? t(key) : '';
@@ -500,6 +575,36 @@ export default function Dashboard() {
           <Form layout="vertical">
             <Form.Item label={t('modal.replyContent')} required>
               <Input.TextArea rows={4} value={replyContent} onChange={(e) => setReplyContent(e.target.value)} />
+            </Form.Item>
+          </Form>
+        );
+      case 'add_invoice':
+        return (
+          <Form layout="vertical">
+            <Form.Item label="Phòng" required>
+              <Select
+                placeholder="Chọn phòng"
+                value={invoiceForm.room_id || undefined}
+                onChange={(v) => setInvoiceForm((f) => ({ ...f, room_id: v }))}
+                showSearch
+                filterOption={(input, option) => option.children.toLowerCase().includes(input.toLowerCase())}
+              >
+                {(data.adminRoomsForInvoice || []).map((r) => (
+                  <Select.Option key={r._id} value={r._id}>{r.room_code} – {r.building}</Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+            <Form.Item label="Tháng (VD: 05/2026)" required>
+              <Input value={invoiceForm.month} onChange={(e) => setInvoiceForm((f) => ({ ...f, month: e.target.value }))} />
+            </Form.Item>
+            <Form.Item label="Tiền điện (VND)" required>
+              <InputNumber className="ktx-input-block" min={0} step={1000} value={invoiceForm.electricity_cost} formatter={formatVndInput} parser={parseVndInput} onChange={(v) => setInvoiceForm((f) => ({ ...f, electricity_cost: v || 0 }))} />
+            </Form.Item>
+            <Form.Item label="Tiền nước (VND)" required>
+              <InputNumber className="ktx-input-block" min={0} step={1000} value={invoiceForm.water_cost} formatter={formatVndInput} parser={parseVndInput} onChange={(v) => setInvoiceForm((f) => ({ ...f, water_cost: v || 0 }))} />
+            </Form.Item>
+            <Form.Item label="Phụ phí (VND)">
+              <InputNumber className="ktx-input-block" min={0} step={1000} value={invoiceForm.additional_cost} formatter={formatVndInput} parser={parseVndInput} onChange={(v) => setInvoiceForm((f) => ({ ...f, additional_cost: v || 0 }))} />
             </Form.Item>
           </Form>
         );
@@ -563,12 +668,28 @@ export default function Dashboard() {
               />
             </Form.Item>
             <Form.Item label={t('modal.images')}>
-              <Select 
-                mode="tags" 
-                placeholder="Nhập URL ảnh và nhấn Enter" 
-                value={roomForm.images} 
-                onChange={(v) => setRoomForm((f) => ({ ...f, images: v }))} 
-              />
+              <Upload
+                listType="picture-card"
+                fileList={roomFiles}
+                onPreview={(file) => {
+                  AntdModal.info({
+                    title: 'Xem ảnh',
+                    content: <img src={file.url || file.preview} style={{ width: '100%' }} />,
+                    footer: null,
+                    maskClosable: true,
+                  });
+                }}
+                onChange={({ fileList }) => setRoomFiles(fileList)}
+                beforeUpload={() => false}
+                multiple
+              >
+                {roomFiles.length >= 10 ? null : (
+                  <div>
+                    <PlusOutlined />
+                    <div style={{ marginTop: 8 }}>Tải lên</div>
+                  </div>
+                )}
+              </Upload>
             </Form.Item>
           </Form>
         );
@@ -662,11 +783,12 @@ export default function Dashboard() {
   const pageTitle = t(`tab.${currentTab}`);
 
   const showSync = currentTab === 'rooms';
-  const showAdd = ['rooms', 'students', 'student_feedbacks', 'admin_knowledge', 'admin_notifications'].includes(currentTab);
+  const showAdd = ['rooms', 'students', 'invoices', 'student_feedbacks', 'admin_knowledge', 'admin_notifications'].includes(currentTab);
   let addLabel = t('dashboard.addNew');
   if (currentTab === 'student_feedbacks') addLabel = t('dashboard.addFeedback');
   if (currentTab === 'admin_knowledge') addLabel = t('dashboard.addKnowledge');
   if (currentTab === 'admin_notifications') addLabel = t('modal.add_notification');
+  if (currentTab === 'invoices') addLabel = '+ Tạo hóa đơn';
 
   const handleAddClick = () => {
     if (currentTab === 'rooms') openModal('add_room');
@@ -674,6 +796,7 @@ export default function Dashboard() {
     else if (currentTab === 'student_feedbacks') openModal('add_feedback');
     else if (currentTab === 'admin_knowledge') openModal('add_knowledge');
     else if (currentTab === 'admin_notifications') openModal('add_notification');
+    else if (currentTab === 'invoices') openModal('add_invoice');
   };
 
   const handleSync = async () => {
@@ -933,6 +1056,34 @@ export default function Dashboard() {
         return <AdminRequestsTab requests={data.requests || []} onHandle={handleRequest} pagination={paginationProps} />;
       case 'contracts':
         return <AdminContractsTab contracts={data.contracts || []} onEndContract={endContract} pagination={paginationProps} />;
+      case 'invoices':
+        return (
+          <AdminInvoicesTab
+            invoices={data.invoices || []}
+            pagination={paginationProps}
+            onConfirm={(id) => {
+              modal.confirm({
+                title: 'Xác nhận đã nhận được tiền?',
+                onOk: async () => {
+                  await api(`/admin/invoices/${id}/confirm`, 'PUT');
+                  showToast('Đã xác nhận thanh toán');
+                  loadTab();
+                },
+              });
+            }}
+            onReject={(id) => {
+              modal.confirm({
+                title: 'Từ chối biên lai này? Hóa đơn sẽ mở lại để sinh viên khác thanh toán.',
+                okType: 'danger',
+                onOk: async () => {
+                  await api(`/admin/invoices/${id}/reject`, 'PUT');
+                  showToast('Đã từ chối biên lai');
+                  loadTab();
+                },
+              });
+            }}
+          />
+        );
       case 'feedbacks':
         return <AdminFeedbacksTab feedbacks={data.feedbacks || []} onReply={(id) => openModal('reply_feedback', id)} pagination={paginationProps} />;
       case 'admin_knowledge':
@@ -969,6 +1120,32 @@ export default function Dashboard() {
         return <StudentContractsTab contracts={data.contracts || []} onCancelContract={cancelStudentContract} pagination={paginationProps} />;
       case 'student_feedbacks':
         return <StudentFeedbacksTab feedbacks={data.feedbacks || []} pagination={paginationProps} />;
+      case 'student_invoices':
+        return (
+          <StudentInvoicesTab
+            room={data.invoiceRoom}
+            invoices={data.invoices || []}
+            pagination={paginationProps}
+            onPay={async (invId, file) => {
+              const formData = new FormData();
+              formData.append('receipt', file);
+              const token = localStorage.getItem('token');
+              try {
+                const res = await fetch(
+                  `${import.meta.env.VITE_API_URL}/student/invoices/${invId}/pay`,
+                  { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: formData }
+                );
+                const json = await res.json();
+                if (!res.ok) throw new Error(json.message || 'Lỗi');
+                showToast('Gửi biên lai thành công!');
+                loadTab();
+              } catch (err) {
+                showToast(err.message, 'error');
+                loadTab();
+              }
+            }}
+          />
+        );
       case 'student_chatbot':
         return <StudentChatbotTab sendMessage={sendChatMessage} />;
       case 'profile':
