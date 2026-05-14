@@ -1,4 +1,4 @@
-import { Button, Space, Table, Tag } from 'antd';
+import { Button, Space, Table, Tag, Typography } from 'antd';
 import { useLanguage } from '../../context/LanguageContext';
 
 function statusColor(status) {
@@ -7,7 +7,7 @@ function statusColor(status) {
   return 'processing';
 }
 
-export default function AdminStudentsTab({ students, onEdit, onDelete, onResetPassword, pagination }) {
+export default function AdminStudentsTab({ students, onEdit, onDelete, onResetPassword, onNavigate, pagination }) {
   const { t } = useLanguage();
 
   const columns = [
@@ -34,6 +34,16 @@ export default function AdminStudentsTab({ students, onEdit, onDelete, onResetPa
       render: (v) => v || t('common.na'),
     },
     {
+      title: 'Phòng đang ở',
+      key: 'currentRoom',
+      render: (_, record) => {
+        if (record.currentRoom) {
+          return <Tag color="blue">{`${record.currentRoom.building} - ${record.currentRoom.room_code}`}</Tag>;
+        }
+        return <Typography.Text type="secondary" italic>{t('common.na')}</Typography.Text>;
+      }
+    },
+    {
       title: t('students.status'),
       dataIndex: 'status',
       key: 'status',
@@ -46,6 +56,9 @@ export default function AdminStudentsTab({ students, onEdit, onDelete, onResetPa
         <Space>
           <Button size="small" onClick={() => onEdit(record)}>
             {t('students.edit')}
+          </Button>
+          <Button size="small" ghost type="primary" onClick={() => onNavigate('contracts', { search: record.mssv })}>
+            Hợp đồng
           </Button>
           <Button size="small" onClick={() => onResetPassword(record._id)}>
             Reset Pass

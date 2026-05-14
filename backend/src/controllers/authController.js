@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import Setting from '../models/Setting.js';
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -51,6 +52,17 @@ const registerUser = async (req, res) => {
 
     if (!fullname || !email || !password) {
       return res.status(400).json({ message: 'Vui lòng điền đủ họ tên, email và mật khẩu' });
+    }
+
+    // Kiểm tra tên miền email được phép
+    const settings = await Setting.findOne();
+    if (settings && settings.allowedEmailDomains && settings.allowedEmailDomains.length > 0) {
+      const emailDomain = email.split('@')[1];
+      if (!settings.allowedEmailDomains.includes(emailDomain)) {
+        return res.status(400).json({ 
+          message: `Chỉ chấp nhận đăng ký từ các tên miền email: ${settings.allowedEmailDomains.join(', ')}` 
+        });
+      }
     }
 
     const userExists = await User.findOne({ email });

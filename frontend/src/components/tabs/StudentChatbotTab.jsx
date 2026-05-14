@@ -116,7 +116,7 @@ function Bubble({ role, text, actions }) {
   const getActionLabel = (name) => {
     if (name === 'checkRoomAvailability') return 'Tra cứu phòng trống';
     if (name === 'checkContractStatus') return 'Kiểm tra hợp đồng';
-    if (name === 'createMaintenanceRequest') return 'Gửi yêu cầu sửa chữa';
+
     return name;
   };
 

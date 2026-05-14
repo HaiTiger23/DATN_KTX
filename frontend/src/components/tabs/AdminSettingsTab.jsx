@@ -1,4 +1,4 @@
-import { Button, Card, Col, Input, Row, Space, Tag, Typography, Switch } from 'antd';
+import { Button, Card, Col, Input, Row, Space, Tag, Typography, Switch, Select } from 'antd';
 import { SettingOutlined } from '@ant-design/icons';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -52,11 +52,35 @@ export default function AdminSettingsTab({ geminiKey, setGeminiKey, agentSetting
               <Typography.Text>Tra cứu hợp đồng</Typography.Text>
               <Switch checked={agentSettings?.agentAllowCheckContract} onChange={v => setAgentSettings(prev => ({ ...prev, agentAllowCheckContract: v }))} />
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#f5f5f5', borderRadius: 6 }}>
-              <Typography.Text>Tạo đơn báo hỏng cơ sở vật chất</Typography.Text>
-              <Switch checked={agentSettings?.agentAllowCreateMaintenance} onChange={v => setAgentSettings(prev => ({ ...prev, agentAllowCreateMaintenance: v }))} />
-            </div>
+
           </Space>
+
+          <div style={{ marginTop: 20 }}>
+            <Typography.Text strong>AI System Prompt</Typography.Text>
+            <Typography.Paragraph type="secondary" style={{ fontSize: 13, marginBottom: 8 }}>
+              Tùy chỉnh tính cách và quy tắc trả lời của AI.
+            </Typography.Paragraph>
+            <Input.TextArea
+              rows={4}
+              value={agentSettings?.aiSystemPrompt}
+              onChange={(e) => setAgentSettings(prev => ({ ...prev, aiSystemPrompt: e.target.value }))}
+              placeholder="Ví dụ: Bạn là trợ lý KTX thân thiện..."
+            />
+          </div>
+
+          <div style={{ marginTop: 20 }}>
+            <Typography.Text strong>Tên miền Email được phép đăng ký</Typography.Text>
+            <Typography.Paragraph type="secondary" style={{ fontSize: 13, marginBottom: 8 }}>
+              Nhập các tên miền được phép (VD: gmail.com, edu.vn). Để trống nếu cho phép tất cả.
+            </Typography.Paragraph>
+            <Select
+              mode="tags"
+              style={{ width: '100%' }}
+              placeholder="Nhập domain và nhấn Enter"
+              value={agentSettings?.allowedEmailDomains}
+              onChange={(v) => setAgentSettings(prev => ({ ...prev, allowedEmailDomains: v }))}
+            />
+          </div>
         </div>
 
         <Space orientation="vertical" size="small">

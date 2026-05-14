@@ -63,33 +63,19 @@ export const chatWithBot = async (req, res) => {
             });
         }
         
-        if (setting.agentAllowCreateMaintenance) {
-            functionDeclarations.push({
-                name: "createMaintenanceRequest",
-                description: "Tạo đơn yêu cầu báo hỏng cơ sở vật chất hoặc sửa chữa phòng. Bạn phải hỏi rõ sinh viên mô tả hư hỏng và mã phòng trước khi gọi hàm này.",
-                parameters: {
-                    type: "object",
-                    properties: {
-                        room_id: { type: "string", description: "ID hoặc mã phòng cần sửa chữa" },
-                        description: { type: "string", description: "Mô tả chi tiết vật dụng bị hỏng cần sửa" }
-                    },
-                    required: ["room_id", "description"]
-                }
-            });
-        }
 
         const tools = functionDeclarations.length > 0 ? [{ functionDeclarations }] : undefined;
 
-        const systemInstruction = `Bạn là trợ lý ảo AI Agent hỗ trợ sinh viên tại Ký túc xá.
+        const systemInstruction = `${setting.aiSystemPrompt || 'Bạn là trợ lý ảo AI Agent hỗ trợ sinh viên tại Ký túc xá.'}
 QUY TẮC QUAN TRỌNG:
 1. Bạn CÓ THỂ sử dụng các công cụ (tools) được cung cấp để tra cứu hoặc thay đổi dữ liệu thực tế.
 2. Nếu sinh viên yêu cầu kiểm tra phòng, kiểm tra hợp đồng hoặc tạo đơn báo hỏng, bạn BẮT BUỘC phải gọi tool tương ứng. KHÔNG ĐƯỢC tự bịa ra thông tin hoặc nói rằng đã làm xong mà không gọi tool.
 3. Chỉ khi tool trả về kết quả, bạn mới dùng kết quả đó để trả lời sinh viên.
 
-Bối cảnh kiến thức:
+Bối cảnh kiến thức (Knowledge Base):
 ${context}
 
-Dựa vào thông tin trên và kết quả thực tế từ các công cụ, hãy trả lời sinh viên một cách ngắn gọn, chuyên nghiệp và thân thiện.`;
+Dựa vào thông tin trên và kết quả thực tế từ các công cụ, hãy trả lời sinh viên một cách chuyên nghiệp và thân thiện.`;
 
         const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${setting.geminiApiKey}`;
@@ -151,15 +137,7 @@ Dựa vào thông tin trên và kết quả thực tế từ các công cụ, h�
                         price: contract.price 
                     } : { message: 'Sinh viên chưa có hợp đồng nào đang có hiệu lực.' };
                 }
-                else if (name === 'createMaintenanceRequest' && setting.agentAllowCreateMaintenance) {
-                    const newFeedback = await Feedback.create({
-                        student_id: studentId,
-                        title: `Yêu cầu sửa chữa phòng ${args.room_id}`,
-                        description: args.description,
-                        status: 'Pending'
-                    });
-                    functionResponseData = { success: true, request_id: newFeedback._id, message: 'Đã tạo yêu cầu sửa chữa (phản hồi) thành công.' };
-                } else {
+                else {
                     functionResponseData = { error: 'Function not allowed or not found' };
                 }
             } catch (err) {

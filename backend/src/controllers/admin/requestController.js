@@ -11,10 +11,23 @@ const getRequests = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const requests = await Request.find({ status: 'Pending' })
+    const { status, type, sort } = req.query;
+    const query = {};
+    if (status) query.status = status;
+    else query.status = 'Pending'; // Default to Pending if no status filter
+
+    if (type) query.type = type;
+
+    let sortOption = { createdAt: -1 };
+    if (sort === 'oldest') sortOption = { createdAt: 1 };
+
+    const requests = await Request.find(query)
       .populate('student_id', 'fullname email mssv')
-      .populate('room_id', 'room_code building current_people capacity').skip(skip).limit(limit);
-    const total = await Request.countDocuments({ status: 'Pending' });
+      .populate('room_id', 'room_code building current_people capacity')
+      .sort(sortOption)
+      .skip(skip)
+      .limit(limit);
+    const total = await Request.countDocuments(query);
 
     res.json({
       data: requests,

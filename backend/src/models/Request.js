@@ -13,7 +13,7 @@ const requestSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['Registration', 'Cancellation', 'Maintenance'],
+    enum: ['Registration', 'Cancellation'],
     default: 'Registration',
   },
   description: {

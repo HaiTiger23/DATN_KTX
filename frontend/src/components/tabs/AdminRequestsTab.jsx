@@ -15,7 +15,7 @@ export default function AdminRequestsTab({ requests, onHandle, pagination }) {
       {requests.map((r) => (
         <Col xs={24} md={12} lg={8} key={r._id}>
           <Card
-            title={r.type === 'Cancellation' ? t('requests.cancelContract') : r.type === 'Maintenance' ? 'Yêu cầu sửa chữa' : t('requests.register')}
+            title={r.type === 'Cancellation' ? t('requests.cancelContract') : t('requests.register')}
             extra={<Tag color="processing">{t('requests.pending')}</Tag>}
             actions={[
               <Button key="reject" danger type="link" icon={<CloseOutlined />} onClick={() => onHandle(r._id, 'reject')}>
@@ -38,11 +38,7 @@ export default function AdminRequestsTab({ requests, onHandle, pagination }) {
                 {r.room_id?.room_code || t('common.na')} — {r.room_id?.building || t('common.na')}
               </Typography.Text>
             </Typography.Paragraph>
-            {r.type === 'Maintenance' && (
-              <Typography.Paragraph className="ktx-tab-p-sm">
-                Mô tả: <Typography.Text strong>{r.description || t('common.na')}</Typography.Text>
-              </Typography.Paragraph>
-            )}
+
             {r.type === 'Registration' && (
               <Typography.Paragraph className="ktx-tab-p-sm">
                 {t('requests.term')} <Typography.Text strong>{t('requests.months', { n: r.months || 6 })}</Typography.Text>

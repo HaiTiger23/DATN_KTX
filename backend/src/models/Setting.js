@@ -9,13 +9,18 @@ const settingSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
-  agentAllowCreateMaintenance: {
-    type: Boolean,
-    default: false
-  },
+
   agentAllowCheckContract: {
     type: Boolean,
     default: true
+  },
+  aiSystemPrompt: {
+    type: String,
+    default: 'Bạn là một trợ lý ảo của Ký túc xá. Hãy hỗ trợ sinh viên dựa trên thông tin được cung cấp.'
+  },
+  allowedEmailDomains: {
+    type: [String],
+    default: [] // Empty means all domains allowed
   }
 }, {
   timestamps: true,

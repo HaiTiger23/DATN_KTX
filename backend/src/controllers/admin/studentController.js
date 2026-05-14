@@ -1,6 +1,7 @@
 import User from '../../models/User.js';
 import Contract from '../../models/Contract.js';
 import Request from '../../models/Request.js';
+import Room from '../../models/Room.js';
 
 // @desc    Get all students
 // @route   GET /api/admin/students
@@ -11,12 +12,47 @@ const getStudents = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
+    const { search, status, sort, room_id } = req.query;
+
     const filter = { role: 'Student' };
-    const students = await User.find(filter).select('-password').skip(skip).limit(limit);
+    
+    // If room_id is provided, find all students in that room first
+    if (room_id) {
+      const activeContracts = await Contract.find({ room_id, status: 'Active' }).select('student_id');
+      const studentIds = activeContracts.map(c => c.student_id);
+      filter._id = { $in: studentIds };
+    }
+
+    if (search) {
+      filter.$or = [
+        { fullname: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { mssv: { $regex: search, $options: 'i' } }
+      ];
+    }
+    if (status) filter.status = status;
+
+    let sortOption = { createdAt: -1 };
+    if (sort) {
+      if (sort === 'name_asc') sortOption = { fullname: 1 };
+      else if (sort === 'name_desc') sortOption = { fullname: -1 };
+    }
+
+    const students = await User.find(filter).select('-password').sort(sortOption).skip(skip).limit(limit).lean();
     const total = await User.countDocuments(filter);
 
+    // Fetch current room for each student
+    const studentsWithRoom = await Promise.all(students.map(async (student) => {
+        const activeContract = await Contract.findOne({ student_id: student._id, status: 'Active' })
+            .populate('room_id', 'room_code building floor');
+        return {
+            ...student,
+            currentRoom: activeContract ? activeContract.room_id : null
+        };
+    }));
+
     res.json({
-      data: students,
+      data: studentsWithRoom,
       pagination: { current: page, pageSize: limit, total }
     });
   } catch (error) {

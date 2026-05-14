@@ -20,8 +20,10 @@ export const updateSettings = async (req, res) => {
         }
         if (req.body.geminiApiKey !== undefined) setting.geminiApiKey = req.body.geminiApiKey;
         if (req.body.agentAllowCheckRoom !== undefined) setting.agentAllowCheckRoom = req.body.agentAllowCheckRoom;
-        if (req.body.agentAllowCreateMaintenance !== undefined) setting.agentAllowCreateMaintenance = req.body.agentAllowCreateMaintenance;
+
         if (req.body.agentAllowCheckContract !== undefined) setting.agentAllowCheckContract = req.body.agentAllowCheckContract;
+        if (req.body.aiSystemPrompt !== undefined) setting.aiSystemPrompt = req.body.aiSystemPrompt;
+        if (req.body.allowedEmailDomains !== undefined) setting.allowedEmailDomains = req.body.allowedEmailDomains;
         
         await setting.save();
         res.json(setting);

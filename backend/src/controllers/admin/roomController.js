@@ -1,5 +1,6 @@
 import Room from '../../models/Room.js';
 import Contract from '../../models/Contract.js';
+import User from '../../models/User.js';
 
 // @desc    Get all rooms
 // @route   GET /api/admin/rooms
@@ -10,11 +11,41 @@ const getRooms = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const rooms = await Room.find({}).skip(skip).limit(limit);
-    const total = await Room.countDocuments({});
+    const { search, status, floor, roomType, sort } = req.query;
+
+    const query = {};
+    if (search) {
+      query.$or = [
+        { room_code: { $regex: search, $options: 'i' } },
+        { building: { $regex: search, $options: 'i' } }
+      ];
+    }
+    if (status) query.status = status;
+    if (floor) query.floor = parseInt(floor);
+    if (roomType) query.roomType = roomType;
+
+    let sortOption = { createdAt: -1 };
+    if (sort) {
+      if (sort === 'price_asc') sortOption = { price: 1 };
+      else if (sort === 'price_desc') sortOption = { price: -1 };
+      else if (sort === 'room_code') sortOption = { room_code: 1 };
+    }
+
+    const rooms = await Room.find(query).sort(sortOption).skip(skip).limit(limit).lean();
+    const total = await Room.countDocuments(query);
+
+    // Fetch residents for each room
+    const roomsWithResidents = await Promise.all(rooms.map(async (room) => {
+        const activeContracts = await Contract.find({ room_id: room._id, status: 'Active' })
+            .populate('student_id', 'fullname email phone mssv');
+        return {
+            ...room,
+            residents: activeContracts.map(c => c.student_id).filter(s => s !== null)
+        };
+    }));
 
     res.json({
-      data: rooms,
+      data: roomsWithResidents,
       pagination: { current: page, pageSize: limit, total }
     });
   } catch (error) {

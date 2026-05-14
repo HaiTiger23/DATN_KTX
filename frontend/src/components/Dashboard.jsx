@@ -13,11 +13,14 @@ import {
   Spin,
   Typography,
   Badge,
-  Modal as AntdModal,
   Select,
+  Modal as AntdModal,
   Upload,
+  Row,
+  Col,
+  Tag,
 } from 'antd';
-import { LogoutOutlined, ReloadOutlined, PlusOutlined, BellOutlined } from '@ant-design/icons';
+import { LogoutOutlined, ReloadOutlined, PlusOutlined, BellOutlined, SearchOutlined } from '@ant-design/icons';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../context/ToastContext';
@@ -71,7 +74,7 @@ const STUDENT_TARGETS = [
 
 export default function Dashboard() {
   const { modal } = App.useApp();
-  const { user, logout, updateUserLocal } = useAuth();
+  const { user, logout, token, updateUserLocal } = useAuth();
   const { t } = useLanguage();
   const { showToast } = useToast();
   const api = useApi();
@@ -106,8 +109,10 @@ export default function Dashboard() {
   const [geminiKey, setGeminiKey] = useState('');
   const [agentSettings, setAgentSettings] = useState({
     agentAllowCheckRoom: true,
-    agentAllowCreateMaintenance: false,
+
     agentAllowCheckContract: true,
+    aiSystemPrompt: '',
+    allowedEmailDomains: [],
   });
   const [profileForm, setProfileForm] = useState({
     fullname: '',
@@ -126,12 +131,71 @@ export default function Dashboard() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [total, setTotal] = useState(0);
+  const [allRooms, setAllRooms] = useState([]);
 
   const [roomFilters, setRoomFilters] = useState({ search: '', floor: '', roomType: '', sort: 'default' });
+  
+  // Read initial state from URL
+  const [filters, setFilters] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return {
+      search: params.get('search') || '',
+      status: params.get('status') || '',
+      type:   params.get('type') || '',
+      month:  params.get('month') || '',
+      sort:   params.get('sort') || '',
+      room_id: params.get('room_id') || ''
+    };
+  });
+
+  // Sync state to URL
+  useEffect(() => {
+    const params = new URLSearchParams();
+    params.set('tab', currentTab);
+    params.set('page', page);
+    params.set('limit', limit);
+    if (filters.search) params.set('search', filters.search);
+    if (filters.status) params.set('status', filters.status);
+    if (filters.type)   params.set('type',   filters.type);
+    if (filters.month)  params.set('month',  filters.month);
+    if (filters.sort)   params.set('sort',   filters.sort);
+    if (filters.room_id) params.set('room_id', filters.room_id);
+
+    const newUrl = `${window.location.pathname}?${params.toString()}`;
+    window.history.replaceState({}, '', newUrl);
+  }, [currentTab, page, limit, filters]);
 
   useEffect(() => {
-    setPage(1);
+    // Only reset filters if they weren't just set by navigateToTab
+    // To handle simple tab clicks from the sidebar
+    if (!window.location.search.includes('room_id=')) {
+        setPage(1);
+        setFilters({ search: '', status: '', type: '', month: '', sort: '', room_id: '' });
+    }
   }, [currentTab]);
+
+  useEffect(() => {
+    // Fetch all rooms for filter dropdown
+    const fetchRoomsForFilter = async () => {
+      try {
+        const d = await api('/admin/rooms?limit=1000');
+        if (d?.data) {
+          setAllRooms(d.data.map(r => ({ label: `${r.building} - ${r.room_code}`, value: r._id })));
+        }
+      } catch (err) {
+        console.error('Fetch rooms error:', err);
+      }
+    };
+    if (user?.role === 'Admin' && token) fetchRoomsForFilter();
+  }, [token, user?.role, api]);
+
+  const navigateToTab = (tab, initialFilters = {}) => {
+    setCurrentTab(tab);
+    setPage(1);
+    setFilters({ search: '', status: '', type: '', month: '', sort: '', room_id: '', ...initialFilters });
+  };
+
+
 
   const navItems = useMemo(() => {
     const targets = user?.role === 'Admin' ? ADMIN_TARGETS : STUDENT_TARGETS;
@@ -152,12 +216,19 @@ export default function Dashboard() {
     setLoading(true);
     setData({});
     try {
-      const q = `?page=${page}&limit=${limit}`;
+      let q = `?page=${page}&limit=${limit}`;
+      if (filters.search) q += `&search=${encodeURIComponent(filters.search)}`;
+      if (filters.status) q += `&status=${encodeURIComponent(filters.status)}`;
+      if (filters.type) q += `&type=${encodeURIComponent(filters.type)}`;
+      if (filters.month) q += `&month=${encodeURIComponent(filters.month)}`;
+      if (filters.sort) q += `&sort=${encodeURIComponent(filters.sort)}`;
+      if (filters.room_id) q += `&room_id=${encodeURIComponent(filters.room_id)}`;
+
       switch (tab) {
         case 'rooms': {
           const res = await api(`/admin/rooms${q}`);
           setData({ rooms: res.data });
-          setTotal(res.pagination.total);
+          setTotal(res.pagination?.total || 0);
           break;
         }
         case 'students': {
@@ -201,8 +272,10 @@ export default function Dashboard() {
           setGeminiKey(settings.geminiApiKey || '');
           setAgentSettings({
             agentAllowCheckRoom: settings.agentAllowCheckRoom ?? true,
-            agentAllowCreateMaintenance: settings.agentAllowCreateMaintenance ?? false,
+
             agentAllowCheckContract: settings.agentAllowCheckContract ?? true,
+            aiSystemPrompt: settings.aiSystemPrompt || '',
+            allowedEmailDomains: settings.allowedEmailDomains || [],
           });
           setData({ settings });
           break;
@@ -225,19 +298,19 @@ export default function Dashboard() {
             studentContracts: studentContractsRes.data, 
             studentRequests: studentRequestsRes.data 
           });
-          setTotal(roomsRes.pagination.total);
+          setTotal(roomsRes.pagination?.total || 0);
           break;
         }
         case 'student_requests': {
           const res = await api(`/student/requests${q}`);
           setData({ requests: res.data });
-          setTotal(res.pagination.total);
+          setTotal(res.pagination?.total || 0);
           break;
         }
         case 'student_contracts': {
           const res = await api(`/student/contracts${q}`);
           setData({ contracts: res.data });
-          setTotal(res.pagination.total);
+          setTotal(res.pagination?.total || 0);
           break;
         }
         case 'student_feedbacks': {
@@ -261,7 +334,7 @@ export default function Dashboard() {
             api('/admin/rooms?limit=1000'), // fetch all rooms for modal dropdown
           ]);
           setData({ invoices: res.data, adminRoomsForInvoice: roomsRes.data });
-          setTotal(res.pagination.total);
+          setTotal(res.pagination?.total || 0);
           break;
         }
         case 'profile': {
@@ -284,7 +357,7 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
-  }, [currentTab, api, page, limit, roomFilters]);
+  }, [currentTab, api, page, limit, roomFilters, filters]);
 
   useEffect(() => {
     loadTab();
@@ -1004,14 +1077,162 @@ export default function Dashboard() {
 
   const sendChatMessage = (msg, history) => api('/student/chat', 'POST', { message: msg, history });
 
-  const renderContent = () => {
-    if (loading) {
-      return (
-        <div className="ktx-dashboard-spin-wrap">
-          <Spin size="large" />
-        </div>
-      );
+  const renderFilterBar = () => {
+    const tabsWithFilters = [
+      'rooms', 'students', 'requests', 'contracts', 'invoices', 'feedbacks', 
+      'admin_knowledge', 'admin_notifications', 'student_invoices',
+      'student_contracts', 'student_requests', 'student_notifications', 'student_feedbacks'
+    ];
+
+    if (!tabsWithFilters.includes(currentTab)) return null;
+
+    const showSearch = true;
+    const showStatus = ['rooms', 'students', 'requests', 'contracts', 'invoices', 'feedbacks', 'student_requests', 'student_contracts', 'student_feedbacks', 'student_invoices'].includes(currentTab);
+    const showType = ['requests', 'student_requests'].includes(currentTab);
+    const showMonth = ['invoices', 'student_invoices'].includes(currentTab);
+    const showSort = ['rooms', 'students', 'requests', 'contracts', 'invoices', 'feedbacks', 'student_rooms'].includes(currentTab);
+
+    // Dynamic Options
+    let statusOptions = [];
+    if (currentTab === 'rooms') statusOptions = [{ label: 'Trống', value: 'Available' }, { label: 'Bảo trì', value: 'Maintenance' }];
+    if (currentTab === 'students') statusOptions = [{ label: 'Hoạt động', value: 'Active' }, { label: 'Khóa', value: 'Inactive' }];
+    if (['requests', 'student_requests'].includes(currentTab)) statusOptions = [{ label: 'Chờ duyệt', value: 'Pending' }, { label: 'Đã duyệt', value: 'Approved' }, { label: 'Từ chối', value: 'Rejected' }];
+    if (['invoices', 'student_invoices'].includes(currentTab)) statusOptions = [{ label: 'Chưa thanh toán', value: 'Pending' }, { label: 'Chờ duyệt', value: 'Waiting_Approval' }, { label: 'Đã thanh toán', value: 'Paid' }];
+    if (['contracts', 'student_contracts'].includes(currentTab)) statusOptions = [{ label: 'Hiệu lực', value: 'Active' }, { label: 'Kết thúc', value: 'Ended' }];
+    if (['feedbacks', 'student_feedbacks'].includes(currentTab)) statusOptions = [{ label: 'Chưa trả lời', value: 'Pending' }, { label: 'Đã trả lời', value: 'Answered' }];
+
+    let sortOptions = [
+      { label: 'Mới nhất', value: '' },
+      { label: 'Cũ nhất', value: 'oldest' }
+    ];
+    if (currentTab === 'rooms' || currentTab === 'student_rooms') {
+      sortOptions = [
+        { label: 'Mới nhất', value: '' },
+        { label: 'Giá tăng dần', value: 'price_asc' },
+        { label: 'Giá giảm dần', value: 'price_desc' },
+        { label: 'Mã phòng', value: 'room_code' }
+      ];
     }
+    if (currentTab === 'students') {
+      sortOptions = [
+        { label: 'Mới nhất', value: '' },
+        { label: 'Tên A-Z', value: 'name_asc' },
+        { label: 'Tên Z-A', value: 'name_desc' }
+      ];
+    }
+    if (currentTab === 'invoices' || currentTab === 'student_invoices') {
+      sortOptions = [
+        { label: 'Mới nhất', value: '' },
+        { label: 'Tháng giảm dần', value: 'month_desc' },
+        { label: 'Tháng tăng dần', value: 'month_asc' },
+        { label: 'Số tiền tăng dần', value: 'amount_asc' },
+        { label: 'Số tiền giảm dần', value: 'amount_desc' }
+      ];
+    }
+
+    return (
+      <div className="ktx-filter-bar" style={{ 
+        marginBottom: 24, 
+        background: 'rgba(255, 255, 255, 0.8)', 
+        backdropFilter: 'blur(10px)',
+        padding: '20px', 
+        borderRadius: '12px', 
+        border: '1px solid rgba(0, 0, 0, 0.06)',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.03)' 
+      }}>
+        <Row gutter={[16, 16]} align="middle">
+          {showSearch && (
+            <Col xs={24} md={6}>
+              <Input 
+                prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
+                placeholder={currentTab.includes('rooms') || currentTab.includes('invoice') || currentTab.includes('contract') ? "Tìm theo mã phòng..." : "Tìm kiếm..."}
+                allowClear
+                value={filters.search}
+                onChange={e => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                style={{ borderRadius: '8px' }}
+              />
+            </Col>
+          )}
+          {(currentTab === 'students' || currentTab === 'invoices' || currentTab === 'contracts') && (
+            <Col xs={12} md={4}>
+              <Select 
+                showSearch
+                style={{ width: '100%', borderRadius: '8px' }}
+                placeholder="Chọn phòng"
+                allowClear
+                value={filters.room_id || undefined}
+                onChange={v => setFilters(prev => ({ ...prev, room_id: v || '' }))}
+                options={allRooms}
+                optionFilterProp="label"
+              />
+            </Col>
+          )}
+          {showStatus && (
+            <Col xs={12} md={4}>
+              <Select 
+                style={{ width: '100%', borderRadius: '8px' }}
+                placeholder="Trạng thái"
+                allowClear
+                value={filters.status || undefined}
+                onChange={v => setFilters(prev => ({ ...prev, status: v || '' }))}
+                options={statusOptions}
+              />
+            </Col>
+          )}
+          {showType && (
+            <Col xs={12} md={4}>
+              <Select 
+                style={{ width: '100%', borderRadius: '8px' }}
+                placeholder="Loại đơn"
+                allowClear
+                value={filters.type || undefined}
+                onChange={v => setFilters(prev => ({ ...prev, type: v || '' }))}
+                options={[
+                  { label: 'Đăng ký', value: 'Registration' },
+                  { label: 'Hủy phòng', value: 'Cancellation' }
+                ]}
+              />
+            </Col>
+          )}
+          {showMonth && (
+            <Col xs={12} md={4}>
+              <Input 
+                placeholder="Tháng (YYYY-MM)" 
+                value={filters.month}
+                onChange={e => setFilters(prev => ({ ...prev, month: e.target.value }))}
+                style={{ borderRadius: '8px' }}
+              />
+            </Col>
+          )}
+          {showSort && (
+            <Col xs={12} md={4}>
+              <Select 
+                style={{ width: '100%', borderRadius: '8px' }}
+                placeholder="Sắp xếp"
+                value={filters.sort || ''}
+                onChange={v => setFilters(prev => ({ ...prev, sort: v }))}
+                options={sortOptions}
+              />
+            </Col>
+          )}
+          {filters.room_id && (currentTab === 'students' || currentTab === 'invoices' || currentTab === 'contracts') && (
+            <Col xs={24} md={24}>
+              <Tag 
+                color="blue" 
+                closable 
+                onClose={() => setFilters(prev => ({ ...prev, room_id: '' }))}
+                style={{ padding: '4px 12px', fontSize: 13, borderRadius: '6px' }}
+              >
+                Đang lọc theo phòng: {allRooms.find(r => r.value === filters.room_id)?.label || filters.room_id}
+              </Tag>
+            </Col>
+          )}
+        </Row>
+      </div>
+    );
+  };
+
+  const renderContent = () => {
     if (data.error) {
       return (
         <Empty
@@ -1021,6 +1242,29 @@ export default function Dashboard() {
       );
     }
 
+    return (
+      <div className="ktx-dashboard-content">
+        {renderFilterBar()}
+        <div style={{ position: 'relative', minHeight: '200px' }}>
+          {loading && (
+            <div className="ktx-dashboard-spin-overlay" style={{
+              position: 'absolute',
+              top: 0, left: 0, right: 0, bottom: 0,
+              display: 'flex', justifyContent: 'center', alignItems: 'center',
+              background: 'rgba(255, 255, 255, 0.6)',
+              zIndex: 10,
+              borderRadius: '12px'
+            }}>
+              <Spin size="large" />
+            </div>
+          )}
+          {renderContentBody()}
+        </div>
+      </div>
+    );
+  };
+
+  const renderContentBody = () => {
     const paginationProps = {
       current: page,
       pageSize: limit,
@@ -1039,6 +1283,7 @@ export default function Dashboard() {
             rooms={data.rooms || []}
             onToggleStatus={toggleRoomStatus}
             onEdit={(r) => openModal('edit_room', r._id)}
+            onNavigate={navigateToTab}
             pagination={paginationProps}
           />
         );
@@ -1049,6 +1294,7 @@ export default function Dashboard() {
             onEdit={(s) => openModal('edit_student', s._id)}
             onDelete={deleteStudent}
             onResetPassword={resetStudentPassword}
+            onNavigate={navigateToTab}
             pagination={paginationProps}
           />
         );

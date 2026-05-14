@@ -19,8 +19,13 @@ export const getAvailableRooms = async (req, res) => {
         { building: { $regex: req.query.search, $options: 'i' } }
       ];
     }
-    if (req.query.floor) query.floor = parseInt(req.query.floor);
-    if (req.query.roomType) query.roomType = req.query.roomType;
+    if (req.query.floor && req.query.floor !== '') {
+      const f = parseInt(req.query.floor);
+      if (!isNaN(f)) query.floor = f;
+    }
+    if (req.query.roomType && req.query.roomType !== '') {
+      query.roomType = req.query.roomType;
+    }
 
     const sortConfig = {};
     if (req.query.sort === 'price_asc') sortConfig.price = 1;
@@ -78,8 +83,16 @@ export const getMyRequests = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const requests = await Request.find({ student_id: req.user._id }).populate('room_id').skip(skip).limit(limit);
-    const total = await Request.countDocuments({ student_id: req.user._id });
+    const { status, type, sort } = req.query;
+    const query = { student_id: req.user._id };
+    if (status) query.status = status;
+    if (type) query.type = type;
+
+    let sortOption = { createdAt: -1 };
+    if (sort === 'oldest') sortOption = { createdAt: 1 };
+
+    const requests = await Request.find(query).populate('room_id').sort(sortOption).skip(skip).limit(limit);
+    const total = await Request.countDocuments(query);
 
     res.json({
       data: requests,
@@ -98,8 +111,15 @@ export const getMyContracts = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const contracts = await Contract.find({ student_id: req.user._id }).populate('room_id').skip(skip).limit(limit);
-    const total = await Contract.countDocuments({ student_id: req.user._id });
+    const { status, sort } = req.query;
+    const query = { student_id: req.user._id };
+    if (status) query.status = status;
+
+    let sortOption = { createdAt: -1 };
+    if (sort === 'oldest') sortOption = { createdAt: 1 };
+
+    const contracts = await Contract.find(query).populate('room_id').sort(sortOption).skip(skip).limit(limit);
+    const total = await Contract.countDocuments(query);
 
     res.json({
       data: contracts,
@@ -153,8 +173,16 @@ export const getMyFeedbacks = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const feedbacks = await Feedback.find({ student_id: req.user._id }).sort('-createdAt').skip(skip).limit(limit);
-    const total = await Feedback.countDocuments({ student_id: req.user._id });
+    const { status, search, sort } = req.query;
+    const query = { student_id: req.user._id };
+    if (status) query.status = status;
+    if (search) query.title = { $regex: search, $options: 'i' };
+
+    let sortOption = { createdAt: -1 };
+    if (sort === 'oldest') sortOption = { createdAt: 1 };
+
+    const feedbacks = await Feedback.find(query).sort(sortOption).skip(skip).limit(limit);
+    const total = await Feedback.countDocuments(query);
 
     res.json({
       data: feedbacks,
@@ -191,8 +219,12 @@ export const getMyNotifications = async (req, res) => {
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
 
-        const notifications = await Notification.find({}).sort({ createdAt: -1 }).skip(skip).limit(limit);
-        const total = await Notification.countDocuments({});
+        const { search } = req.query;
+        const query = {};
+        if (search) query.title = { $regex: search, $options: 'i' };
+
+        const notifications = await Notification.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit);
+        const total = await Notification.countDocuments(query);
         
         // Map to include an isRead flag
         const mappedNotifications = notifications.map(notif => {

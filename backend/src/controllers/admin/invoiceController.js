@@ -1,5 +1,6 @@
 import Invoice from '../../models/Invoice.js';
 import Room from '../../models/Room.js';
+import User from '../../models/User.js';
 
 // GET /api/admin/invoices?page=1&limit=10
 export const getInvoices = async (req, res) => {
@@ -8,14 +9,45 @@ export const getInvoices = async (req, res) => {
     const limit = Math.max(1, parseInt(req.query.limit) || 10);
     const skip  = (page - 1) * limit;
 
+    const { status, month, search, sort } = req.query;
+
+    const query = {};
+    if (status) query.status = status;
+    if (month) query.month = month;
+    if (search) {
+      const [rooms, students] = await Promise.all([
+        Room.find({ room_code: { $regex: search, $options: 'i' } }).select('_id'),
+        User.find({ 
+          $or: [
+            { fullname: { $regex: search, $options: 'i' } },
+            { mssv: { $regex: search, $options: 'i' } },
+            { email: { $regex: search, $options: 'i' } }
+          ]
+        }).select('_id')
+      ]);
+
+      query.$or = [
+        { room_id: { $in: rooms.map(r => r._id) } },
+        { paid_by: { $in: students.map(s => s._id) } }
+      ];
+    }
+
+    let sortOption = { createdAt: -1 };
+    if (sort) {
+      if (sort === 'month_desc') sortOption = { month: -1 };
+      else if (sort === 'month_asc') sortOption = { month: 1 };
+      else if (sort === 'amount_desc') sortOption = { total_amount: -1 };
+      else if (sort === 'amount_asc') sortOption = { total_amount: 1 };
+    }
+
     const [data, total] = await Promise.all([
-      Invoice.find({})
+      Invoice.find(query)
         .populate('room_id', 'room_code building')
         .populate('paid_by', 'fullname mssv')
-        .sort({ createdAt: -1 })
+        .sort(sortOption)
         .skip(skip)
         .limit(limit),
-      Invoice.countDocuments({}),
+      Invoice.countDocuments(query),
     ]);
 
     res.json({ data, pagination: { total, page, limit } });

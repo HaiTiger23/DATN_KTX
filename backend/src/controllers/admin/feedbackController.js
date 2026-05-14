@@ -9,9 +9,20 @@ const getFeedbacks = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const feedbacks = await Feedback.find({})
-      .populate('student_id', 'fullname mssv email').skip(skip).limit(limit);
-    const total = await Feedback.countDocuments({});
+    const { search, status, sort } = req.query;
+    const query = {};
+    if (status) query.status = status;
+    if (search) query.title = { $regex: search, $options: 'i' };
+
+    let sortOption = { createdAt: -1 };
+    if (sort === 'oldest') sortOption = { createdAt: 1 };
+
+    const feedbacks = await Feedback.find(query)
+      .populate('student_id', 'fullname mssv email')
+      .sort(sortOption)
+      .skip(skip)
+      .limit(limit);
+    const total = await Feedback.countDocuments(query);
 
     res.json({
       data: feedbacks,

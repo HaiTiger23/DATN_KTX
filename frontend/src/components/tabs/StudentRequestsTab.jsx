@@ -30,7 +30,7 @@ export default function StudentRequestsTab({ requests, pagination }) {
     {
       title: t('studentRequests.type'),
       key: 'type',
-      render: (_, r) => (r.type === 'Cancellation' ? t('studentRequests.typeCancel') : r.type === 'Maintenance' ? 'Sửa chữa' : t('studentRequests.typeRegister')),
+      render: (_, r) => (r.type === 'Cancellation' ? t('studentRequests.typeCancel') : t('studentRequests.typeRegister')),
     },
     {
       title: t('studentRequests.sentAt'),

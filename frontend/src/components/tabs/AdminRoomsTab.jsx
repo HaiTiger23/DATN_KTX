@@ -1,5 +1,5 @@
-import { Button, Card, Col, Row, Tag, Typography, Pagination } from 'antd';
-import { EditOutlined, SwapOutlined } from '@ant-design/icons';
+import { Button, Card, Col, Row, Tag, Typography, Pagination, Avatar, Tooltip } from 'antd';
+import { EditOutlined, SwapOutlined, UserOutlined } from '@ant-design/icons';
 import { formatMoney } from '../../api';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -9,7 +9,7 @@ function statusTagColor(status) {
   return 'default';
 }
 
-export default function AdminRoomsTab({ rooms, onToggleStatus, onEdit, pagination }) {
+export default function AdminRoomsTab({ rooms, onToggleStatus, onEdit, onNavigate, pagination }) {
   const { t } = useLanguage();
 
   return (
@@ -50,6 +50,35 @@ export default function AdminRoomsTab({ rooms, onToggleStatus, onEdit, paginatio
                   {available}/{r.capacity}
                 </Typography.Text>
               </Typography.Paragraph>
+
+              {r.residents && r.residents.length > 0 && (
+                <div style={{ marginTop: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                      Sinh viên đang ở:
+                    </Typography.Text>
+                    <Button 
+                      type="link" 
+                      size="small" 
+                      style={{ fontSize: 11, padding: 0 }}
+                      onClick={() => onNavigate('students', { room_id: r._id })}
+                    >
+                      Xem danh sách
+                    </Button>
+                  </div>
+                  <Avatar.Group maxCount={4} size="small">
+                    {r.residents.map(res => (
+                      <Tooltip key={res._id} title={`${res.fullname} (${res.mssv || 'N/A'})`}>
+                        <Avatar 
+                          style={{ backgroundColor: '#1890ff', cursor: 'pointer' }} 
+                          icon={<UserOutlined />} 
+                          onClick={() => onNavigate('students', { room_id: r._id, search: res.mssv })}
+                        />
+                      </Tooltip>
+                    ))}
+                  </Avatar.Group>
+                </div>
+              )}
               <Typography.Paragraph className="ktx-tab-p-last">
                 {t('room.price')}{' '}
                 <Typography.Text strong>

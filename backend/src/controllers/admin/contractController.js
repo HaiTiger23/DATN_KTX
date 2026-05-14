@@ -1,5 +1,6 @@
 import Contract from '../../models/Contract.js';
 import Room from '../../models/Room.js';
+import User from '../../models/User.js';
 
 // @desc    Get all contracts
 // @route   GET /api/admin/contracts
@@ -10,10 +11,38 @@ const getContracts = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const contracts = await Contract.find({})
+    const { status, search, sort } = req.query;
+    const query = {};
+    if (status) query.status = status;
+    if (search) {
+      const [rooms, students] = await Promise.all([
+        Room.find({ room_code: { $regex: search, $options: 'i' } }).select('_id'),
+        User.find({ 
+          $or: [
+            { fullname: { $regex: search, $options: 'i' } },
+            { mssv: { $regex: search, $options: 'i' } },
+            { email: { $regex: search, $options: 'i' } }
+          ]
+        }).select('_id')
+      ]);
+
+      query.$or = [
+        { room_id: { $in: rooms.map(r => r._id) } },
+        { student_id: { $in: students.map(s => s._id) } }
+      ];
+    }
+
+    let sortOption = { createdAt: -1 };
+    if (sort === 'start_asc') sortOption = { start_date: 1 };
+    else if (sort === 'start_desc') sortOption = { start_date: -1 };
+
+    const contracts = await Contract.find(query)
       .populate('student_id', 'fullname email mssv')
-      .populate('room_id', 'room_code building').skip(skip).limit(limit);
-    const total = await Contract.countDocuments({});
+      .populate('room_id', 'room_code building')
+      .sort(sortOption)
+      .skip(skip)
+      .limit(limit);
+    const total = await Contract.countDocuments(query);
 
     res.json({
       data: contracts,
