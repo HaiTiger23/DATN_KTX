@@ -1,24 +1,27 @@
 import { useState } from 'react';
 import { Button, Table, Tag, Space, Image, Typography, Tooltip, Modal } from 'antd';
 import { formatMoney, formatDate } from '../../api';
+import { useLanguage } from '../../context/LanguageContext';
 
 function statusColor(s) {
   if (s === 'Paid') return 'success';
   if (s === 'Waiting_Approval') return 'warning';
   return 'default';
 }
-function statusText(s) {
-  if (s === 'Paid') return 'Đã thu';
-  if (s === 'Waiting_Approval') return 'Chờ duyệt';
-  return 'Chưa đóng';
-}
 
 export default function AdminInvoicesTab({ invoices, pagination, onConfirm, onReject }) {
   const [previewUrl, setPreviewUrl] = useState(null);
+  const { t } = useLanguage();
+
+  function statusText(s) {
+    if (s === 'Paid') return t('invoices.statusPaid');
+    if (s === 'Waiting_Approval') return t('invoices.statusWaiting');
+    return t('invoices.statusUnpaid');
+  }
 
   const columns = [
     {
-      title: 'Phòng',
+      title: t('invoices.room'),
       key: 'room',
       render: (_, inv) => (
         <>
@@ -30,27 +33,27 @@ export default function AdminInvoicesTab({ invoices, pagination, onConfirm, onRe
         </>
       ),
     },
-    { title: 'Tháng', dataIndex: 'month', key: 'month' },
+    { title: t('invoices.month'), dataIndex: 'month', key: 'month' },
     {
-      title: 'Tiền điện',
+      title: t('invoices.electricity'),
       dataIndex: 'electricity_cost',
       key: 'electricity_cost',
       render: (v) => formatMoney(v),
     },
     {
-      title: 'Tiền nước',
+      title: t('invoices.water'),
       dataIndex: 'water_cost',
       key: 'water_cost',
       render: (v) => formatMoney(v),
     },
     {
-      title: 'Tổng cộng',
+      title: t('invoices.total'),
       dataIndex: 'total_amount',
       key: 'total_amount',
       render: (v) => <strong style={{ color: '#cf1322' }}>{formatMoney(v)}</strong>,
     },
     {
-      title: 'Trạng thái',
+      title: t('invoices.status'),
       key: 'status',
       render: (_, inv) => (
         <>
@@ -64,32 +67,32 @@ export default function AdminInvoicesTab({ invoices, pagination, onConfirm, onRe
       ),
     },
     {
-      title: 'Hành động',
+      title: t('invoices.actions'),
       key: 'actions',
       render: (_, inv) => {
         if (inv.status === 'Waiting_Approval') {
           return (
-            <Space wrap>
+            <Space wrap className="ktx-action-space">
               {inv.payment_proof_url && (
-                <Tooltip title="Xem biên lai">
+                <Tooltip title={t('invoices.viewReceipt')}>
                   <Button size="small" onClick={() => setPreviewUrl(inv.payment_proof_url)}>
-                    🖼 Biên lai
+                    {t('invoices.viewReceipt')}
                   </Button>
                 </Tooltip>
               )}
               <Button size="small" type="primary" onClick={() => onConfirm(inv._id)}>
-                Duyệt
+                {t('invoices.approve')}
               </Button>
               <Button size="small" danger onClick={() => onReject(inv._id)}>
-                Từ chối
+                {t('invoices.reject')}
               </Button>
             </Space>
           );
         }
         if (inv.status === 'Paid') {
-          return <Tag color="success">✅ Hoàn tất</Tag>;
+          return <Tag color="success">✅ {t('invoices.paidComplete')}</Tag>;
         }
-        return <Typography.Text type="secondary">Chờ thanh toán</Typography.Text>;
+        return <Typography.Text type="secondary">{t('invoices.pendingPayment')}</Typography.Text>;
       },
     },
   ];
@@ -107,13 +110,13 @@ export default function AdminInvoicesTab({ invoices, pagination, onConfirm, onRe
         open={!!previewUrl}
         footer={null}
         onCancel={() => setPreviewUrl(null)}
-        title="Biên lai chuyển khoản"
+        title={t('invoices.receiptTitle')}
         width={600}
       >
         {previewUrl && (
           <Image
             src={previewUrl}
-            alt="Biên lai"
+            alt={t('invoices.viewReceipt')}
             style={{ width: '100%', borderRadius: 8 }}
             fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
           />

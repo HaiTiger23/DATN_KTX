@@ -71,12 +71,12 @@ export default function StudentRoomDetail({ room, activeRoomId, pendingRoomId, o
           <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
             <Typography.Text style={{ fontSize: 16 }}>
               <EnvironmentOutlined style={{ marginRight: 8, color: '#1890ff' }} />
-              <strong>{t('room.building')}:</strong> {r.building} - {t('room.floor') ?? 'Tầng'} {r.floor || 1}
+              <strong>{t('room.building')}</strong> {r.building} - {t('room.floor') ?? 'Tầng'} {r.floor || 1}
             </Typography.Text>
             
             <Typography.Text style={{ fontSize: 16 }}>
               <InfoCircleOutlined style={{ marginRight: 8, color: '#1890ff' }} />
-              <strong>{t('studentRooms.availability')}</strong> <span style={{ color: available > 0 ? '#52c41a' : '#ff4d4f', fontWeight: 'bold' }}>{t('studentRooms.availableSeats', { available })}</span> {t('studentRooms.totalSeats', { capacity: r.capacity })}
+              <strong>{t('studentRooms.availability')}</strong> <span style={{ color: available / r.capacity > 0.5 ? '#52c41a' : available / r.capacity === 0.5 ? '#faad14' : '#ff4d4f', fontWeight: 'bold' }}>{available}/{r.capacity}</span>
             </Typography.Text>
 
             {r.amenities && r.amenities.length > 0 && (

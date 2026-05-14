@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Button, Card, Input, Space, Typography } from 'antd';
-import { SendOutlined } from '@ant-design/icons';
+import { Button, Input, Space, Typography, Avatar, Tag } from 'antd';
+import { SendOutlined, RobotOutlined, DatabaseOutlined } from '@ant-design/icons';
 import { useLanguage } from '../../context/LanguageContext';
 
 export default function StudentChatbotTab({ sendMessage }) {
@@ -54,83 +54,106 @@ export default function StudentChatbotTab({ sendMessage }) {
       }
       scrollToBottom();
     },
-    [input, sendMessage, t],
+    [input, messages, sendMessage, t],
   );
 
   return (
-    <Card className="ktx-chat-card">
-      <div className="ktx-chat-flex-col">
-        <div className="ktx-chat-scroll">
-          <Space orientation="vertical" size="middle" className="ktx-chat-messages">
+    <div className="gemini-chat-container">
+      <div className="gemini-chat-scroll">
+        <div className="gemini-chat-inner">
+          <div className="gemini-chat-messages">
             {messages.map((m) => (
-              <Bubble key={m.id} role={m.role} text={m.text} actions={m.actions} />
+              <Bubble key={m.id} role={m.role} text={m.text} actions={m.actions} t={t} />
             ))}
-            <div ref={bottomRef} />
-          </Space>
+            <div ref={bottomRef} style={{ height: 20 }} />
+          </div>
         </div>
-        <div className="ktx-chat-footer">
-          <Space wrap size="small" className="ktx-chat-quick-row">
-            <Button size="small" type="default" onClick={() => sendChat(t('chat.quickAsk1'))}>
+      </div>
+      
+      <div className="gemini-chat-footer">
+        <div className="gemini-chat-inner">
+          <Space wrap size="small" className="gemini-chat-quick-row">
+            <Button shape="round" className="gemini-quick-btn" onClick={() => sendChat(t('chat.quickAsk1'))}>
               {t('chat.quick1')}
             </Button>
-            <Button size="small" type="default" onClick={() => sendChat(t('chat.quickAsk2'))}>
+            <Button shape="round" className="gemini-quick-btn" onClick={() => sendChat(t('chat.quickAsk2'))}>
               {t('chat.quick2')}
             </Button>
-            <Button size="small" type="default" onClick={() => sendChat(t('chat.quickAsk3'))}>
+            <Button shape="round" className="gemini-quick-btn" onClick={() => sendChat(t('chat.quickAsk3'))}>
               {t('chat.quick3')}
             </Button>
           </Space>
-          <Space.Compact className="ktx-chat-compact">
+          <div className="gemini-input-wrapper">
             <Input
+              className="gemini-input"
               placeholder={t('chat.placeholder')}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onPressEnter={() => sendChat()}
+              bordered={false}
+              suffix={
+                <Button 
+                  type="text" 
+                  shape="circle"
+                  icon={<SendOutlined style={{ fontSize: 18, color: input.trim() ? '#1a73e8' : '#9aa0a6' }} />} 
+                  onClick={() => sendChat()}
+                  disabled={!input.trim()}
+                />
+              }
             />
-            <Button type="primary" icon={<SendOutlined />} onClick={() => sendChat()}>
-              {t('chat.send')}
-            </Button>
-          </Space.Compact>
+          </div>
+          <Typography.Text type="secondary" className="gemini-disclaimer">
+            Gemini can make mistakes. Consider verifying important information.
+          </Typography.Text>
         </div>
       </div>
-    </Card>
+    </div>
   );
 }
 
-import { DatabaseOutlined } from '@ant-design/icons';
-import { Tag } from 'antd';
-
-function Bubble({ role, text, actions }) {
+function Bubble({ role, text, actions, t }) {
   const isUser = role === 'user';
   const isError = role === 'error';
   const isTyping = role === 'typing';
 
-  let bubbleClass = 'ktx-chat-bubble';
-  if (isUser) bubbleClass += ' ktx-chat-bubble--user';
-  else if (isError) bubbleClass += ' ktx-chat-bubble--error';
-  else {
-    bubbleClass += ' ktx-chat-bubble--bot';
-    if (isTyping) bubbleClass += ' ktx-chat-bubble--typing';
-  }
-
   const getActionLabel = (name) => {
-    if (name === 'checkRoomAvailability') return 'Tra cứu phòng trống';
-    if (name === 'checkContractStatus') return 'Kiểm tra hợp đồng';
-
+    if (name === 'checkRoomAvailability') return t('settings.agentCheckRoom');
+    if (name === 'checkContractStatus') return t('settings.agentCheckContract');
     return name;
   };
 
+  if (isUser) {
+    return (
+      <div className="gemini-message-row user">
+        <div className="gemini-user-bubble">
+          {text}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className={`ktx-chat-row ${isUser ? 'ktx-chat-row--end' : 'ktx-chat-row--start'}`}>
-      <div className={isUser ? '' : 'ktx-chat-bot-wrap'}>
+    <div className={`gemini-message-row bot ${isError ? 'error' : ''}`}>
+      <Avatar 
+        className={`gemini-bot-avatar ${isTyping ? 'typing' : ''}`} 
+        icon={<RobotOutlined spin={isTyping} />} 
+      />
+      <div className="gemini-bot-content">
         {actions && actions.length > 0 && (
-          <div className="ktx-chat-action-badge">
-            <Tag color="blue" icon={<DatabaseOutlined />}>
-              Hệ thống: {actions.map(a => getActionLabel(a)).join(', ')}
+          <div className="gemini-bot-actions">
+            <Tag color="geekblue" icon={<DatabaseOutlined />} style={{ borderRadius: 16 }}>
+              {t('chat.system')}: {actions.map(a => getActionLabel(a)).join(', ')}
             </Tag>
           </div>
         )}
-        <Typography.Text className={bubbleClass}>{text}</Typography.Text>
+        <Typography.Paragraph className={`gemini-bot-text ${isTyping ? 'pulse' : ''}`}>
+          {text.split('\n').map((line, i) => (
+            <span key={i}>
+              {line}
+              <br />
+            </span>
+          ))}
+        </Typography.Paragraph>
       </div>
     </div>
   );

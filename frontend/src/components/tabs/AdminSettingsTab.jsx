@@ -39,44 +39,44 @@ export default function AdminSettingsTab({ geminiKey, setGeminiKey, agentSetting
         />
 
         <div style={{ marginTop: 24, marginBottom: 16 }}>
-          <Typography.Title level={5}>Cấu hình Quyền của AI Agent</Typography.Title>
+          <Typography.Title level={5}>{t('settings.agentPermsTitle')}</Typography.Title>
           <Typography.Paragraph type="secondary" style={{ fontSize: 13 }}>
-            Bật/Tắt các công cụ mà AI Agent có thể sử dụng thay mặt cho sinh viên.
+            {t('settings.agentPermsDesc')}
           </Typography.Paragraph>
           <Space orientation="vertical" style={{ width: '100%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#f5f5f5', borderRadius: 6 }}>
-              <Typography.Text>Tra cứu phòng trống</Typography.Text>
+              <Typography.Text>{t('settings.agentCheckRoom')}</Typography.Text>
               <Switch checked={agentSettings?.agentAllowCheckRoom} onChange={v => setAgentSettings(prev => ({ ...prev, agentAllowCheckRoom: v }))} />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#f5f5f5', borderRadius: 6 }}>
-              <Typography.Text>Tra cứu hợp đồng</Typography.Text>
+              <Typography.Text>{t('settings.agentCheckContract')}</Typography.Text>
               <Switch checked={agentSettings?.agentAllowCheckContract} onChange={v => setAgentSettings(prev => ({ ...prev, agentAllowCheckContract: v }))} />
             </div>
 
           </Space>
 
           <div style={{ marginTop: 20 }}>
-            <Typography.Text strong>AI System Prompt</Typography.Text>
+            <Typography.Text strong>{t('settings.aiSystemPromptTitle')}</Typography.Text>
             <Typography.Paragraph type="secondary" style={{ fontSize: 13, marginBottom: 8 }}>
-              Tùy chỉnh tính cách và quy tắc trả lời của AI.
+              {t('settings.aiSystemPromptDesc')}
             </Typography.Paragraph>
             <Input.TextArea
               rows={4}
               value={agentSettings?.aiSystemPrompt}
               onChange={(e) => setAgentSettings(prev => ({ ...prev, aiSystemPrompt: e.target.value }))}
-              placeholder="Ví dụ: Bạn là trợ lý KTX thân thiện..."
+              placeholder={t('settings.aiSystemPromptPlaceholder')}
             />
           </div>
 
           <div style={{ marginTop: 20 }}>
-            <Typography.Text strong>Tên miền Email được phép đăng ký</Typography.Text>
+            <Typography.Text strong>{t('settings.allowedEmailTitle')}</Typography.Text>
             <Typography.Paragraph type="secondary" style={{ fontSize: 13, marginBottom: 8 }}>
-              Nhập các tên miền được phép (VD: gmail.com, edu.vn). Để trống nếu cho phép tất cả.
+              {t('settings.allowedEmailDesc')}
             </Typography.Paragraph>
             <Select
               mode="tags"
               style={{ width: '100%' }}
-              placeholder="Nhập domain và nhấn Enter"
+              placeholder={t('settings.allowedEmailPlaceholder')}
               value={agentSettings?.allowedEmailDomains}
               onChange={(v) => setAgentSettings(prev => ({ ...prev, allowedEmailDomains: v }))}
             />

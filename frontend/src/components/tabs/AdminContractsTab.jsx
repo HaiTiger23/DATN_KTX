@@ -53,9 +53,11 @@ export default function AdminContractsTab({ contracts, onEndContract, pagination
       key: 'actions',
       render: (_, c) =>
         c.status === 'Active' ? (
-          <Button size="small" danger type="link" onClick={() => onEndContract(c._id)}>
-            {t('contracts.end')}
-          </Button>
+          <div className="ktx-action-space">
+            <Button size="small" danger type="default" onClick={() => onEndContract(c._id)}>
+              {t('contracts.end')}
+            </Button>
+          </div>
         ) : null,
     },
   ];

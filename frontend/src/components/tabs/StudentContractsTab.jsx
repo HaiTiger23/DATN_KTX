@@ -48,9 +48,11 @@ export default function StudentContractsTab({ contracts, onCancelContract, pagin
       key: 'actions',
       render: (_, c) =>
         c.status === 'Active' ? (
-          <Button size="small" danger type="link" onClick={() => onCancelContract(c._id)}>
-            {t('studentContracts.cancelReq')}
-          </Button>
+          <div className="ktx-action-space">
+            <Button size="small" danger type="default" onClick={() => onCancelContract(c._id)}>
+              {t('studentContracts.cancelReq')}
+            </Button>
+          </div>
         ) : null,
     },
   ];

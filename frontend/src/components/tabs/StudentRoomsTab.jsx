@@ -188,7 +188,7 @@ export default function StudentRoomsTab({ rooms, activeRoomId, pendingRoomId, on
                   </Space>
 
                   <Typography.Paragraph className="ktx-tab-p-sm">
-                    {t('room.building')}: <Typography.Text strong>{r.building}</Typography.Text>
+                    {t('room.building')} <Typography.Text strong>{r.building}</Typography.Text>
                   </Typography.Paragraph>
 
                   {r.description && (
@@ -207,8 +207,8 @@ export default function StudentRoomsTab({ rooms, activeRoomId, pendingRoomId, on
                   )}
 
                   <Typography.Paragraph className="ktx-tab-p-sm">
-                    {t('room.seats')}:{' '}
-                    <Typography.Text strong className="ktx-seat-available">
+                    {t('room.seats')}{' '}
+                    <Typography.Text strong className="ktx-seat-available" style={{ color: available / r.capacity > 0.5 ? '#52c41a' : available / r.capacity === 0.5 ? '#faad14' : '#ff4d4f' }}>
                       {available}/{r.capacity}
                     </Typography.Text>
                   </Typography.Paragraph>

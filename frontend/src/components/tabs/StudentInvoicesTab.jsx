@@ -2,21 +2,24 @@ import { useRef, useState } from 'react';
 import { Button, Card, Col, Row, Tag, Typography, Upload, Image, Alert, Space } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
 import { formatMoney } from '../../api';
+import { useLanguage } from '../../context/LanguageContext';
 
 function statusColor(s) {
   if (s === 'Paid') return 'success';
   if (s === 'Waiting_Approval') return 'warning';
   return 'default';
 }
-function statusLabel(s) {
-  if (s === 'Paid') return 'Đã thanh toán';
-  if (s === 'Waiting_Approval') return 'Chờ Admin duyệt';
-  return 'Chưa đóng';
-}
 
 export default function StudentInvoicesTab({ room, invoices, pagination, onPay }) {
   const [fileMap, setFileMap] = useState({}); // { invoiceId: File }
   const [previewUrl, setPreviewUrl] = useState(null);
+  const { t } = useLanguage();
+
+  function statusLabel(s) {
+    if (s === 'Paid') return t('studentInvoices.statusPaid');
+    if (s === 'Waiting_Approval') return t('studentInvoices.statusWaiting');
+    return t('studentInvoices.statusUnpaid');
+  }
 
   const handleFileChange = (invId, file) => {
     setFileMap((prev) => ({ ...prev, [invId]: file }));
@@ -26,7 +29,7 @@ export default function StudentInvoicesTab({ room, invoices, pagination, onPay }
   const handlePay = async (invId) => {
     const file = fileMap[invId];
     if (!file) {
-      alert('Vui lòng chọn ảnh biên lai chuyển khoản trước!');
+      alert(t('studentInvoices.alertPayFirst'));
       return;
     }
     await onPay(invId, file);
@@ -36,7 +39,7 @@ export default function StudentInvoicesTab({ room, invoices, pagination, onPay }
     return (
       <Alert
         type="info"
-        message="Bạn chưa có hợp đồng thuê phòng đang hoạt động nên không có hóa đơn."
+        message={t('studentInvoices.alertNoContract')}
         showIcon
       />
     );
@@ -46,7 +49,7 @@ export default function StudentInvoicesTab({ room, invoices, pagination, onPay }
     return (
       <Alert
         type="info"
-        message={`Phòng ${room.room_code} chưa có hóa đơn nào.`}
+        message={t('studentInvoices.alertNoInvoices').replace('{roomCode}', room.room_code)}
         showIcon
       />
     );
@@ -55,7 +58,7 @@ export default function StudentInvoicesTab({ room, invoices, pagination, onPay }
   return (
     <>
       <Typography.Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
-        Hóa đơn của phòng: <strong>{room.room_code} – {room.building}</strong>
+        {t('studentInvoices.roomInvoices')} <strong>{room.room_code} – {room.building}</strong>
       </Typography.Text>
 
       <Row gutter={[16, 16]}>
@@ -69,22 +72,22 @@ export default function StudentInvoicesTab({ room, invoices, pagination, onPay }
                 size="small"
                 title={
                   <Space>
-                    <span>Tháng {inv.month}</span>
+                    <span>{t('invoices.month')} {inv.month}</span>
                     <Tag color={statusColor(inv.status)}>{statusLabel(inv.status)}</Tag>
                   </Space>
                 }
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <span>Tiền điện:</span>
+                  <span>{t('studentInvoices.electricity')}</span>
                   <strong>{formatMoney(inv.electricity_cost)}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <span>Tiền nước:</span>
+                  <span>{t('studentInvoices.water')}</span>
                   <strong>{formatMoney(inv.water_cost)}</strong>
                 </div>
                 {inv.additional_cost > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <span>Phụ phí:</span>
+                    <span>{t('studentInvoices.additional')}</span>
                     <strong>{formatMoney(inv.additional_cost)}</strong>
                   </div>
                 )}
@@ -97,7 +100,7 @@ export default function StudentInvoicesTab({ room, invoices, pagination, onPay }
                     marginTop: 8,
                   }}
                 >
-                  <span>Tổng cộng:</span>
+                  <span>{t('studentInvoices.total')}</span>
                   <strong style={{ color: '#cf1322', fontSize: 16 }}>
                     {formatMoney(inv.total_amount)}
                   </strong>
@@ -118,7 +121,7 @@ export default function StudentInvoicesTab({ room, invoices, pagination, onPay }
                       }
                     >
                       <Button icon={<UploadOutlined />} size="small" style={{ width: '100%', marginBottom: 8 }}>
-                        Chọn ảnh biên lai
+                        {t('studentInvoices.chooseReceipt')}
                       </Button>
                     </Upload>
                     <Button
@@ -128,7 +131,7 @@ export default function StudentInvoicesTab({ room, invoices, pagination, onPay }
                       onClick={() => handlePay(inv._id)}
                       disabled={!fileMap[inv._id]}
                     >
-                      Xác nhận đã chuyển khoản
+                      {t('studentInvoices.confirmTransfer')}
                     </Button>
                   </div>
                 )}
@@ -138,7 +141,7 @@ export default function StudentInvoicesTab({ room, invoices, pagination, onPay }
                     style={{ marginTop: 10 }}
                     type="warning"
                     showIcon
-                    message={`Đang được thanh toán bởi: ${inv.paid_by.fullname}`}
+                    message={`${t('studentInvoices.alertLocked')} ${inv.paid_by.fullname}`}
                   />
                 )}
 
@@ -147,7 +150,7 @@ export default function StudentInvoicesTab({ room, invoices, pagination, onPay }
                     style={{ marginTop: 10 }}
                     type="info"
                     showIcon
-                    message="Biên lai đã gửi, đang chờ Admin duyệt..."
+                    message={t('studentInvoices.alertWaiting')}
                   />
                 )}
 
@@ -156,7 +159,7 @@ export default function StudentInvoicesTab({ room, invoices, pagination, onPay }
                     style={{ marginTop: 10 }}
                     type="success"
                     showIcon
-                    message="✅ Hóa đơn đã được thanh toán"
+                    message={`✅ ${t('studentInvoices.alertPaid')}`}
                   />
                 )}
 
@@ -167,7 +170,7 @@ export default function StudentInvoicesTab({ room, invoices, pagination, onPay }
                     style={{ marginTop: 4, padding: 0 }}
                     onClick={() => setPreviewUrl(inv.payment_proof_url)}
                   >
-                    Xem biên lai đã gửi
+                    {t('studentInvoices.viewSentReceipt')}
                   </Button>
                 )}
               </Card>

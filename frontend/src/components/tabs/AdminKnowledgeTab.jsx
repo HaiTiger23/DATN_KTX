@@ -28,9 +28,11 @@ export default function AdminKnowledgeTab({ items, onDelete, pagination }) {
       key: 'actions',
       width: 120,
       render: (_, record) => (
-        <Button size="small" danger type="link" onClick={() => onDelete(record._id)}>
-          {t('knowledge.delete')}
-        </Button>
+        <div className="ktx-action-space">
+          <Button size="small" danger type="default" onClick={() => onDelete(record._id)}>
+            {t('knowledge.delete')}
+          </Button>
+        </div>
       ),
     },
   ];

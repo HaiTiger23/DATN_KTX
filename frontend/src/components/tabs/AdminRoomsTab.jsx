@@ -36,49 +36,32 @@ export default function AdminRoomsTab({ rooms, onToggleStatus, onEdit, onNavigat
               ]}
             >
               <Typography.Paragraph className="ktx-tab-p-sm" style={{ marginBottom: 4 }}>
-                {t('room.building')}: <Typography.Text strong>{r.building}</Typography.Text>
+                {t('room.building')} <Typography.Text strong>{r.building}</Typography.Text>
               </Typography.Paragraph>
               <Typography.Paragraph className="ktx-tab-p-sm" style={{ marginBottom: 4 }}>
-                Tầng: <Typography.Text strong>{r.floor || 1}</Typography.Text>
+                {t('room.floor')} <Typography.Text strong>{r.floor || 1}</Typography.Text>
               </Typography.Paragraph>
               <Typography.Paragraph className="ktx-tab-p-sm" style={{ marginBottom: 4 }}>
-                Loại phòng: <Tag color={r.roomType === 'VIP' ? 'gold' : r.roomType === 'Service' ? 'geekblue' : 'default'}>{r.roomType || 'Standard'}</Tag>
+                {t('room.type')} <Tag color={r.roomType === 'VIP' ? 'gold' : r.roomType === 'Service' ? 'geekblue' : 'default'}>{r.roomType === 'VIP' ? t('modal.roomTypeVip') : r.roomType === 'Service' ? t('modal.roomTypeService') : t('modal.roomTypeStandard')}</Tag>
               </Typography.Paragraph>
-              <Typography.Paragraph className="ktx-tab-p-sm" style={{ marginBottom: 4 }}>
-                {t('room.seats')}:{' '}
-                <Typography.Text strong>
-                  {available}/{r.capacity}
-                </Typography.Text>
+              <Typography.Paragraph className="ktx-tab-p-sm" style={{ marginBottom: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>
+                  {t('room.seats')}{' '}
+                  <Typography.Text strong style={{ color: available / r.capacity > 0.5 ? '#52c41a' : available / r.capacity === 0.5 ? '#faad14' : '#ff4d4f' }}>
+                    {available}/{r.capacity}
+                  </Typography.Text>
+                </span>
+                {r.residents && r.residents.length > 0 && (
+                  <Button 
+                    type="link" 
+                    size="small" 
+                    style={{ fontSize: 11, padding: 0 }}
+                    onClick={() => onNavigate('students', { room_id: r._id })}
+                  >
+                    {t('room.viewList')}
+                  </Button>
+                )}
               </Typography.Paragraph>
-
-              {r.residents && r.residents.length > 0 && (
-                <div style={{ marginTop: 12 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                    <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                      Sinh viên đang ở:
-                    </Typography.Text>
-                    <Button 
-                      type="link" 
-                      size="small" 
-                      style={{ fontSize: 11, padding: 0 }}
-                      onClick={() => onNavigate('students', { room_id: r._id })}
-                    >
-                      Xem danh sách
-                    </Button>
-                  </div>
-                  <Avatar.Group maxCount={4} size="small">
-                    {r.residents.map(res => (
-                      <Tooltip key={res._id} title={`${res.fullname} (${res.mssv || 'N/A'})`}>
-                        <Avatar 
-                          style={{ backgroundColor: '#1890ff', cursor: 'pointer' }} 
-                          icon={<UserOutlined />} 
-                          onClick={() => onNavigate('students', { room_id: r._id, search: res.mssv })}
-                        />
-                      </Tooltip>
-                    ))}
-                  </Avatar.Group>
-                </div>
-              )}
               <Typography.Paragraph className="ktx-tab-p-last">
                 {t('room.price')}{' '}
                 <Typography.Text strong>

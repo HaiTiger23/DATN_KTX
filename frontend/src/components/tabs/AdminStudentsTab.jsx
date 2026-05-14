@@ -34,7 +34,7 @@ export default function AdminStudentsTab({ students, onEdit, onDelete, onResetPa
       render: (v) => v || t('common.na'),
     },
     {
-      title: 'Phòng đang ở',
+      title: t('students.currentRoom'),
       key: 'currentRoom',
       render: (_, record) => {
         if (record.currentRoom) {
@@ -53,17 +53,17 @@ export default function AdminStudentsTab({ students, onEdit, onDelete, onResetPa
       title: t('students.actions'),
       key: 'actions',
       render: (_, record) => (
-        <Space>
+        <Space className="ktx-action-space">
           <Button size="small" onClick={() => onEdit(record)}>
             {t('students.edit')}
           </Button>
           <Button size="small" ghost type="primary" onClick={() => onNavigate('contracts', { search: record.mssv })}>
-            Hợp đồng
+            {t('students.viewContracts')}
           </Button>
           <Button size="small" onClick={() => onResetPassword(record._id)}>
-            Reset Pass
+            {t('students.resetPass')}
           </Button>
-          <Button size="small" danger type="link" onClick={() => onDelete(record._id)}>
+          <Button size="small" danger type="default" onClick={() => onDelete(record._id)}>
             {t('students.delete')}
           </Button>
         </Space>

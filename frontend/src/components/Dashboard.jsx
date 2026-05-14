@@ -170,7 +170,14 @@ export default function Dashboard() {
     // To handle simple tab clicks from the sidebar
     if (!window.location.search.includes('room_id=')) {
         setPage(1);
-        setFilters({ search: '', status: '', type: '', month: '', sort: '', room_id: '' });
+        setFilters({ 
+          search: '', 
+          status: (currentTab === 'feedbacks' || currentTab === 'student_feedbacks') ? 'Pending' : '', 
+          type: '', 
+          month: '', 
+          sort: '', 
+          room_id: '' 
+        });
     }
   }, [currentTab]);
 
@@ -192,7 +199,8 @@ export default function Dashboard() {
   const navigateToTab = (tab, initialFilters = {}) => {
     setCurrentTab(tab);
     setPage(1);
-    setFilters({ search: '', status: '', type: '', month: '', sort: '', room_id: '', ...initialFilters });
+    const defaultStatus = (tab === 'feedbacks' || tab === 'student_feedbacks') ? 'Pending' : '';
+    setFilters({ search: '', status: defaultStatus, type: '', month: '', sort: '', room_id: '', ...initialFilters });
   };
 
 
@@ -500,7 +508,7 @@ export default function Dashboard() {
           body: formData,
         });
         const json = await res.json();
-        if (!res.ok) throw new Error(json.message || 'Lỗi upload ảnh');
+        if (!res.ok) throw new Error(json.message || t('toast.uploadError'));
         finalImages = [...finalImages, ...json.urls];
       }
 
@@ -615,11 +623,11 @@ export default function Dashboard() {
     }
     if (modalType === 'add_invoice') {
       if (!invoiceForm.room_id || !invoiceForm.month) {
-        showToast('Vui lòng chọn phòng và nhập tháng', 'error');
+        showToast(t('toast.invoiceFill'), 'error');
         throw new Error('validation');
       }
       await api('/admin/invoices', 'POST', invoiceForm);
-      showToast('Tạo hóa đơn thành công');
+      showToast(t('toast.invoiceCreated'));
       closeModal();
       loadTab();
     }
@@ -635,7 +643,7 @@ export default function Dashboard() {
       add_feedback: 'modal.add_feedback',
       add_knowledge: 'modal.add_knowledge',
       add_notification: 'modal.add_notification',
-      add_invoice: 'Tạo Hóa đơn tháng',
+      add_invoice: 'modal.add_invoice',
     };
     const key = keys[modalType];
     return key ? t(key) : '';
@@ -654,9 +662,9 @@ export default function Dashboard() {
       case 'add_invoice':
         return (
           <Form layout="vertical">
-            <Form.Item label="Phòng" required>
+            <Form.Item label={t('modal.invoiceRoom')} required>
               <Select
-                placeholder="Chọn phòng"
+                placeholder={t('modal.invoiceRoomSelect')}
                 value={invoiceForm.room_id || undefined}
                 onChange={(v) => setInvoiceForm((f) => ({ ...f, room_id: v }))}
                 showSearch
@@ -667,16 +675,16 @@ export default function Dashboard() {
                 ))}
               </Select>
             </Form.Item>
-            <Form.Item label="Tháng (VD: 05/2026)" required>
+            <Form.Item label={t('modal.invoiceMonth')} required>
               <Input value={invoiceForm.month} onChange={(e) => setInvoiceForm((f) => ({ ...f, month: e.target.value }))} />
             </Form.Item>
-            <Form.Item label="Tiền điện (VND)" required>
+            <Form.Item label={t('modal.invoiceElec')} required>
               <InputNumber className="ktx-input-block" min={0} step={1000} value={invoiceForm.electricity_cost} formatter={formatVndInput} parser={parseVndInput} onChange={(v) => setInvoiceForm((f) => ({ ...f, electricity_cost: v || 0 }))} />
             </Form.Item>
-            <Form.Item label="Tiền nước (VND)" required>
+            <Form.Item label={t('modal.invoiceWater')} required>
               <InputNumber className="ktx-input-block" min={0} step={1000} value={invoiceForm.water_cost} formatter={formatVndInput} parser={parseVndInput} onChange={(v) => setInvoiceForm((f) => ({ ...f, water_cost: v || 0 }))} />
             </Form.Item>
-            <Form.Item label="Phụ phí (VND)">
+            <Form.Item label={t('modal.invoiceAdditional')}>
               <InputNumber className="ktx-input-block" min={0} step={1000} value={invoiceForm.additional_cost} formatter={formatVndInput} parser={parseVndInput} onChange={(v) => setInvoiceForm((f) => ({ ...f, additional_cost: v || 0 }))} />
             </Form.Item>
           </Form>
@@ -705,9 +713,9 @@ export default function Dashboard() {
             </Form.Item>
             <Form.Item label={t('modal.roomType')}>
               <Select value={roomForm.roomType} onChange={(v) => setRoomForm((f) => ({ ...f, roomType: v }))}>
-                <Select.Option value="Standard">Tiêu chuẩn</Select.Option>
-                <Select.Option value="Service">Dịch vụ</Select.Option>
-                <Select.Option value="VIP">VIP</Select.Option>
+                <Select.Option value="Standard">{t('modal.roomTypeStandard')}</Select.Option>
+                <Select.Option value="Service">{t('modal.roomTypeService')}</Select.Option>
+                <Select.Option value="VIP">{t('modal.roomTypeVip')}</Select.Option>
               </Select>
             </Form.Item>
             <Form.Item label={t('modal.capacity')} required>
@@ -735,7 +743,7 @@ export default function Dashboard() {
             <Form.Item label={t('modal.amenities')}>
               <Select 
                 mode="tags" 
-                placeholder="Nhập và nhấn Enter (VD: Điều hòa, Máy giặt)" 
+                placeholder={t('modal.amenitiesHint')} 
                 value={roomForm.amenities} 
                 onChange={(v) => setRoomForm((f) => ({ ...f, amenities: v }))} 
               />
@@ -746,7 +754,7 @@ export default function Dashboard() {
                 fileList={roomFiles}
                 onPreview={(file) => {
                   AntdModal.info({
-                    title: 'Xem ảnh',
+                    title: t('modal.viewImage'),
                     content: <img src={file.url || file.preview} style={{ width: '100%' }} />,
                     footer: null,
                     maskClosable: true,
@@ -759,7 +767,7 @@ export default function Dashboard() {
                 {roomFiles.length >= 10 ? null : (
                   <div>
                     <PlusOutlined />
-                    <div style={{ marginTop: 8 }}>Tải lên</div>
+                    <div style={{ marginTop: 8 }}>{t('modal.upload')}</div>
                   </div>
                 )}
               </Upload>
@@ -861,7 +869,7 @@ export default function Dashboard() {
   if (currentTab === 'student_feedbacks') addLabel = t('dashboard.addFeedback');
   if (currentTab === 'admin_knowledge') addLabel = t('dashboard.addKnowledge');
   if (currentTab === 'admin_notifications') addLabel = t('modal.add_notification');
-  if (currentTab === 'invoices') addLabel = '+ Tạo hóa đơn';
+  if (currentTab === 'invoices') addLabel = t('dashboard.addInvoice');
 
   const handleAddClick = () => {
     if (currentTab === 'rooms') openModal('add_room');
@@ -908,11 +916,11 @@ export default function Dashboard() {
 
   const resetStudentPassword = (id) => {
     modal.confirm({
-      title: 'Xác nhận reset mật khẩu?',
-      content: 'Mật khẩu của sinh viên sẽ được đặt lại thành 123456.',
+      title: t('confirm.resetPassword'),
+      content: t('confirm.resetPasswordDesc'),
       onOk: async () => {
         const res = await api(`/admin/students/${id}/reset-password`, 'POST');
-        showToast(res.message || 'Đã đặt lại mật khẩu thành 123456');
+        showToast(res.message || t('toast.passwordReset'));
       },
     });
   };
@@ -1094,39 +1102,39 @@ export default function Dashboard() {
 
     // Dynamic Options
     let statusOptions = [];
-    if (currentTab === 'rooms') statusOptions = [{ label: 'Trống', value: 'Available' }, { label: 'Bảo trì', value: 'Maintenance' }];
-    if (currentTab === 'students') statusOptions = [{ label: 'Hoạt động', value: 'Active' }, { label: 'Khóa', value: 'Inactive' }];
-    if (['requests', 'student_requests'].includes(currentTab)) statusOptions = [{ label: 'Chờ duyệt', value: 'Pending' }, { label: 'Đã duyệt', value: 'Approved' }, { label: 'Từ chối', value: 'Rejected' }];
-    if (['invoices', 'student_invoices'].includes(currentTab)) statusOptions = [{ label: 'Chưa thanh toán', value: 'Pending' }, { label: 'Chờ duyệt', value: 'Waiting_Approval' }, { label: 'Đã thanh toán', value: 'Paid' }];
-    if (['contracts', 'student_contracts'].includes(currentTab)) statusOptions = [{ label: 'Hiệu lực', value: 'Active' }, { label: 'Kết thúc', value: 'Ended' }];
-    if (['feedbacks', 'student_feedbacks'].includes(currentTab)) statusOptions = [{ label: 'Chưa trả lời', value: 'Pending' }, { label: 'Đã trả lời', value: 'Answered' }];
+    if (currentTab === 'rooms') statusOptions = [{ label: t('filter.available'), value: 'Available' }, { label: t('filter.maintenance'), value: 'Maintenance' }];
+    if (currentTab === 'students') statusOptions = [{ label: t('filter.active'), value: 'Active' }, { label: t('filter.inactive'), value: 'Inactive' }];
+    if (['requests', 'student_requests'].includes(currentTab)) statusOptions = [{ label: t('filter.pending'), value: 'Pending' }, { label: t('filter.approved'), value: 'Approved' }, { label: t('filter.rejected'), value: 'Rejected' }];
+    if (['invoices', 'student_invoices'].includes(currentTab)) statusOptions = [{ label: t('filter.unpaid'), value: 'Pending' }, { label: t('filter.waiting_approval'), value: 'Waiting_Approval' }, { label: t('filter.paid'), value: 'Paid' }];
+    if (['contracts', 'student_contracts'].includes(currentTab)) statusOptions = [{ label: t('filter.effect'), value: 'Active' }, { label: t('filter.ended'), value: 'Ended' }];
+    if (['feedbacks', 'student_feedbacks'].includes(currentTab)) statusOptions = [{ label: t('filter.unanswered'), value: 'Pending' }, { label: t('filter.answered'), value: 'Answered' }];
 
     let sortOptions = [
-      { label: 'Mới nhất', value: '' },
-      { label: 'Cũ nhất', value: 'oldest' }
+      { label: t('sort.newest'), value: '' },
+      { label: t('sort.oldest'), value: 'oldest' }
     ];
     if (currentTab === 'rooms' || currentTab === 'student_rooms') {
       sortOptions = [
-        { label: 'Mới nhất', value: '' },
-        { label: 'Giá tăng dần', value: 'price_asc' },
-        { label: 'Giá giảm dần', value: 'price_desc' },
-        { label: 'Mã phòng', value: 'room_code' }
+        { label: t('sort.newest'), value: '' },
+        { label: t('sort.priceAsc'), value: 'price_asc' },
+        { label: t('sort.priceDesc'), value: 'price_desc' },
+        { label: t('sort.roomCode'), value: 'room_code' }
       ];
     }
     if (currentTab === 'students') {
       sortOptions = [
-        { label: 'Mới nhất', value: '' },
-        { label: 'Tên A-Z', value: 'name_asc' },
-        { label: 'Tên Z-A', value: 'name_desc' }
+        { label: t('sort.newest'), value: '' },
+        { label: t('sort.nameAsc'), value: 'name_asc' },
+        { label: t('sort.nameDesc'), value: 'name_desc' }
       ];
     }
     if (currentTab === 'invoices' || currentTab === 'student_invoices') {
       sortOptions = [
-        { label: 'Mới nhất', value: '' },
-        { label: 'Tháng giảm dần', value: 'month_desc' },
-        { label: 'Tháng tăng dần', value: 'month_asc' },
-        { label: 'Số tiền tăng dần', value: 'amount_asc' },
-        { label: 'Số tiền giảm dần', value: 'amount_desc' }
+        { label: t('sort.newest'), value: '' },
+        { label: t('sort.monthDesc'), value: 'month_desc' },
+        { label: t('sort.monthAsc'), value: 'month_asc' },
+        { label: t('sort.amountAsc'), value: 'amount_asc' },
+        { label: t('sort.amountDesc'), value: 'amount_desc' }
       ];
     }
 
@@ -1145,7 +1153,7 @@ export default function Dashboard() {
             <Col xs={24} md={6}>
               <Input 
                 prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
-                placeholder={currentTab.includes('rooms') || currentTab.includes('invoice') || currentTab.includes('contract') ? "Tìm theo mã phòng..." : "Tìm kiếm..."}
+                placeholder={currentTab.includes('rooms') || currentTab.includes('invoice') || currentTab.includes('contract') ? t('filter.searchRoom') : t('filter.search')}
                 allowClear
                 value={filters.search}
                 onChange={e => setFilters(prev => ({ ...prev, search: e.target.value }))}
@@ -1158,7 +1166,7 @@ export default function Dashboard() {
               <Select 
                 showSearch
                 style={{ width: '100%', borderRadius: '8px' }}
-                placeholder="Chọn phòng"
+                placeholder={t('filter.selectRoom')}
                 allowClear
                 value={filters.room_id || undefined}
                 onChange={v => setFilters(prev => ({ ...prev, room_id: v || '' }))}
@@ -1171,7 +1179,7 @@ export default function Dashboard() {
             <Col xs={12} md={4}>
               <Select 
                 style={{ width: '100%', borderRadius: '8px' }}
-                placeholder="Trạng thái"
+                placeholder={t('filter.status')}
                 allowClear
                 value={filters.status || undefined}
                 onChange={v => setFilters(prev => ({ ...prev, status: v || '' }))}
@@ -1183,13 +1191,13 @@ export default function Dashboard() {
             <Col xs={12} md={4}>
               <Select 
                 style={{ width: '100%', borderRadius: '8px' }}
-                placeholder="Loại đơn"
+                placeholder={t('filter.type')}
                 allowClear
                 value={filters.type || undefined}
                 onChange={v => setFilters(prev => ({ ...prev, type: v || '' }))}
                 options={[
-                  { label: 'Đăng ký', value: 'Registration' },
-                  { label: 'Hủy phòng', value: 'Cancellation' }
+                  { label: t('filter.typeReg'), value: 'Registration' },
+                  { label: t('filter.typeCancel'), value: 'Cancellation' }
                 ]}
               />
             </Col>
@@ -1197,7 +1205,7 @@ export default function Dashboard() {
           {showMonth && (
             <Col xs={12} md={4}>
               <Input 
-                placeholder="Tháng (YYYY-MM)" 
+                placeholder={t('filter.month')} 
                 value={filters.month}
                 onChange={e => setFilters(prev => ({ ...prev, month: e.target.value }))}
                 style={{ borderRadius: '8px' }}
@@ -1208,7 +1216,7 @@ export default function Dashboard() {
             <Col xs={12} md={4}>
               <Select 
                 style={{ width: '100%', borderRadius: '8px' }}
-                placeholder="Sắp xếp"
+                placeholder={t('filter.sort')}
                 value={filters.sort || ''}
                 onChange={v => setFilters(prev => ({ ...prev, sort: v }))}
                 options={sortOptions}
@@ -1223,7 +1231,7 @@ export default function Dashboard() {
                 onClose={() => setFilters(prev => ({ ...prev, room_id: '' }))}
                 style={{ padding: '4px 12px', fontSize: 13, borderRadius: '6px' }}
               >
-                Đang lọc theo phòng: {allRooms.find(r => r.value === filters.room_id)?.label || filters.room_id}
+                {t('filter.filteringByRoom')}{allRooms.find(r => r.value === filters.room_id)?.label || filters.room_id}
               </Tag>
             </Col>
           )}
@@ -1309,21 +1317,21 @@ export default function Dashboard() {
             pagination={paginationProps}
             onConfirm={(id) => {
               modal.confirm({
-                title: 'Xác nhận đã nhận được tiền?',
+                title: t('confirm.paymentConfirm'),
                 onOk: async () => {
                   await api(`/admin/invoices/${id}/confirm`, 'PUT');
-                  showToast('Đã xác nhận thanh toán');
+                  showToast(t('toast.paymentConfirmed'));
                   loadTab();
                 },
               });
             }}
             onReject={(id) => {
               modal.confirm({
-                title: 'Từ chối biên lai này? Hóa đơn sẽ mở lại để sinh viên khác thanh toán.',
+                title: t('confirm.receiptReject'),
                 okType: 'danger',
                 onOk: async () => {
                   await api(`/admin/invoices/${id}/reject`, 'PUT');
-                  showToast('Đã từ chối biên lai');
+                  showToast(t('toast.receiptRejected'));
                   loadTab();
                 },
               });
@@ -1382,8 +1390,8 @@ export default function Dashboard() {
                   { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: formData }
                 );
                 const json = await res.json();
-                if (!res.ok) throw new Error(json.message || 'Lỗi');
-                showToast('Gửi biên lai thành công!');
+                if (!res.ok) throw new Error(json.message || 'Error');
+                showToast(t('toast.receiptSent'));
                 loadTab();
               } catch (err) {
                 showToast(err.message, 'error');
