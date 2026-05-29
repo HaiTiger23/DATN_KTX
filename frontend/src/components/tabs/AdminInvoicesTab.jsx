@@ -21,6 +21,12 @@ export default function AdminInvoicesTab({ invoices, pagination, onConfirm, onRe
 
   const columns = [
     {
+      title: 'Mã Hóa Đơn',
+      dataIndex: 'invoice_code',
+      key: 'invoice_code',
+      render: (val, record) => val || record._id.slice(-6),
+    },
+    {
       title: t('invoices.room'),
       key: 'room',
       render: (_, inv) => (
@@ -40,6 +46,7 @@ export default function AdminInvoicesTab({ invoices, pagination, onConfirm, onRe
       key: 'electricity_cost',
       render: (v) => formatMoney(v),
     },
+
     {
       title: t('invoices.water'),
       dataIndex: 'water_cost',

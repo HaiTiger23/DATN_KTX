@@ -110,7 +110,10 @@ const createContract = async (req, res) => {
       return res.status(400).json({ message: 'Phòng đã đủ số lượng người' });
     }
 
+    const contract_code = 'HĐ-' + Date.now().toString().slice(-6);
+
     const contract = await Contract.create({
+      contract_code,
       student_id,
       room_id,
       start_date,

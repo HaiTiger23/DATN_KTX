@@ -1,6 +1,10 @@
 import mongoose from 'mongoose';
 
 const invoiceSchema = new mongoose.Schema({
+  invoice_code: {
+    type: String,
+    unique: true,
+  },
   room_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Room',

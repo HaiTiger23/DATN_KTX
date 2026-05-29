@@ -1,6 +1,10 @@
 import mongoose from 'mongoose';
 
 const contractSchema = new mongoose.Schema({
+  contract_code: {
+    type: String,
+    unique: true,
+  },
   student_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

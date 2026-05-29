@@ -124,12 +124,11 @@ export default function LoginScreen() {
               <Form
                 key="login"
                 layout="vertical"
-                initialValues={{ email: 'admin@dorm.com', password: 'admin123' }}
                 onFinish={onLogin}
                 className="ktx-login-form"
               >
                 <Form.Item name="email" label={t('login.email')} rules={[{ required: true, type: 'email' }]}>
-                  <Input placeholder="admin@dorm.com" />
+                  <Input placeholder={t('students.email')} />
                 </Form.Item>
                 <Form.Item name="password" label={t('login.password')} rules={[{ required: true }]}>
                   <Input.Password placeholder="••••••••" />

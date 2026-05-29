@@ -13,6 +13,12 @@ export default function AdminContractsTab({ contracts, onEndContract, onEditCont
 
   const columns = [
     {
+      title: 'Mã HĐ',
+      dataIndex: 'contract_code',
+      key: 'contract_code',
+      render: (val, record) => val || record._id.slice(-6),
+    },
+    {
       title: t('contracts.student'),
       key: 'student',
       render: (_, c) => (

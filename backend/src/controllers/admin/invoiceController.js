@@ -79,7 +79,10 @@ export const createInvoice = async (req, res) => {
       Number(additional_cost || 0) +
       Number(room.price);
 
+    const invoice_code = 'HoaDon-' + Date.now().toString().slice(-6);
+
     const invoice = await Invoice.create({
+      invoice_code,
       room_id, month,
       electricity_cost: Number(electricity_cost),
       water_cost:       Number(water_cost),

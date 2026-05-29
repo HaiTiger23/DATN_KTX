@@ -118,7 +118,10 @@ const approveRequest = async (req, res) => {
     const months = request.months || 6;
     const endDate = new Date(new Date().setMonth(startDate.getMonth() + months));
 
+    const contract_code = 'HĐ-' + Date.now().toString().slice(-6);
+
     const contract = await Contract.create({
+      contract_code,
       student_id: request.student_id,
       room_id: request.room_id,
       status: 'Active',

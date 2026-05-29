@@ -79,6 +79,10 @@ export default function StudentInvoicesTab({ room, invoices, pagination, onPay }
                 }
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span>Mã HĐ:</span>
+                  <strong>{inv.invoice_code || inv._id.slice(-6)}</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                   <span>{t('studentInvoices.electricity')}</span>
                   <strong>{formatMoney(inv.electricity_cost)}</strong>
                 </div>

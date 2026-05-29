@@ -1399,7 +1399,7 @@ export default function Dashboard() {
           if (i.status === 'Paid') statusStr = 'Đã thanh toán';
 
           return {
-            'Mã HĐ': i._id, // the code uses _id if invoice_code doesn't exist
+            'Mã HĐ': i.invoice_code || i._id,
             'Tháng': i.month,
             'Phòng': i.room_id?.room_code || '',
             'Tiền điện (VNĐ)': i.electricity_cost,
@@ -1414,6 +1414,7 @@ export default function Dashboard() {
       } else if (currentTab === 'contracts') {
          endpoint = `/admin/contracts${queryString}`;
          formatData = (data) => data.map(c => ({
+           'Mã HĐ': c.contract_code || c._id,
            'Sinh viên': c.student_id?.fullname || '',
            'Mã SV': c.student_id?.mssv || '',
            'Phòng': c.room_id?.room_code || '',

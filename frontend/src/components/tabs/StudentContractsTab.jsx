@@ -16,6 +16,12 @@ export default function StudentContractsTab({ contracts, onCancelContract, pagin
 
   const columns = [
     {
+      title: 'Mã HĐ',
+      dataIndex: 'contract_code',
+      key: 'contract_code',
+      render: (val, record) => val || record._id.slice(-6),
+    },
+    {
       title: t('studentRequests.roomCode'),
       key: 'code',
       render: (_, c) => <strong>{c.room_id?.room_code || t('common.na')}</strong>,
