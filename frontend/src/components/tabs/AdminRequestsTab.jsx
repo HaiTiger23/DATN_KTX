@@ -1,5 +1,6 @@
 import { Button, Card, Col, Empty, Row, Tag, Typography } from 'antd';
 import { CheckOutlined, CloseOutlined } from '@ant-design/icons';
+import { User, Bed, Clock, Calendar } from 'lucide-react';
 import { formatDate } from '../../api';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -27,13 +28,13 @@ export default function AdminRequestsTab({ requests, onHandle, pagination }) {
             ]}
           >
             <Typography.Paragraph className="ktx-tab-p-sm">
-              {t('requests.student')}{' '}
+              <User size={16} style={{ marginRight: 6, verticalAlign: '-3px' }} /> {t('requests.student')}{' '}
               <Typography.Text strong>
                 {r.student_id?.fullname || t('common.na')} ({r.student_id?.mssv || t('common.na')})
               </Typography.Text>
             </Typography.Paragraph>
             <Typography.Paragraph className="ktx-tab-p-sm">
-              {t('requests.room')}{' '}
+              <Bed size={16} style={{ marginRight: 6, verticalAlign: '-3px' }} /> {t('requests.room')}{' '}
               <Typography.Text strong>
                 {r.room_id?.room_code || t('common.na')} — {r.room_id?.building || t('common.na')}
               </Typography.Text>
@@ -41,11 +42,11 @@ export default function AdminRequestsTab({ requests, onHandle, pagination }) {
 
             {r.type === 'Registration' && (
               <Typography.Paragraph className="ktx-tab-p-sm">
-                {t('requests.term')} <Typography.Text strong>{t('requests.months', { n: r.months || 6 })}</Typography.Text>
+                <Clock size={16} style={{ marginRight: 6, verticalAlign: '-3px' }} /> {t('requests.term')} <Typography.Text strong>{t('requests.months', { n: r.months || 6 })}</Typography.Text>
               </Typography.Paragraph>
             )}
             <Typography.Paragraph className="ktx-tab-p-last">
-              {t('requests.sentAt')} <Typography.Text strong>{formatDate(r.createdAt)}</Typography.Text>
+              <Calendar size={16} style={{ marginRight: 6, verticalAlign: '-3px' }} /> {t('requests.sentAt')} <Typography.Text strong>{formatDate(r.createdAt)}</Typography.Text>
             </Typography.Paragraph>
           </Card>
         </Col>

@@ -1,5 +1,6 @@
 import { Button, Card, Col, Row, Tag, Typography, Pagination, Avatar, Tooltip } from 'antd';
 import { EditOutlined, SwapOutlined, UserOutlined } from '@ant-design/icons';
+import { Building2, Bed, Banknote, MapPin, Tag as TagIcon } from 'lucide-react';
 import { formatMoney } from '../../api';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -36,17 +37,17 @@ export default function AdminRoomsTab({ rooms, onToggleStatus, onEdit, onNavigat
               ]}
             >
               <Typography.Paragraph className="ktx-tab-p-sm" style={{ marginBottom: 4 }}>
-                {t('room.building')} <Typography.Text strong>{r.building}</Typography.Text>
+                <Building2 size={16} style={{ marginRight: 6, verticalAlign: '-3px' }} /> {t('room.building')} <Typography.Text strong>{r.building}</Typography.Text>
               </Typography.Paragraph>
               <Typography.Paragraph className="ktx-tab-p-sm" style={{ marginBottom: 4 }}>
-                {t('room.floor')} <Typography.Text strong>{r.floor || 1}</Typography.Text>
+                <MapPin size={16} style={{ marginRight: 6, verticalAlign: '-3px' }} /> {t('room.floor')} <Typography.Text strong>{r.floor || 1}</Typography.Text>
               </Typography.Paragraph>
               <Typography.Paragraph className="ktx-tab-p-sm" style={{ marginBottom: 4 }}>
-                {t('room.type')} <Tag color={r.roomType === 'VIP' ? 'gold' : r.roomType === 'Service' ? 'geekblue' : 'default'}>{r.roomType === 'VIP' ? t('modal.roomTypeVip') : r.roomType === 'Service' ? t('modal.roomTypeService') : t('modal.roomTypeStandard')}</Tag>
+                <TagIcon size={16} style={{ marginRight: 6, verticalAlign: '-3px' }} /> {t('room.type')} <Tag color={r.roomType === 'VIP' ? 'gold' : r.roomType === 'Service' ? 'geekblue' : 'default'}>{r.roomType === 'VIP' ? t('modal.roomTypeVip') : r.roomType === 'Service' ? t('modal.roomTypeService') : t('modal.roomTypeStandard')}</Tag>
               </Typography.Paragraph>
               <Typography.Paragraph className="ktx-tab-p-sm" style={{ marginBottom: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span>
-                  {t('room.seats')}{' '}
+                  <Bed size={16} style={{ marginRight: 6, verticalAlign: '-3px' }} /> {t('room.seats')}{' '}
                   <Typography.Text strong style={{ color: available / r.capacity > 0.5 ? '#52c41a' : available / r.capacity === 0.5 ? '#faad14' : '#ff4d4f' }}>
                     {available}/{r.capacity}
                   </Typography.Text>
@@ -63,7 +64,7 @@ export default function AdminRoomsTab({ rooms, onToggleStatus, onEdit, onNavigat
                 )}
               </Typography.Paragraph>
               <Typography.Paragraph className="ktx-tab-p-last">
-                {t('room.price')}{' '}
+                <Banknote size={16} style={{ marginRight: 6, verticalAlign: '-3px' }} /> {t('room.price')}{' '}
                 <Typography.Text strong>
                   {formatMoney(r.price)}
                   {t('room.perMonth')}

@@ -9,7 +9,9 @@ import {
     submitFeedback,
     cancelContract,
     getMyNotifications,
-    markNotificationAsRead
+    markNotificationAsRead,
+    replyToFeedback,
+    deleteFeedbackReply
 } from '../controllers/studentController.js';
 import { chatWithBot } from '../controllers/chatController.js';
 import { getMyRoomInvoices, payInvoice } from '../controllers/student/invoiceController.js';
@@ -28,6 +30,8 @@ router.post('/contracts/:id/cancel', cancelContract);
 router.route('/feedbacks')
     .get(getMyFeedbacks)
     .post(submitFeedback);
+router.route('/feedbacks/:id/reply').post(replyToFeedback);
+router.route('/feedbacks/:id/reply/:replyId').delete(deleteFeedbackReply);
 router.post('/chat', chatWithBot);
 
 router.get('/notifications', getMyNotifications);

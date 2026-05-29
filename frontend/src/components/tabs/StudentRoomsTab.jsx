@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Button, Card, Col, Input, Row, Select, Space, Tag, Tooltip, Typography, Carousel, Pagination, Image } from 'antd';
 import { HomeOutlined, EyeOutlined } from '@ant-design/icons';
+import { Building2, Bed, Banknote, MapPin } from 'lucide-react';
 import { formatMoney } from '../../api';
 import { useLanguage } from '../../context/LanguageContext';
 import StudentRoomDetail from './StudentRoomDetail';
@@ -93,12 +94,14 @@ export default function StudentRoomsTab({ rooms, activeRoomId, pendingRoomId, on
               extraTag = <Tag color="blue">{t('studentRooms.yourRoom')}</Tag>;
             } else if (isPending) {
               extraTag = <Tag color="warning">{t('studentRooms.pendingRoom')}</Tag>;
+            } else if (r.status === 'Maintenance') {
+              extraTag = <Tag color="warning">{t('room.maintenance')}</Tag>;
             } else {
               extraTag = <Tag color="success">{t('room.available')}</Tag>;
             }
 
-            const registerDisabled = isMyRoom || isPending;
-            const tooltipTitle = isMyRoom ? t('studentRooms.yourRoomHint') : isPending ? t('studentRooms.pendingHint') : '';
+            const registerDisabled = isMyRoom || isPending || r.status === 'Maintenance';
+            const tooltipTitle = isMyRoom ? t('studentRooms.yourRoomHint') : isPending ? t('studentRooms.pendingHint') : r.status === 'Maintenance' ? t('room.maintenance') : '';
 
             const actionButton = (
               <Tooltip title={tooltipTitle || undefined}>
@@ -113,7 +116,7 @@ export default function StudentRoomsTab({ rooms, activeRoomId, pendingRoomId, on
                     if (!registerDisabled && available > 0) onRegister(r._id);
                   }}
                 >
-                  {isMyRoom ? t('studentRooms.yourRoom') : isPending ? t('studentRooms.pendingRoom') : available === 0 ? t('studentRooms.full') : t('studentRooms.registerNow')}
+                  {isMyRoom ? t('studentRooms.yourRoom') : isPending ? t('studentRooms.pendingRoom') : r.status === 'Maintenance' ? t('room.maintenance') : available === 0 ? t('studentRooms.full') : t('studentRooms.registerNow')}
                 </Button>
               </Tooltip>
             );
@@ -184,11 +187,11 @@ export default function StudentRoomsTab({ rooms, activeRoomId, pendingRoomId, on
                   
                   <Space wrap style={{ marginBottom: 12 }}>
                     <Tag color={typeColor}>{r.roomType || 'Standard'}</Tag>
-                    <Tag>{t('room.floor')} {r.floor || 1}</Tag>
+                    <Tag><MapPin size={14} style={{ marginRight: 4, verticalAlign: '-2px' }} /> {t('room.floor')} {r.floor || 1}</Tag>
                   </Space>
 
                   <Typography.Paragraph className="ktx-tab-p-sm">
-                    {t('room.building')} <Typography.Text strong>{r.building}</Typography.Text>
+                    <Building2 size={16} style={{ marginRight: 6, verticalAlign: '-3px' }} /> {t('room.building')} <Typography.Text strong>{r.building}</Typography.Text>
                   </Typography.Paragraph>
 
                   {r.description && (
@@ -207,13 +210,13 @@ export default function StudentRoomsTab({ rooms, activeRoomId, pendingRoomId, on
                   )}
 
                   <Typography.Paragraph className="ktx-tab-p-sm">
-                    {t('room.seats')}{' '}
+                    <Bed size={16} style={{ marginRight: 6, verticalAlign: '-3px' }} /> {t('room.seats')}{' '}
                     <Typography.Text strong className="ktx-seat-available" style={{ color: available / r.capacity > 0.5 ? '#52c41a' : available / r.capacity === 0.5 ? '#faad14' : '#ff4d4f' }}>
                       {available}/{r.capacity}
                     </Typography.Text>
                   </Typography.Paragraph>
                   <Typography.Paragraph className="ktx-tab-p-last">
-                    {t('room.price')}:{' '}
+                    <Banknote size={16} style={{ marginRight: 6, verticalAlign: '-3px' }} /> {t('room.price')}:{' '}
                     <Typography.Text strong style={{ color: '#ff4d4f', fontSize: 16 }}>
                       {formatMoney(r.price)}
                       {t('room.perMonth')}

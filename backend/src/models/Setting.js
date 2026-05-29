@@ -21,7 +21,11 @@ const settingSchema = new mongoose.Schema({
   allowedEmailDomains: {
     type: [String],
     default: [] // Empty means all domains allowed
-  }
+  },
+  smtpHost: { type: String, default: '' },
+  smtpPort: { type: Number, default: 587 },
+  smtpUser: { type: String, default: '' },
+  smtpPass: { type: String, default: '' }
 }, {
   timestamps: true,
 });

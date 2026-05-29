@@ -8,7 +8,7 @@ function statusColor(status) {
   return 'processing';
 }
 
-export default function AdminContractsTab({ contracts, onEndContract, pagination }) {
+export default function AdminContractsTab({ contracts, onEndContract, onEditContract, onViewContract, pagination }) {
   const { t } = useLanguage();
 
   const columns = [
@@ -51,14 +51,23 @@ export default function AdminContractsTab({ contracts, onEndContract, pagination
     {
       title: t('contracts.actions'),
       key: 'actions',
-      render: (_, c) =>
-        c.status === 'Active' ? (
-          <div className="ktx-action-space">
-            <Button size="small" danger type="default" onClick={() => onEndContract(c._id)}>
-              {t('contracts.end')}
-            </Button>
-          </div>
-        ) : null,
+      render: (_, c) => (
+        <div className="ktx-action-space">
+          <Button size="small" onClick={() => onViewContract(c)}>
+            {t('contracts.details')}
+          </Button>
+          {c.status === 'Active' && (
+            <>
+              <Button size="small" type="primary" ghost onClick={() => onEditContract(c)}>
+                {t('contracts.edit')}
+              </Button>
+              <Button size="small" danger type="default" onClick={() => onEndContract(c._id)}>
+                {t('contracts.end')}
+              </Button>
+            </>
+          )}
+        </div>
+      ),
     },
   ];
 

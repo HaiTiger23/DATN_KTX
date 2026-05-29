@@ -11,7 +11,7 @@ export default function StudentRoomDetail({ room, activeRoomId, pendingRoomId, o
   const available = r.capacity - r.current_people;
   const isMyRoom = Boolean(activeRoomId && rid === activeRoomId);
   const isPending = Boolean(pendingRoomId && rid === pendingRoomId && !isMyRoom);
-  const registerDisabled = isMyRoom || isPending;
+  const registerDisabled = isMyRoom || isPending || r.status === 'Maintenance';
   const typeColor = r.roomType === 'VIP' ? 'gold' : r.roomType === 'Service' ? 'geekblue' : 'default';
 
   return (
@@ -59,7 +59,8 @@ export default function StudentRoomDetail({ room, activeRoomId, pendingRoomId, o
             <Tag color={typeColor} style={{ fontSize: 14, padding: '4px 12px' }}>{r.roomType || 'Standard'}</Tag>
             {isMyRoom && <Tag color="blue" style={{ fontSize: 14, padding: '4px 12px' }}>{t('studentRooms.yourRoom')}</Tag>}
             {isPending && <Tag color="warning" style={{ fontSize: 14, padding: '4px 12px' }}>{t('studentRooms.pendingRoom')}</Tag>}
-            {!isMyRoom && !isPending && <Tag color="success" style={{ fontSize: 14, padding: '4px 12px' }}>{t('room.available')}</Tag>}
+            {r.status === 'Maintenance' && <Tag color="warning" style={{ fontSize: 14, padding: '4px 12px' }}>{t('room.maintenance')}</Tag>}
+            {!isMyRoom && !isPending && r.status !== 'Maintenance' && <Tag color="success" style={{ fontSize: 14, padding: '4px 12px' }}>{t('room.available')}</Tag>}
           </Space>
 
           <Typography.Title level={3} style={{ color: '#ff4d4f', marginTop: 0 }}>
@@ -107,7 +108,7 @@ export default function StudentRoomDetail({ room, activeRoomId, pendingRoomId, o
               onClick={() => !registerDisabled && available > 0 && onRegister(r._id)}
               style={{ height: 50, fontSize: 16, fontWeight: 'bold', borderRadius: 8 }}
             >
-              {isMyRoom ? t('studentRooms.yourRoom') : isPending ? t('studentRooms.pendingRoom') : available === 0 ? t('studentRooms.full') : t('studentRooms.registerNow')}
+              {isMyRoom ? t('studentRooms.yourRoom') : isPending ? t('studentRooms.pendingRoom') : r.status === 'Maintenance' ? t('room.maintenance') : available === 0 ? t('studentRooms.full') : t('studentRooms.registerNow')}
             </Button>
           </div>
         </Col>

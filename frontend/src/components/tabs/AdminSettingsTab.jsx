@@ -1,6 +1,7 @@
 import { Button, Card, Col, Input, Row, Space, Tag, Typography, Switch, Select } from 'antd';
 import { SettingOutlined } from '@ant-design/icons';
 import { useLanguage } from '../../context/LanguageContext';
+import RichTextEditor from '../RichTextEditor';
 
 const PENDING_BLOCKS = [
   { id: 'email', titleKey: 'settings.blockEmailTitle', leadKey: 'settings.blockEmailLead' },
@@ -83,6 +84,49 @@ export default function AdminSettingsTab({ geminiKey, setGeminiKey, agentSetting
           </div>
         </div>
 
+        <div style={{ marginTop: 24, marginBottom: 16, paddingTop: 16, borderTop: '1px solid #f0f0f0' }}>
+          <Typography.Title level={5}>{t('settings.smtpTitle')}</Typography.Title>
+          <Typography.Paragraph type="secondary" style={{ fontSize: 13 }}>
+            {t('settings.smtpDesc')}
+          </Typography.Paragraph>
+          
+          <Row gutter={[16, 16]}>
+            <Col span={18}>
+              <Typography.Text>{t('settings.smtpHost')}</Typography.Text>
+              <Input 
+                value={agentSettings?.smtpHost} 
+                onChange={(e) => setAgentSettings(prev => ({ ...prev, smtpHost: e.target.value }))}
+                placeholder="smtp.gmail.com"
+              />
+            </Col>
+            <Col span={6}>
+              <Typography.Text>{t('settings.smtpPort')}</Typography.Text>
+              <Input 
+                type="number"
+                value={agentSettings?.smtpPort} 
+                onChange={(e) => setAgentSettings(prev => ({ ...prev, smtpPort: parseInt(e.target.value) || 587 }))}
+                placeholder="587"
+              />
+            </Col>
+            <Col span={12}>
+              <Typography.Text>{t('settings.smtpUser')}</Typography.Text>
+              <Input 
+                value={agentSettings?.smtpUser} 
+                onChange={(e) => setAgentSettings(prev => ({ ...prev, smtpUser: e.target.value }))}
+                placeholder="admin@gmail.com"
+              />
+            </Col>
+            <Col span={12}>
+              <Typography.Text>{t('settings.smtpPass')}</Typography.Text>
+              <Input.Password 
+                value={agentSettings?.smtpPass} 
+                onChange={(e) => setAgentSettings(prev => ({ ...prev, smtpPass: e.target.value }))}
+                placeholder="App Password"
+              />
+            </Col>
+          </Row>
+        </div>
+
         <Space orientation="vertical" size="small">
           <Button type="primary" onClick={onSave}>
             {t('settings.saveGemini')}
@@ -90,6 +134,62 @@ export default function AdminSettingsTab({ geminiKey, setGeminiKey, agentSetting
           <Typography.Text type="secondary" className="ktx-settings-footnote">
             {t('settings.geminiFootnote')}
           </Typography.Text>
+        </Space>
+      </Card>
+
+      <Card title="Cấu hình Hợp đồng (Bên A)">
+        <Typography.Paragraph type="secondary">Cấu hình thông tin đại diện pháp lý và các điều khoản mẫu cho Hợp đồng Thuê chỗ ở.</Typography.Paragraph>
+        
+        <Row gutter={[16, 16]}>
+          <Col span={12}>
+            <Typography.Text>Tên đơn vị quản lý</Typography.Text>
+            <Input 
+              value={agentSettings?.contractBqlName} 
+              onChange={(e) => setAgentSettings(prev => ({ ...prev, contractBqlName: e.target.value }))}
+              placeholder="Ban Quản lý Ký túc xá"
+            />
+          </Col>
+          <Col span={12}>
+            <Typography.Text>Người đại diện</Typography.Text>
+            <Input 
+              value={agentSettings?.contractRepName} 
+              onChange={(e) => setAgentSettings(prev => ({ ...prev, contractRepName: e.target.value }))}
+              placeholder="Họ và tên người đại diện"
+            />
+          </Col>
+          <Col span={12}>
+            <Typography.Text>Chức vụ</Typography.Text>
+            <Input 
+              value={agentSettings?.contractRepRole} 
+              onChange={(e) => setAgentSettings(prev => ({ ...prev, contractRepRole: e.target.value }))}
+              placeholder="Giám đốc / Trưởng ban"
+            />
+          </Col>
+          <Col span={12}>
+            <Typography.Text>Số điện thoại liên hệ</Typography.Text>
+            <Input 
+              value={agentSettings?.contractRepPhone} 
+              onChange={(e) => setAgentSettings(prev => ({ ...prev, contractRepPhone: e.target.value }))}
+              placeholder="0123.456.789"
+            />
+          </Col>
+        </Row>
+        
+        <div style={{ marginTop: 24 }}>
+          <Typography.Text strong>Các điều khoản hợp đồng</Typography.Text>
+          <div style={{ marginTop: 8, height: 300, marginBottom: 50 }}>
+            <RichTextEditor 
+              value={agentSettings?.contractTerms || ''} 
+              onChange={(val) => setAgentSettings(prev => ({ ...prev, contractTerms: val }))}
+              placeholder="Nhập nội dung các điều khoản (Điều 1, Điều 2...)"
+            />
+          </div>
+        </div>
+
+        <Space orientation="vertical" size="small" style={{ marginTop: 16 }}>
+          <Button type="primary" onClick={onSave}>
+            Lưu cấu hình hợp đồng
+          </Button>
         </Space>
       </Card>
 

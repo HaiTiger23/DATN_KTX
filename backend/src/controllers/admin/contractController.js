@@ -37,8 +37,8 @@ const getContracts = async (req, res) => {
     else if (sort === 'start_desc') sortOption = { start_date: -1 };
 
     const contracts = await Contract.find(query)
-      .populate('student_id', 'fullname email mssv')
-      .populate('room_id', 'room_code building')
+      .populate('student_id', 'fullname email mssv cccd phone address')
+      .populate('room_id', 'room_code building price')
       .sort(sortOption)
       .skip(skip)
       .limit(limit);
@@ -84,4 +84,69 @@ const endContract = async (req, res) => {
   }
 };
 
-export { getContracts, endContract };
+// @desc    Create contract
+// @route   POST /api/admin/contracts
+// @access  Private/Admin
+const createContract = async (req, res) => {
+  try {
+    const { student_id, room_id, start_date, end_date } = req.body;
+
+    if (!student_id || !room_id || !start_date || !end_date) {
+      return res.status(400).json({ message: 'Vui lòng cung cấp đủ thông tin' });
+    }
+
+    // Check if student already has active contract
+    const activeContract = await Contract.findOne({ student_id, status: 'Active' });
+    if (activeContract) {
+      return res.status(400).json({ message: 'Sinh viên đã có hợp đồng đang hoạt động' });
+    }
+
+    // Check if room has available spots
+    const room = await Room.findById(room_id);
+    if (!room) {
+      return res.status(404).json({ message: 'Không tìm thấy phòng' });
+    }
+    if (room.current_people >= room.capacity) {
+      return res.status(400).json({ message: 'Phòng đã đủ số lượng người' });
+    }
+
+    const contract = await Contract.create({
+      student_id,
+      room_id,
+      start_date,
+      end_date,
+      status: 'Active'
+    });
+
+    // Tăng số người phòng
+    await Room.findByIdAndUpdate(room_id, { $inc: { current_people: 1 } });
+
+    res.status(201).json(contract);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Update contract
+// @route   PUT /api/admin/contracts/:id
+// @access  Private/Admin
+const updateContract = async (req, res) => {
+  try {
+    const { start_date, end_date } = req.body;
+    const contract = await Contract.findById(req.params.id);
+
+    if (!contract) {
+      return res.status(404).json({ message: 'Không tìm thấy hợp đồng' });
+    }
+
+    if (start_date) contract.start_date = start_date;
+    if (end_date) contract.end_date = end_date;
+
+    const updatedContract = await contract.save();
+    res.json(updatedContract);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export { getContracts, endContract, createContract, updateContract };

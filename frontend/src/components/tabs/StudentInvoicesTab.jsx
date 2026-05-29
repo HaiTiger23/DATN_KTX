@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { Button, Card, Col, Row, Tag, Typography, Upload, Image, Alert, Space } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
+import { Receipt } from 'lucide-react';
 import { formatMoney } from '../../api';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -58,7 +59,7 @@ export default function StudentInvoicesTab({ room, invoices, pagination, onPay }
   return (
     <>
       <Typography.Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
-        {t('studentInvoices.roomInvoices')} <strong>{room.room_code} – {room.building}</strong>
+        <Receipt size={16} style={{ marginRight: 6, verticalAlign: '-3px' }} /> {t('studentInvoices.roomInvoices')} <strong>{room.room_code} – {room.building}</strong>
       </Typography.Text>
 
       <Row gutter={[16, 16]}>

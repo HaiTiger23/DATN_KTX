@@ -201,9 +201,65 @@ export const submitFeedback = async (req, res) => {
         const feedback = await Feedback.create({
             student_id: req.user._id,
             title,
-            description
+            description,
+            replies: []
         });
         res.status(201).json(feedback);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc Reply to feedback
+// @route POST /api/student/feedbacks/:id/reply
+export const replyToFeedback = async (req, res) => {
+    try {
+        const { reply_content } = req.body;
+        if (!reply_content || !reply_content.trim()) {
+            return res.status(400).json({ message: 'Nội dung phản hồi không được để trống' });
+        }
+
+        const feedback = await Feedback.findOne({ _id: req.params.id, student_id: req.user._id });
+        if (!feedback) {
+            return res.status(404).json({ message: 'Không tìm thấy phản ánh' });
+        }
+
+        feedback.replies.push({
+            user_id: req.user._id,
+            role: 'Student',
+            content: reply_content.trim()
+        });
+
+        await feedback.save();
+        res.json(feedback);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc Delete student's own reply
+// @route DELETE /api/student/feedbacks/:id/reply/:replyId
+export const deleteFeedbackReply = async (req, res) => {
+    try {
+        const feedback = await Feedback.findOne({ _id: req.params.id, student_id: req.user._id });
+        if (!feedback) {
+            return res.status(404).json({ message: 'Không tìm thấy phản ánh' });
+        }
+
+        const replyId = req.params.replyId;
+        const reply = feedback.replies.find(r => r._id.toString() === replyId);
+        
+        if (!reply) {
+            return res.status(404).json({ message: 'Không tìm thấy phản hồi' });
+        }
+        
+        if (reply.role !== 'Student') {
+            return res.status(403).json({ message: 'Không có quyền xóa phản hồi của người khác' });
+        }
+
+        feedback.replies = feedback.replies.filter(r => r._id.toString() !== replyId);
+        await feedback.save();
+        res.json({ message: 'Đã xóa phản hồi' });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -228,7 +284,7 @@ export const getMyNotifications = async (req, res) => {
         
         // Map to include an isRead flag
         const mappedNotifications = notifications.map(notif => {
-            const isRead = notif.readBy.includes(req.user._id);
+            const isRead = notif.readBy.some(id => id.toString() === req.user._id.toString());
             return {
                 ...notif._doc,
                 isRead
@@ -254,7 +310,7 @@ export const markNotificationAsRead = async (req, res) => {
             return res.status(404).json({ message: 'Notification not found' });
         }
 
-        if (!notification.readBy.includes(req.user._id)) {
+        if (!notification.readBy.some(id => id.toString() === req.user._id.toString())) {
             notification.readBy.push(req.user._id);
             await notification.save();
         }

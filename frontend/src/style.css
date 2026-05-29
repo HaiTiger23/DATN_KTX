@@ -723,3 +723,77 @@ tr:hover td {
     font-size: 12px;
     margin-top: 12px;
 }
+
+/* AI Chat Widget */
+.ktx-ai-widget-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.ktx-ai-widget-button {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transition: transform 0.2s, box-shadow 0.2s;
+    width: 60px !important;
+    height: 60px !important;
+    background: linear-gradient(135deg, #1890ff, #722ed1) !important;
+    border: none !important;
+}
+
+.ktx-ai-widget-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+}
+
+.ktx-ai-widget-window {
+    width: 360px;
+    height: 520px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: slideUpFade 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-origin: bottom right;
+    border: 1px solid #f0f0f0;
+}
+
+.ktx-ai-widget-header {
+    background: linear-gradient(135deg, #1890ff, #722ed1);
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #fff;
+}
+
+@keyframes slideUpFade {
+    0% { opacity: 0; transform: scale(0.9) translateY(20px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Override gemini chat container styles specifically for widget */
+.ktx-ai-widget-window .gemini-chat-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    background: #f8f9fa;
+}
+
+.ktx-ai-widget-window .gemini-chat-footer {
+    border-top: 1px solid #e8eaed;
+    background: #fff;
+    padding: 0;
+}
+
+.ktx-ai-widget-window .gemini-input-wrapper {
+    background: #f1f3f4;
+    border-radius: 24px;
+    padding: 4px 12px;
+    margin-bottom: 8px;
+}

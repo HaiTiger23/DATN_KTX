@@ -1,6 +1,8 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import Setting from '../models/Setting.js';
+import Otp from '../models/Otp.js';
+import { sendEmail } from '../utils/mailer.js';
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -43,15 +45,56 @@ const authUser = async (req, res) => {
   }
 };
 
+// @desc    Send OTP for registration
+// @route   POST /api/auth/send-otp-register
+// @access  Public
+const sendRegisterOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Vui lòng cung cấp email' });
+
+    // Kiểm tra tên miền email được phép
+    const settings = await Setting.findOne();
+    if (settings && settings.allowedEmailDomains && settings.allowedEmailDomains.length > 0) {
+      const emailDomain = email.split('@')[1];
+      if (!settings.allowedEmailDomains.includes(emailDomain)) {
+        return res.status(400).json({ 
+          message: `Chỉ chấp nhận đăng ký từ các tên miền email: ${settings.allowedEmailDomains.join(', ')}` 
+        });
+      }
+    }
+
+    const userExists = await User.findOne({ email });
+    if (userExists) return res.status(400).json({ message: 'Email đã được sử dụng' });
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digits
+
+    // Xóa mã cũ nếu có
+    await Otp.deleteMany({ email, type: 'Register' });
+
+    await Otp.create({ email, code, type: 'Register' });
+
+    await sendEmail(
+      email,
+      'Mã xác nhận đăng ký tài khoản KTX',
+      `<p>Mã xác nhận của bạn là: <strong>${code}</strong></p><p>Mã này sẽ hết hạn sau 5 phút.</p>`
+    );
+
+    res.json({ message: 'Mã xác nhận đã được gửi đến email của bạn' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Register a new student
 // @route   POST /api/auth/register
 // @access  Public
 const registerUser = async (req, res) => {
   try {
-    const { fullname, email, password, mssv, cccd } = req.body;
+    const { fullname, email, password, mssv, cccd, otp } = req.body;
 
-    if (!fullname || !email || !password) {
-      return res.status(400).json({ message: 'Vui lòng điền đủ họ tên, email và mật khẩu' });
+    if (!fullname || !email || !password || !otp) {
+      return res.status(400).json({ message: 'Vui lòng điền đủ họ tên, email, mật khẩu và mã OTP' });
     }
 
     // Kiểm tra tên miền email được phép
@@ -63,6 +106,11 @@ const registerUser = async (req, res) => {
           message: `Chỉ chấp nhận đăng ký từ các tên miền email: ${settings.allowedEmailDomains.join(', ')}` 
         });
       }
+    }
+
+    const validOtp = await Otp.findOne({ email, code: otp, type: 'Register' });
+    if (!validOtp) {
+      return res.status(400).json({ message: 'Mã OTP không hợp lệ hoặc đã hết hạn' });
     }
 
     const userExists = await User.findOne({ email });
@@ -78,6 +126,8 @@ const registerUser = async (req, res) => {
       cccd,
       role: 'Student'
     });
+
+    await Otp.deleteOne({ _id: validOtp._id });
 
     res.status(201).json({
       _id: user._id,
@@ -115,6 +165,22 @@ const updateUserProfile = async (req, res) => {
     if (user.role === 'Student') {
       user.phone = req.body.phone !== undefined ? req.body.phone : user.phone;
       user.address = req.body.address !== undefined ? req.body.address : user.address;
+      
+      // Update new fields
+      if (req.body.mssv && req.body.mssv !== user.mssv) {
+        const mssvExists = await User.findOne({ mssv: req.body.mssv });
+        if (mssvExists) return res.status(400).json({ message: 'MSSV này đã được sử dụng bởi sinh viên khác' });
+        user.mssv = req.body.mssv;
+      }
+      
+      if (req.body.cccd && req.body.cccd !== user.cccd) {
+        const cccdExists = await User.findOne({ cccd: req.body.cccd });
+        if (cccdExists) return res.status(400).json({ message: 'Số CCCD này đã được đăng ký' });
+        user.cccd = req.body.cccd;
+      }
+      
+      user.cccd_date = req.body.cccd_date !== undefined ? req.body.cccd_date : user.cccd_date;
+      user.cccd_place = req.body.cccd_place !== undefined ? req.body.cccd_place : user.cccd_place;
     }
     
     if (req.body.password) {
@@ -135,4 +201,57 @@ const updateUserProfile = async (req, res) => {
   }
 };
 
-export { authUser, registerUser, getUserProfile, updateUserProfile };
+// @desc    Forgot Password
+// @route   POST /api/auth/forgot-password
+// @access  Public
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Vui lòng cung cấp email' });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: 'Không tìm thấy tài khoản với email này' });
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+    await Otp.deleteMany({ email, type: 'ResetPassword' });
+    await Otp.create({ email, code, type: 'ResetPassword' });
+
+    await sendEmail(
+      email,
+      'Khôi phục mật khẩu tài khoản KTX',
+      `<p>Mã xác nhận để khôi phục mật khẩu của bạn là: <strong>${code}</strong></p><p>Mã này sẽ hết hạn sau 5 phút.</p>`
+    );
+
+    res.json({ message: 'Mã khôi phục đã được gửi đến email của bạn' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Reset Password
+// @route   POST /api/auth/reset-password
+// @access  Public
+const resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+    if (!email || !otp || !newPassword) return res.status(400).json({ message: 'Vui lòng cung cấp đủ thông tin' });
+
+    const validOtp = await Otp.findOne({ email, code: otp, type: 'ResetPassword' });
+    if (!validOtp) return res.status(400).json({ message: 'Mã OTP không hợp lệ hoặc đã hết hạn' });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: 'Không tìm thấy tài khoản' });
+
+    user.password = newPassword;
+    await user.save();
+
+    await Otp.deleteOne({ _id: validOtp._id });
+
+    res.json({ message: 'Mật khẩu đã được khôi phục thành công' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export { authUser, registerUser, sendRegisterOtp, getUserProfile, updateUserProfile, forgotPassword, resetPassword };

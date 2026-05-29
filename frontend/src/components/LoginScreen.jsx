@@ -15,6 +15,11 @@ export default function LoginScreen() {
   const [mode, setMode] = useState('login');
   const [loginLoading, setLoginLoading] = useState(false);
   const [registerLoading, setRegisterLoading] = useState(false);
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [forgotLoading, setForgotLoading] = useState(false);
+
+  const [registerForm] = Form.useForm();
+  const [forgotForm] = Form.useForm();
 
   async function onLogin(values) {
     setLoginLoading(true);
@@ -39,6 +44,7 @@ export default function LoginScreen() {
           email: values.email,
           password: values.password,
           mssv: values.mssv,
+          otp: values.otp,
         },
         showToast,
       );
@@ -47,6 +53,57 @@ export default function LoginScreen() {
       // handled
     } finally {
       setRegisterLoading(false);
+    }
+  }
+
+  async function onSendRegisterOtp() {
+    try {
+      const email = registerForm.getFieldValue('email');
+      if (!email) {
+        showToast('Vui lòng nhập email trước khi nhận mã OTP', 'error');
+        return;
+      }
+      setOtpLoading(true);
+      const res = await api('/auth/send-otp-register', 'POST', { email });
+      showToast(res.message);
+    } catch {
+      // handled
+    } finally {
+      setOtpLoading(false);
+    }
+  }
+
+  async function onSendForgotOtp() {
+    try {
+      const email = forgotForm.getFieldValue('email');
+      if (!email) {
+        showToast('Vui lòng nhập email trước khi nhận mã OTP', 'error');
+        return;
+      }
+      setOtpLoading(true);
+      const res = await api('/auth/forgot-password', 'POST', { email });
+      showToast(res.message);
+    } catch {
+      // handled
+    } finally {
+      setOtpLoading(false);
+    }
+  }
+
+  async function onResetPassword(values) {
+    setForgotLoading(true);
+    try {
+      const res = await api('/auth/reset-password', 'POST', {
+        email: values.email,
+        otp: values.otp,
+        newPassword: values.newPassword,
+      });
+      showToast(res.message);
+      setMode('login');
+    } catch {
+      // handled
+    } finally {
+      setForgotLoading(false);
     }
   }
 
@@ -60,7 +117,7 @@ export default function LoginScreen() {
               <Typography.Title level={3} className="ktx-login-brand-title">
                 🏢 {t('login.brand')}
               </Typography.Title>
-              <Typography.Text type="secondary">{mode === 'login' ? t('login.subtitleLogin') : t('login.subtitleRegister')}</Typography.Text>
+              <Typography.Text type="secondary">{mode === 'login' ? t('login.subtitleLogin') : mode === 'register' ? t('login.subtitleRegister') : 'Khôi phục mật khẩu'}</Typography.Text>
             </div>
 
             {mode === 'login' ? (
@@ -82,20 +139,35 @@ export default function LoginScreen() {
                     {t('login.submit')}
                   </Button>
                 </Form.Item>
-                <Typography.Text type="secondary">
-                  {t('login.noAccount')}{' '}
-                  <Button type="link" className="ktx-login-link-btn" onClick={() => setMode('register')}>
-                    {t('login.registerStudent')}
+                <Typography.Text type="secondary" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>
+                    {t('login.noAccount')}{' '}
+                    <Button type="link" className="ktx-login-link-btn" onClick={() => setMode('register')}>
+                      {t('login.registerStudent')}
+                    </Button>
+                  </span>
+                  <Button type="link" className="ktx-login-link-btn" onClick={() => setMode('forgot_password')}>
+                    Quên mật khẩu?
                   </Button>
                 </Typography.Text>
               </Form>
-            ) : (
-              <Form key="register" layout="vertical" onFinish={onRegister} className="ktx-login-form">
+            ) : mode === 'register' ? (
+              <Form key="register" form={registerForm} layout="vertical" onFinish={onRegister} className="ktx-login-form">
                 <Form.Item name="fullname" label={t('login.fullname')} rules={[{ required: true }]}>
                   <Input placeholder="Nguyễn Văn A" />
                 </Form.Item>
                 <Form.Item name="email" label={t('login.email')} rules={[{ required: true, type: 'email' }]}>
                   <Input placeholder="sv@dorm.com" />
+                </Form.Item>
+                <Form.Item label="Mã OTP" style={{ marginBottom: 0 }}>
+                  <Space style={{ display: 'flex', marginBottom: 24 }}>
+                    <Form.Item name="otp" rules={[{ required: true }]} noStyle>
+                      <Input placeholder="Nhập mã 6 số" style={{ width: '100%' }} />
+                    </Form.Item>
+                    <Button onClick={onSendRegisterOtp} loading={otpLoading}>
+                      Nhận mã
+                    </Button>
+                  </Space>
                 </Form.Item>
                 <Form.Item name="password" label={t('login.password')} rules={[{ required: true }]}>
                   <Input.Password placeholder="••••••••" />
@@ -112,6 +184,35 @@ export default function LoginScreen() {
                   {t('login.haveAccount')}{' '}
                   <Button type="link" className="ktx-login-link-btn" onClick={() => setMode('login')}>
                     {t('login.loginLink')}
+                  </Button>
+                </Typography.Text>
+              </Form>
+            ) : (
+              <Form key="forgot" form={forgotForm} layout="vertical" onFinish={onResetPassword} className="ktx-login-form">
+                <Form.Item name="email" label={t('login.email')} rules={[{ required: true, type: 'email' }]}>
+                  <Input placeholder="Nhập email đăng ký" />
+                </Form.Item>
+                <Form.Item label="Mã OTP" style={{ marginBottom: 0 }}>
+                  <Space style={{ display: 'flex', marginBottom: 24 }}>
+                    <Form.Item name="otp" rules={[{ required: true }]} noStyle>
+                      <Input placeholder="Nhập mã 6 số" style={{ width: '100%' }} />
+                    </Form.Item>
+                    <Button onClick={onSendForgotOtp} loading={otpLoading}>
+                      Nhận mã
+                    </Button>
+                  </Space>
+                </Form.Item>
+                <Form.Item name="newPassword" label="Mật khẩu mới" rules={[{ required: true }]}>
+                  <Input.Password placeholder="••••••••" />
+                </Form.Item>
+                <Form.Item>
+                  <Button type="primary" htmlType="submit" block loading={forgotLoading}>
+                    Đổi mật khẩu
+                  </Button>
+                </Form.Item>
+                <Typography.Text type="secondary">
+                  <Button type="link" className="ktx-login-link-btn" onClick={() => setMode('login')} style={{ paddingLeft: 0 }}>
+                    Quay lại Đăng nhập
                   </Button>
                 </Typography.Text>
               </Form>

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import {
   App,
   Avatar,
@@ -20,7 +20,26 @@ import {
   Col,
   Tag,
 } from 'antd';
-import { LogoutOutlined, ReloadOutlined, PlusOutlined, BellOutlined, SearchOutlined } from '@ant-design/icons';
+import {
+  LogoutOutlined,
+  ReloadOutlined,
+  PlusOutlined,
+  BellOutlined,
+  SearchOutlined,
+} from '@ant-design/icons';
+import {
+  Bed,
+  Users,
+  ClipboardList,
+  FileText,
+  Receipt,
+  MessageSquare,
+  BookOpen,
+  Bell,
+  Settings,
+  User,
+  Bot,
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../context/ToastContext';
@@ -39,13 +58,16 @@ import StudentRoomsTab from './tabs/StudentRoomsTab';
 import StudentRequestsTab from './tabs/StudentRequestsTab';
 import StudentContractsTab from './tabs/StudentContractsTab';
 import StudentFeedbacksTab from './tabs/StudentFeedbacksTab';
-import StudentChatbotTab from './tabs/StudentChatbotTab';
+import AiChatWidget from './AiChatWidget';
+import { exportToExcel } from '../utils/exportUtils';
+import { DownloadOutlined } from '@ant-design/icons';
 import AdminNotificationsTab from './tabs/AdminNotificationsTab';
 import StudentNotificationsTab from './tabs/StudentNotificationsTab';
 import AdminInvoicesTab from './tabs/AdminInvoicesTab';
 import StudentInvoicesTab from './tabs/StudentInvoicesTab';
 import ProfileTab from './tabs/ProfileTab';
 import RichTextEditor from './RichTextEditor';
+import ContractPrintTemplate from './ContractPrintTemplate';
 
 const { Header, Sider, Content } = Layout;
 
@@ -68,7 +90,6 @@ const STUDENT_TARGETS = [
   'student_contracts',
   'student_invoices',
   'student_feedbacks',
-  'student_chatbot',
   'profile',
 ];
 
@@ -81,7 +102,7 @@ export default function Dashboard() {
 
   const defaultTab = user?.role === 'Admin' ? 'rooms' : 'student_rooms';
   const [currentTab, setCurrentTab] = useState(defaultTab);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [data, setData] = useState({});
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -113,6 +134,10 @@ export default function Dashboard() {
     agentAllowCheckContract: true,
     aiSystemPrompt: '',
     allowedEmailDomains: [],
+    smtpHost: '',
+    smtpPort: 587,
+    smtpUser: '',
+    smtpPass: '',
   });
   const [profileForm, setProfileForm] = useState({
     fullname: '',
@@ -122,6 +147,9 @@ export default function Dashboard() {
     password: '',
   });
   const [roomFiles, setRoomFiles] = useState([]); // Array of { uid, name, status, url }
+  const [contractForm, setContractForm] = useState({ student_id: '', room_id: '', start_date: '', end_date: '' });
+  const printRef = useRef(null);
+  const [viewingContract, setViewingContract] = useState(null);
 
   const [allNotifs, setAllNotifs] = useState([]);
   const [unreadList, setUnreadList] = useState([]);
@@ -132,6 +160,7 @@ export default function Dashboard() {
   const [limit, setLimit] = useState(10);
   const [total, setTotal] = useState(0);
   const [allRooms, setAllRooms] = useState([]);
+  const [allStudents, setAllStudents] = useState([]);
 
   const [roomFilters, setRoomFilters] = useState({ search: '', floor: '', roomType: '', sort: 'default' });
   
@@ -182,18 +211,23 @@ export default function Dashboard() {
   }, [currentTab]);
 
   useEffect(() => {
-    // Fetch all rooms for filter dropdown
-    const fetchRoomsForFilter = async () => {
+    const fetchAllData = async () => {
       try {
-        const d = await api('/admin/rooms?limit=1000');
-        if (d?.data) {
-          setAllRooms(d.data.map(r => ({ label: `${r.building} - ${r.room_code}`, value: r._id })));
+        const [roomsRes, studentsRes] = await Promise.all([
+          api('/admin/rooms?limit=1000'),
+          api('/admin/students?limit=1000')
+        ]);
+        if (roomsRes?.data) {
+          setAllRooms(roomsRes.data.map(r => ({ label: `${r.building} - ${r.room_code} (${r.current_people}/${r.capacity})`, value: r._id })));
+        }
+        if (studentsRes?.data) {
+          setAllStudents(studentsRes.data.map(s => ({ label: `${s.fullname} - ${s.mssv || s.email}`, value: s._id })));
         }
       } catch (err) {
-        console.error('Fetch rooms error:', err);
+        console.error('Fetch error:', err);
       }
     };
-    if (user?.role === 'Admin' && token) fetchRoomsForFilter();
+    if (user?.role === 'Admin' && token) fetchAllData();
   }, [token, user?.role, api]);
 
   const navigateToTab = (tab, initialFilters = {}) => {
@@ -205,6 +239,40 @@ export default function Dashboard() {
 
 
 
+  const getNavIcon = (target) => {
+    const iconProps = { size: 18 };
+    switch (target) {
+      case 'rooms':
+      case 'student_rooms':
+        return <Bed {...iconProps} />;
+      case 'students':
+        return <Users {...iconProps} />;
+      case 'requests':
+      case 'student_requests':
+        return <ClipboardList {...iconProps} />;
+      case 'contracts':
+      case 'student_contracts':
+        return <FileText {...iconProps} />;
+      case 'invoices':
+      case 'student_invoices':
+        return <Receipt {...iconProps} />;
+      case 'feedbacks':
+      case 'student_feedbacks':
+        return <MessageSquare {...iconProps} />;
+      case 'admin_knowledge':
+        return <BookOpen {...iconProps} />;
+      case 'admin_notifications':
+      case 'student_notifications':
+        return <Bell {...iconProps} />;
+      case 'admin_settings':
+        return <Settings {...iconProps} />;
+      case 'profile':
+        return <User {...iconProps} />;
+      default:
+        return null;
+    }
+  };
+
   const navItems = useMemo(() => {
     const targets = user?.role === 'Admin' ? ADMIN_TARGETS : STUDENT_TARGETS;
     return targets.map((target) => ({ target, label: t(`nav.${target}`) }));
@@ -214,6 +282,7 @@ export default function Dashboard() {
     () =>
       navItems.map(({ target, label }) => ({
         key: target,
+        icon: getNavIcon(target),
         label,
       })),
     [navItems],
@@ -253,6 +322,15 @@ export default function Dashboard() {
         }
         case 'contracts': {
           const res = await api(`/admin/contracts${q}`);
+          const settings = await api('/admin/settings');
+          setAgentSettings(prev => ({
+            ...prev,
+            contractBqlName: settings.contractBqlName || 'Ban Quản lý Ký túc xá',
+            contractRepName: settings.contractRepName || '..............................',
+            contractRepRole: settings.contractRepRole || '..............................',
+            contractRepPhone: settings.contractRepPhone || '..............................',
+            contractTerms: settings.contractTerms || '',
+          }));
           setData({ contracts: res.data });
           setTotal(res.pagination.total);
           break;
@@ -280,10 +358,18 @@ export default function Dashboard() {
           setGeminiKey(settings.geminiApiKey || '');
           setAgentSettings({
             agentAllowCheckRoom: settings.agentAllowCheckRoom ?? true,
-
             agentAllowCheckContract: settings.agentAllowCheckContract ?? true,
             aiSystemPrompt: settings.aiSystemPrompt || '',
             allowedEmailDomains: settings.allowedEmailDomains || [],
+            smtpHost: settings.smtpHost || '',
+            smtpPort: settings.smtpPort || 587,
+            smtpUser: settings.smtpUser || '',
+            smtpPass: settings.smtpPass || '',
+            contractBqlName: settings.contractBqlName || '',
+            contractRepName: settings.contractRepName || '',
+            contractRepRole: settings.contractRepRole || '',
+            contractRepPhone: settings.contractRepPhone || '',
+            contractTerms: settings.contractTerms || '',
           });
           setData({ settings });
           break;
@@ -333,9 +419,6 @@ export default function Dashboard() {
           setTotal(res.pagination?.total || 0);
           break;
         }
-        case 'student_chatbot':
-          setData({});
-          break;
         case 'invoices': {
           const [res, roomsRes] = await Promise.all([
             api(`/admin/invoices${q}`),
@@ -352,6 +435,10 @@ export default function Dashboard() {
             email: prof.email || '',
             phone: prof.phone || '',
             address: prof.address || '',
+            mssv: prof.mssv || '',
+            cccd: prof.cccd || '',
+            cccd_date: prof.cccd_date || '',
+            cccd_place: prof.cccd_place || '',
             password: '',
           });
           setData({ profile: prof });
@@ -536,6 +623,27 @@ export default function Dashboard() {
         showToast(t('toast.roomUpdated'));
       }
 
+      closeModal();
+      loadTab();
+      return;
+    }
+    if (modalType === 'add_contract' || modalType === 'edit_contract') {
+      const body = { ...contractForm };
+      if (!body.start_date || !body.end_date) {
+        showToast(t('toast.fillRequired'), 'error');
+        throw new Error('validation');
+      }
+      if (modalType === 'add_contract') {
+        if (!body.student_id || !body.room_id) {
+          showToast(t('toast.fillRequired'), 'error');
+          throw new Error('validation');
+        }
+        await api('/admin/contracts', 'POST', body);
+        showToast('Tạo hợp đồng thành công');
+      } else {
+        await api(`/admin/contracts/${modalId}`, 'PUT', { start_date: body.start_date, end_date: body.end_date });
+        showToast('Cập nhật hợp đồng thành công');
+      }
       closeModal();
       loadTab();
       return;
@@ -856,6 +964,95 @@ export default function Dashboard() {
             </Form.Item>
           </Form>
         );
+      case 'add_contract':
+      case 'edit_contract':
+        return (
+          <Form layout="vertical">
+            {modalType === 'add_contract' && (
+              <>
+                <Form.Item label={t('contracts.selectStudent')} required>
+                  <Select
+                    showSearch
+                    optionFilterProp="label"
+                    value={contractForm.student_id}
+                    onChange={(v) => setContractForm(f => ({ ...f, student_id: v }))}
+                    options={allStudents}
+                  />
+                </Form.Item>
+                <Form.Item label={t('contracts.selectRoom')} required>
+                  <Select
+                    showSearch
+                    optionFilterProp="label"
+                    value={contractForm.room_id}
+                    onChange={(v) => setContractForm(f => ({ ...f, room_id: v }))}
+                    options={allRooms}
+                  />
+                </Form.Item>
+              </>
+            )}
+            <Form.Item label={t('contracts.from')} required>
+              <Input type="date" value={contractForm.start_date?.split('T')[0] || ''} onChange={(e) => setContractForm(f => ({ ...f, start_date: e.target.value }))} />
+            </Form.Item>
+            <Form.Item label={t('contracts.to')} required>
+              <Input type="date" value={contractForm.end_date?.split('T')[0] || ''} onChange={(e) => setContractForm(f => ({ ...f, end_date: e.target.value }))} />
+            </Form.Item>
+          </Form>
+        );
+      case 'view_contract':
+        return (
+          <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '12px' }}>
+            <div style={{ 
+              background: 'white', padding: '30px 24px', borderRadius: '8px', 
+              boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0', 
+              fontFamily: 'Times New Roman, serif', color: '#0f172a' 
+            }}>
+              <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold' }}>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</h3>
+                <h4 style={{ margin: 0, fontSize: '15px', textDecoration: 'underline' }}>Độc lập - Tự do - Hạnh phúc</h4>
+              </div>
+              
+              <h2 style={{ textAlign: 'center', fontSize: '18px', fontWeight: 'bold', marginBottom: '24px' }}>HỢP ĐỒNG THUÊ CHỖ Ở KÝ TÚC XÁ</h2>
+              
+              <div style={{ fontSize: '15px', lineHeight: '1.6' }}>
+                <p style={{ margin: '8px 0' }}><strong>Bên A (Cho thuê):</strong> {agentSettings?.contractBqlName || 'Ban Quản lý Ký túc xá'}</p>
+                <p style={{ margin: '8px 0' }}><strong>Người đại diện:</strong> {agentSettings?.contractRepName || '..............................'} - <strong>Chức vụ:</strong> {agentSettings?.contractRepRole || '..............................'}</p>
+                <p style={{ margin: '8px 0', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}></p>
+                <p style={{ margin: '8px 0' }}><strong>Bên B (Người thuê):</strong> {viewingContract?.student_id?.fullname} - <strong>MSSV:</strong> {viewingContract?.student_id?.mssv || '...'}</p>
+                <p style={{ margin: '8px 0' }}><strong>CCCD/CMND:</strong> {viewingContract?.student_id?.cccd || '...'}</p>
+                <p style={{ margin: '8px 0' }}><strong>Căn hộ/Phòng:</strong> {viewingContract?.room_id?.room_code} (Tòa nhà {viewingContract?.room_id?.building})</p>
+                <p style={{ margin: '8px 0' }}><strong>Thời hạn thuê:</strong> Từ ngày {new Date(viewingContract?.start_date).toLocaleDateString('vi-VN')} đến ngày {new Date(viewingContract?.end_date).toLocaleDateString('vi-VN')}</p>
+                <p style={{ margin: '8px 0' }}><strong>Đơn giá:</strong> {viewingContract?.room_id?.price ? viewingContract.room_id.price.toLocaleString() : '...'} VNĐ/tháng</p>
+              </div>
+
+              <div style={{ marginTop: '24px', padding: '12px', background: '#fef2f2', borderLeft: '4px solid #ef4444', color: '#991b1b', fontStyle: 'italic', fontSize: '13px' }}>
+                * Đây là bản xem trước tóm tắt. Vui lòng bấm <strong>In Hợp Đồng</strong> để xuất bản in A4 với đầy đủ các điều khoản pháp lý ràng buộc giữa hai bên.
+              </div>
+            </div>
+
+            <div style={{ textAlign: 'center', marginTop: '24px' }}>
+              <Button 
+                type="primary" 
+                size="large"
+                onClick={() => {
+                  if (printRef.current) {
+                    window.print();
+                  }
+                }}
+                style={{ 
+                  background: 'linear-gradient(135deg, #4f46e5 0%, #4338ca 100%)', 
+                  borderColor: '#4338ca', 
+                  borderRadius: '8px', 
+                  boxShadow: '0 4px 14px rgba(79, 70, 229, 0.4)', 
+                  padding: '0 40px',
+                  fontWeight: 600
+                }}
+              >
+                {t('contracts.print')}
+              </Button>
+            </div>
+            <ContractPrintTemplate ref={printRef} contract={viewingContract} settings={agentSettings} />
+          </div>
+        );
       default:
         return null;
     }
@@ -863,17 +1060,22 @@ export default function Dashboard() {
 
   const pageTitle = t(`tab.${currentTab}`);
 
-  const showSync = currentTab === 'rooms';
-  const showAdd = ['rooms', 'students', 'invoices', 'student_feedbacks', 'admin_knowledge', 'admin_notifications'].includes(currentTab);
+
+  const showAdd = ['rooms', 'students', 'contracts', 'invoices', 'student_feedbacks', 'admin_knowledge', 'admin_notifications'].includes(currentTab);
   let addLabel = t('dashboard.addNew');
   if (currentTab === 'student_feedbacks') addLabel = t('dashboard.addFeedback');
   if (currentTab === 'admin_knowledge') addLabel = t('dashboard.addKnowledge');
   if (currentTab === 'admin_notifications') addLabel = t('modal.add_notification');
   if (currentTab === 'invoices') addLabel = t('dashboard.addInvoice');
+  if (currentTab === 'contracts') addLabel = t('contracts.add');
 
   const handleAddClick = () => {
     if (currentTab === 'rooms') openModal('add_room');
     else if (currentTab === 'students') openModal('add_student');
+    else if (currentTab === 'contracts') {
+      setContractForm({ student_id: '', room_id: '', start_date: '', end_date: '' });
+      openModal('add_contract');
+    }
     else if (currentTab === 'student_feedbacks') openModal('add_feedback');
     else if (currentTab === 'admin_knowledge') openModal('add_knowledge');
     else if (currentTab === 'admin_notifications') openModal('add_notification');
@@ -950,7 +1152,24 @@ export default function Dashboard() {
     });
   };
 
-  const registerRoom = (roomId) => {
+  const registerRoom = async (roomId) => {
+    // Validation profile completeness
+    try {
+      const prof = await api('/auth/profile');
+      if (!prof.cccd || !prof.mssv || !prof.phone || !prof.address || !prof.cccd_date || !prof.cccd_place) {
+        modal.warning({
+          title: 'Cập nhật thông tin',
+          content: 'Bạn cần cập nhật đầy đủ thông tin cá nhân (MSSV, CCCD, Ngày/Nơi cấp, SĐT, Địa chỉ) trước khi đăng ký phòng.',
+          okText: 'Cập nhật ngay',
+          onOk: () => setCurrentTab('profile'),
+        });
+        return;
+      }
+    } catch {
+      showToast('Lỗi kiểm tra thông tin', 'error');
+      return;
+    }
+
     let monthsNum = 6;
     modal.confirm({
       title: t('prompt.rentMonths'),
@@ -988,6 +1207,28 @@ export default function Dashboard() {
         });
       },
     });
+  };
+
+  const handleSendFeedbackReply = async (feedbackId, content) => {
+    try {
+      const endpoint = user?.role === 'Admin' ? `/admin/feedbacks/${feedbackId}/reply` : `/student/feedbacks/${feedbackId}/reply`;
+      await api(endpoint, 'POST', { reply_content: content });
+      showToast(t('feedbacks.replySuccess', 'Đã gửi phản hồi'));
+      loadTab(currentTab);
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  };
+
+  const handleDeleteFeedbackReply = async (feedbackId, replyId) => {
+    try {
+      const endpoint = user?.role === 'Admin' ? `/admin/feedbacks/${feedbackId}/reply/${replyId}` : `/student/feedbacks/${feedbackId}/reply/${replyId}`;
+      await api(endpoint, 'DELETE');
+      showToast(t('feedbacks.deleteReplySuccess', 'Đã xóa phản hồi'));
+      loadTab(currentTab);
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
   };
 
   const cancelStudentContract = (id) => {
@@ -1072,6 +1313,10 @@ export default function Dashboard() {
         email: profileForm.email,
         phone: profileForm.phone,
         address: profileForm.address,
+        mssv: profileForm.mssv,
+        cccd: profileForm.cccd,
+        cccd_date: profileForm.cccd_date,
+        cccd_place: profileForm.cccd_place,
       };
       if (profileForm.password) body.password = profileForm.password;
       const res = await api('/auth/profile', 'PUT', body);
@@ -1083,7 +1328,106 @@ export default function Dashboard() {
     }
   };
 
-  const sendChatMessage = (msg, history) => api('/student/chat', 'POST', { message: msg, history });
+
+
+  const handleExportExcel = async () => {
+    try {
+      showToast(t('dashboard.loading'), 'info'); // using generic loading msg
+      let endpoint = '';
+      let formatData = (data) => data;
+      let filename = currentTab;
+      
+      const q = new URLSearchParams();
+      q.set('limit', 10000);
+      if (filters.search) q.set('search', filters.search);
+      if (filters.status) q.set('status', filters.status);
+      if (filters.type) q.set('type', filters.type);
+      if (filters.month) q.set('month', filters.month);
+      if (filters.sort) q.set('sort', filters.sort);
+      if (filters.room_id) q.set('room_id', filters.room_id);
+
+      const queryString = `?${q.toString()}`;
+
+      if (currentTab === 'rooms') {
+        endpoint = `/admin/rooms${queryString}`;
+        formatData = (data) => data.map(r => ({
+          'Tòa nhà': r.building,
+          'Tầng': r.floor,
+          'Số phòng': r.room_code,
+          'Loại phòng': r.room_type,
+          'Sức chứa': r.capacity,
+          'Đang ở': r.current_people,
+          'Giá (VNĐ)': r.price,
+          'Trạng thái': r.status,
+        }));
+        filename = 'DS_Phong';
+      } else if (currentTab === 'students') {
+        endpoint = `/admin/students${queryString}`;
+        formatData = (data) => data.map(s => ({
+          'Mã SV': s.mssv || '',
+          'Họ và tên': s.fullname || '',
+          'Email': s.email,
+          'SĐT': s.phone,
+          'Phòng': s.room_id?.room_code || 'Chưa xếp',
+          'Trạng thái': s.status
+        }));
+        filename = 'DS_SinhVien';
+      } else if (currentTab === 'invoices') {
+        endpoint = `/admin/invoices${queryString}`;
+        formatData = (data) => data.map(i => ({
+          'Mã HĐ': i.invoice_code,
+          'Tháng': i.month,
+          'Phòng': i.room_id?.room_code || '',
+          'Tổng tiền (VNĐ)': i.amount,
+          'Loại': i.type,
+          'Trạng thái': i.status,
+          'Ngày tạo': new Date(i.createdAt).toLocaleDateString('vi-VN')
+        }));
+        filename = 'DS_HoaDon_DoanhThu';
+      } else if (currentTab === 'contracts') {
+         endpoint = `/admin/contracts${queryString}`;
+         formatData = (data) => data.map(c => ({
+           'Sinh viên': c.student_id?.fullname || '',
+           'Mã SV': c.student_id?.mssv || '',
+           'Phòng': c.room_id?.room_code || '',
+           'Ngày bắt đầu': new Date(c.start_date).toLocaleDateString('vi-VN'),
+           'Ngày kết thúc': new Date(c.end_date).toLocaleDateString('vi-VN'),
+           'Trạng thái': c.status
+         }));
+         filename = 'DS_HopDong';
+      } else if (currentTab === 'feedbacks') {
+         endpoint = `/admin/feedbacks${queryString}`;
+         formatData = (data) => data.map(f => ({
+           'Tiêu đề': f.title,
+           'Nội dung': f.content,
+           'Người gửi': f.student_id?.fullname || '',
+           'Phòng': f.room_id?.room_code || '',
+           'Trạng thái': f.status,
+           'Ngày gửi': new Date(f.createdAt).toLocaleDateString('vi-VN')
+         }));
+         filename = 'DS_PhanAnh';
+      } else if (currentTab === 'requests') {
+         endpoint = `/admin/requests${queryString}`;
+         formatData = (data) => data.map(r => ({
+           'Sinh viên': r.student_id?.fullname || '',
+           'Phòng yêu cầu': r.room_id?.room_code || '',
+           'Loại đơn': r.type,
+           'Trạng thái': r.status,
+           'Ngày tạo': new Date(r.createdAt).toLocaleDateString('vi-VN')
+         }));
+         filename = 'DS_DonDangKy';
+      } else {
+        showToast('Trang này chưa hỗ trợ xuất Excel', 'warning');
+        return;
+      }
+
+      const res = await api(endpoint);
+      const formatted = formatData(res.data || []);
+      exportToExcel(formatted, filename, 'DuLieu');
+    } catch (err) {
+      showToast('Lỗi xuất Excel: ' + err.message, 'error');
+    }
+  };
 
   const renderFilterBar = () => {
     const tabsWithFilters = [
@@ -1148,24 +1492,23 @@ export default function Dashboard() {
         border: '1px solid rgba(0, 0, 0, 0.06)',
         boxShadow: '0 4px 20px rgba(0,0,0,0.03)' 
       }}>
-        <Row gutter={[16, 16]} align="middle">
-          {showSearch && (
-            <Col xs={24} md={6}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'space-between', alignItems: 'center' }}>
+          {/* Left Side: Filter Controls */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', flex: 1 }}>
+            {showSearch && (
               <Input 
                 prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
                 placeholder={currentTab.includes('rooms') || currentTab.includes('invoice') || currentTab.includes('contract') ? t('filter.searchRoom') : t('filter.search')}
                 allowClear
                 value={filters.search}
                 onChange={e => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                style={{ borderRadius: '8px' }}
+                style={{ borderRadius: '8px', width: '240px' }}
               />
-            </Col>
-          )}
-          {(currentTab === 'students' || currentTab === 'invoices' || currentTab === 'contracts') && (
-            <Col xs={12} md={4}>
+            )}
+            {(currentTab === 'students' || currentTab === 'invoices' || currentTab === 'contracts') && (
               <Select 
                 showSearch
-                style={{ width: '100%', borderRadius: '8px' }}
+                style={{ width: '180px', borderRadius: '8px' }}
                 placeholder={t('filter.selectRoom')}
                 allowClear
                 value={filters.room_id || undefined}
@@ -1173,24 +1516,20 @@ export default function Dashboard() {
                 options={allRooms}
                 optionFilterProp="label"
               />
-            </Col>
-          )}
-          {showStatus && (
-            <Col xs={12} md={4}>
+            )}
+            {showStatus && (
               <Select 
-                style={{ width: '100%', borderRadius: '8px' }}
+                style={{ width: '160px', borderRadius: '8px' }}
                 placeholder={t('filter.status')}
                 allowClear
                 value={filters.status || undefined}
                 onChange={v => setFilters(prev => ({ ...prev, status: v || '' }))}
                 options={statusOptions}
               />
-            </Col>
-          )}
-          {showType && (
-            <Col xs={12} md={4}>
+            )}
+            {showType && (
               <Select 
-                style={{ width: '100%', borderRadius: '8px' }}
+                style={{ width: '160px', borderRadius: '8px' }}
                 placeholder={t('filter.type')}
                 allowClear
                 value={filters.type || undefined}
@@ -1200,42 +1539,63 @@ export default function Dashboard() {
                   { label: t('filter.typeCancel'), value: 'Cancellation' }
                 ]}
               />
-            </Col>
-          )}
-          {showMonth && (
-            <Col xs={12} md={4}>
+            )}
+            {showMonth && (
               <Input 
                 placeholder={t('filter.month')} 
                 value={filters.month}
                 onChange={e => setFilters(prev => ({ ...prev, month: e.target.value }))}
-                style={{ borderRadius: '8px' }}
+                style={{ borderRadius: '8px', width: '160px' }}
               />
-            </Col>
-          )}
-          {showSort && (
-            <Col xs={12} md={4}>
+            )}
+            {showSort && (
               <Select 
-                style={{ width: '100%', borderRadius: '8px' }}
+                style={{ width: '160px', borderRadius: '8px' }}
                 placeholder={t('filter.sort')}
                 value={filters.sort || ''}
                 onChange={v => setFilters(prev => ({ ...prev, sort: v }))}
                 options={sortOptions}
               />
-            </Col>
-          )}
-          {filters.room_id && (currentTab === 'students' || currentTab === 'invoices' || currentTab === 'contracts') && (
-            <Col xs={24} md={24}>
-              <Tag 
-                color="blue" 
-                closable 
-                onClose={() => setFilters(prev => ({ ...prev, room_id: '' }))}
-                style={{ padding: '4px 12px', fontSize: 13, borderRadius: '6px' }}
+            )}
+          </div>
+
+          {/* Right Side: Export Button */}
+          {user?.role === 'Admin' && ['rooms', 'students', 'requests', 'contracts', 'invoices', 'feedbacks'].includes(currentTab) && (
+            <div>
+              <Button 
+                type="primary" 
+                icon={<DownloadOutlined />} 
+                style={{ 
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', 
+                  border: 'none', 
+                  borderRadius: '10px', 
+                  boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)',
+                  height: '40px',
+                  padding: '0 24px',
+                  fontWeight: 600,
+                  fontSize: '14px'
+                }}
+                onClick={handleExportExcel}
               >
-                {t('filter.filteringByRoom')}{allRooms.find(r => r.value === filters.room_id)?.label || filters.room_id}
-              </Tag>
-            </Col>
+                Xuất Excel
+              </Button>
+            </div>
           )}
-        </Row>
+        </div>
+
+        {/* Filter Tags underneath */}
+        {filters.room_id && (currentTab === 'students' || currentTab === 'invoices' || currentTab === 'contracts') && (
+          <div style={{ marginTop: '16px' }}>
+            <Tag 
+              color="blue" 
+              closable 
+              onClose={() => setFilters(prev => ({ ...prev, room_id: '' }))}
+              style={{ padding: '4px 12px', fontSize: 13, borderRadius: '6px' }}
+            >
+              {t('filter.filteringByRoom')} {allRooms.find(r => r.value === filters.room_id)?.label || filters.room_id}
+            </Tag>
+          </div>
+        )}
       </div>
     );
   };
@@ -1268,6 +1628,7 @@ export default function Dashboard() {
           )}
           {renderContentBody()}
         </div>
+        <AiChatWidget api={api} chatEndpoint={user?.role === 'Admin' ? '/admin/chat' : '/student/chat'} isAdmin={user?.role === 'Admin'} />
       </div>
     );
   };
@@ -1309,7 +1670,21 @@ export default function Dashboard() {
       case 'requests':
         return <AdminRequestsTab requests={data.requests || []} onHandle={handleRequest} pagination={paginationProps} />;
       case 'contracts':
-        return <AdminContractsTab contracts={data.contracts || []} onEndContract={endContract} pagination={paginationProps} />;
+        const onEditContract = (contract) => {
+          setContractForm({
+            student_id: contract.student_id?._id,
+            room_id: contract.room_id?._id,
+            start_date: contract.start_date,
+            end_date: contract.end_date,
+          });
+          openModal('edit_contract', contract._id);
+        };
+        const onViewContract = (contract) => {
+          setViewingContract(contract);
+          openModal('view_contract');
+        };
+
+        return <AdminContractsTab contracts={data.contracts || []} onEndContract={endContract} onEditContract={onEditContract} onViewContract={onViewContract} pagination={{ current: page, pageSize: limit, total, onChange: setPage }} />;
       case 'invoices':
         return (
           <AdminInvoicesTab
@@ -1339,7 +1714,16 @@ export default function Dashboard() {
           />
         );
       case 'feedbacks':
-        return <AdminFeedbacksTab feedbacks={data.feedbacks || []} onReply={(id) => openModal('reply_feedback', id)} pagination={paginationProps} />;
+        const deleteFeedback = async (id) => {
+          try {
+            await api(`/admin/feedbacks/${id}`, 'DELETE');
+            showToast('Đã xóa phản ánh');
+            loadTab();
+          } catch {
+            /* handled */
+          }
+        };
+        return <AdminFeedbacksTab feedbacks={data.feedbacks || []} onSendReply={handleSendFeedbackReply} onDeleteReply={handleDeleteFeedbackReply} onDelete={deleteFeedback} pagination={paginationProps} currentUser={user} />;
       case 'admin_knowledge':
         return <AdminKnowledgeTab items={data.knowledge || []} onDelete={deleteKnowledge} pagination={paginationProps} />;
       case 'admin_notifications':
@@ -1373,7 +1757,7 @@ export default function Dashboard() {
       case 'student_contracts':
         return <StudentContractsTab contracts={data.contracts || []} onCancelContract={cancelStudentContract} pagination={paginationProps} />;
       case 'student_feedbacks':
-        return <StudentFeedbacksTab feedbacks={data.feedbacks || []} pagination={paginationProps} />;
+        return <StudentFeedbacksTab feedbacks={data.feedbacks || []} onSendReply={handleSendFeedbackReply} onDeleteReply={handleDeleteFeedbackReply} onAdd={() => openModal('add_student_feedback')} pagination={paginationProps} currentUser={user} />;
       case 'student_invoices':
         return (
           <StudentInvoicesTab
@@ -1400,8 +1784,6 @@ export default function Dashboard() {
             }}
           />
         );
-      case 'student_chatbot':
-        return <StudentChatbotTab sendMessage={sendChatMessage} />;
       case 'profile':
         return <ProfileTab user={user} form={profileForm} setForm={setProfileForm} onSave={saveProfile} />;
       default:
@@ -1463,11 +1845,7 @@ export default function Dashboard() {
                   <Button icon={<BellOutlined />} onClick={() => setShowAllNotifsModal(true)} />
                 </Badge>
               )}
-              {showSync ? (
-                <Button onClick={handleSync}>
-                  {t('dashboard.sync')}
-                </Button>
-              ) : null}
+
               {showAdd ? (
                 <Button type="primary" onClick={handleAddClick}>
                   {addLabel}

@@ -14,6 +14,7 @@ import settingRoutes from './routes/admin/settingRoutes.js';
 import knowledgeRoutes from './routes/admin/knowledgeRoutes.js';
 import notificationRoutes from './routes/admin/notificationRoutes.js';
 import invoiceRoutes from './routes/admin/invoiceRoutes.js';
+import adminChatRoutes from './routes/admin/chatRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import studentPortalRoutes from './routes/studentRoutes.js';
 
@@ -37,6 +38,7 @@ app.use('/api/admin/settings', settingRoutes);
 app.use('/api/admin/knowledge', knowledgeRoutes);
 app.use('/api/admin/notifications', notificationRoutes);
 app.use('/api/admin/invoices', invoiceRoutes);
+app.use('/api/admin/chat', adminChatRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/student', studentPortalRoutes);
 

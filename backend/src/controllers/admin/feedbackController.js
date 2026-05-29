@@ -50,12 +50,13 @@ const replyFeedback = async (req, res) => {
       return res.status(404).json({ message: 'Không tìm thấy phản ánh' });
     }
 
-    // BUG FIX: Chặn reply đã trả lời rồi (tùy yêu cầu có thể bỏ)
-    if (feedback.status === 'Answered') {
-      return res.status(400).json({ message: 'Phản ánh này đã được trả lời rồi' });
-    }
-
-    feedback.reply_content = reply_content.trim();
+    // BUG FIX: Chặn reply đã trả lời rồi (tùy yêu cầu có thể bỏ) - Đã bỏ vì yêu cầu chat nhiều lần
+    
+    feedback.replies.push({
+      user_id: req.user._id,
+      role: 'Admin',
+      content: reply_content.trim()
+    });
     feedback.status = 'Answered';
 
     const updatedFeedback = await feedback.save();
@@ -65,4 +66,43 @@ const replyFeedback = async (req, res) => {
   }
 };
 
-export { getFeedbacks, replyFeedback };
+// @desc    Delete feedback
+// @route   DELETE /api/admin/feedbacks/:id
+// @access  Private/Admin
+const deleteFeedback = async (req, res) => {
+  try {
+    const feedback = await Feedback.findById(req.params.id);
+
+    if (!feedback) {
+      return res.status(404).json({ message: 'Không tìm thấy phản ánh' });
+    }
+
+    await Feedback.deleteOne({ _id: feedback._id });
+    res.json({ message: 'Đã xóa phản ánh thành công' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const deleteFeedbackReply = async (req, res) => {
+  try {
+    const feedback = await Feedback.findById(req.params.id);
+    if (!feedback) {
+      return res.status(404).json({ message: 'Không tìm thấy phản ánh' });
+    }
+
+    const replyId = req.params.replyId;
+    feedback.replies = feedback.replies.filter(r => r._id.toString() !== replyId);
+    
+    if (feedback.replies.length === 0) {
+      feedback.status = 'Pending';
+    }
+
+    await feedback.save();
+    res.json({ message: 'Đã xóa phản hồi' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export { getFeedbacks, replyFeedback, deleteFeedback };
