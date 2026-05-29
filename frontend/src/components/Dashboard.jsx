@@ -639,10 +639,10 @@ export default function Dashboard() {
           throw new Error('validation');
         }
         await api('/admin/contracts', 'POST', body);
-        showToast('Tạo hợp đồng thành công');
+        showToast(t('toast.contractCreated'));
       } else {
         await api(`/admin/contracts/${modalId}`, 'PUT', { start_date: body.start_date, end_date: body.end_date });
-        showToast('Cập nhật hợp đồng thành công');
+        showToast(t('toast.contractUpdated'));
       }
       closeModal();
       loadTab();
@@ -1166,7 +1166,7 @@ export default function Dashboard() {
         return;
       }
     } catch {
-      showToast('Lỗi kiểm tra thông tin', 'error');
+      showToast(t('toast.checkInfoError'), 'error');
       return;
     }
 
@@ -1350,39 +1350,66 @@ export default function Dashboard() {
 
       if (currentTab === 'rooms') {
         endpoint = `/admin/rooms${queryString}`;
-        formatData = (data) => data.map(r => ({
-          'Tòa nhà': r.building,
-          'Tầng': r.floor,
-          'Số phòng': r.room_code,
-          'Loại phòng': r.room_type,
-          'Sức chứa': r.capacity,
-          'Đang ở': r.current_people,
-          'Giá (VNĐ)': r.price,
-          'Trạng thái': r.status,
-        }));
+        formatData = (data) => data.map(r => {
+          let typeStr = r.roomType || r.room_type; // Handle both camelCase and snake_case if exist
+          if (typeStr === 'Standard') typeStr = 'Tiêu chuẩn';
+          if (typeStr === 'Service') typeStr = 'Dịch vụ';
+          if (typeStr === 'VIP') typeStr = 'VIP';
+
+          let statusStr = r.status;
+          if (r.status === 'Available') statusStr = 'Còn trống';
+          if (r.status === 'Full') statusStr = 'Đã đầy';
+          if (r.status === 'Maintenance') statusStr = 'Đang bảo trì';
+
+          return {
+            'Tòa nhà': r.building,
+            'Tầng': r.floor,
+            'Số phòng': r.room_code,
+            'Loại phòng': typeStr,
+            'Sức chứa': r.capacity,
+            'Đang ở': r.current_people,
+            'Giá (VNĐ)': r.price,
+            'Trạng thái': statusStr,
+          };
+        });
         filename = 'DS_Phong';
       } else if (currentTab === 'students') {
         endpoint = `/admin/students${queryString}`;
-        formatData = (data) => data.map(s => ({
-          'Mã SV': s.mssv || '',
-          'Họ và tên': s.fullname || '',
-          'Email': s.email,
-          'SĐT': s.phone,
-          'Phòng': s.room_id?.room_code || 'Chưa xếp',
-          'Trạng thái': s.status
-        }));
+        formatData = (data) => data.map(s => {
+          let statusStr = s.status;
+          if (s.status === 'Active') statusStr = 'Hoạt động';
+          if (s.status === 'Inactive') statusStr = 'Đã khóa';
+
+          return {
+            'Mã SV': s.mssv || '',
+            'Họ và tên': s.fullname || '',
+            'Email': s.email,
+            'SĐT': s.phone,
+            'Phòng': s.room_id?.room_code || 'Chưa xếp',
+            'Trạng thái': statusStr
+          };
+        });
         filename = 'DS_SinhVien';
       } else if (currentTab === 'invoices') {
         endpoint = `/admin/invoices${queryString}`;
-        formatData = (data) => data.map(i => ({
-          'Mã HĐ': i.invoice_code,
-          'Tháng': i.month,
-          'Phòng': i.room_id?.room_code || '',
-          'Tổng tiền (VNĐ)': i.amount,
-          'Loại': i.type,
-          'Trạng thái': i.status,
-          'Ngày tạo': new Date(i.createdAt).toLocaleDateString('vi-VN')
-        }));
+        formatData = (data) => data.map(i => {
+          let statusStr = i.status;
+          if (i.status === 'Pending') statusStr = 'Chưa thanh toán';
+          if (i.status === 'Waiting_Approval') statusStr = 'Chờ duyệt';
+          if (i.status === 'Paid') statusStr = 'Đã thanh toán';
+
+          return {
+            'Mã HĐ': i._id, // the code uses _id if invoice_code doesn't exist
+            'Tháng': i.month,
+            'Phòng': i.room_id?.room_code || '',
+            'Tiền điện (VNĐ)': i.electricity_cost,
+            'Tiền nước (VNĐ)': i.water_cost,
+            'Phụ phí (VNĐ)': i.additional_cost,
+            'Tổng cộng (VNĐ)': i.total_amount,
+            'Trạng thái': statusStr,
+            'Ngày tạo': new Date(i.createdAt).toLocaleDateString('vi-VN')
+          };
+        });
         filename = 'DS_HoaDon_DoanhThu';
       } else if (currentTab === 'contracts') {
          endpoint = `/admin/contracts${queryString}`;
@@ -1392,32 +1419,52 @@ export default function Dashboard() {
            'Phòng': c.room_id?.room_code || '',
            'Ngày bắt đầu': new Date(c.start_date).toLocaleDateString('vi-VN'),
            'Ngày kết thúc': new Date(c.end_date).toLocaleDateString('vi-VN'),
-           'Trạng thái': c.status
+           'Trạng thái': c.status === 'Active' ? 'Đang hiệu lực' : c.status === 'Expired' ? 'Hết hạn' : 'Đã hủy'
          }));
          filename = 'DS_HopDong';
       } else if (currentTab === 'feedbacks') {
          endpoint = `/admin/feedbacks${queryString}`;
-         formatData = (data) => data.map(f => ({
-           'Tiêu đề': f.title,
-           'Nội dung': f.content,
-           'Người gửi': f.student_id?.fullname || '',
-           'Phòng': f.room_id?.room_code || '',
-           'Trạng thái': f.status,
-           'Ngày gửi': new Date(f.createdAt).toLocaleDateString('vi-VN')
-         }));
+         formatData = (data) => data.map(f => {
+           let statusStr = f.status;
+           if (f.status === 'Pending') statusStr = 'Đang chờ';
+           if (f.status === 'Answered') statusStr = 'Đã trả lời';
+
+           // remove html tags from description for excel export
+           const plainText = f.description ? f.description.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').trim() : '';
+           
+           return {
+             'Tiêu đề': f.title,
+             'Nội dung': plainText,
+             'Người gửi': f.student_id?.fullname || '',
+             'Trạng thái': statusStr,
+             'Ngày gửi': new Date(f.createdAt).toLocaleDateString('vi-VN')
+           };
+         });
          filename = 'DS_PhanAnh';
       } else if (currentTab === 'requests') {
          endpoint = `/admin/requests${queryString}`;
-         formatData = (data) => data.map(r => ({
-           'Sinh viên': r.student_id?.fullname || '',
-           'Phòng yêu cầu': r.room_id?.room_code || '',
-           'Loại đơn': r.type,
-           'Trạng thái': r.status,
-           'Ngày tạo': new Date(r.createdAt).toLocaleDateString('vi-VN')
-         }));
+         formatData = (data) => data.map(r => {
+           let typeStr = r.type;
+           if (r.type === 'Maintenance') typeStr = 'Sửa chữa';
+           if (r.type === 'ChangeRoom') typeStr = 'Chuyển phòng';
+           if (r.type === 'CancelContract') typeStr = 'Hủy hợp đồng';
+
+           let statusStr = r.status;
+           if (r.status === 'Pending') statusStr = 'Đang chờ';
+           if (r.status === 'Approved') statusStr = 'Đã duyệt';
+           if (r.status === 'Rejected') statusStr = 'Từ chối';
+
+           return {
+             'Sinh viên': r.student_id?.fullname || '',
+             'Phòng yêu cầu': r.room_id?.room_code || '',
+             'Loại đơn': typeStr,
+             'Trạng thái': statusStr,
+             'Ngày tạo': new Date(r.createdAt).toLocaleDateString('vi-VN')
+           };
+         });
          filename = 'DS_DonDangKy';
       } else {
-        showToast('Trang này chưa hỗ trợ xuất Excel', 'warning');
+        showToast(t('toast.exportNotSupported'), 'warning');
         return;
       }
 
@@ -1425,7 +1472,7 @@ export default function Dashboard() {
       const formatted = formatData(res.data || []);
       exportToExcel(formatted, filename, 'DuLieu');
     } catch (err) {
-      showToast('Lỗi xuất Excel: ' + err.message, 'error');
+      showToast(t('toast.exportError') + err.message, 'error');
     }
   };
 
@@ -1717,8 +1764,8 @@ export default function Dashboard() {
         const deleteFeedback = async (id) => {
           try {
             await api(`/admin/feedbacks/${id}`, 'DELETE');
-            showToast('Đã xóa phản ánh');
-            loadTab();
+            showToast(t('toast.feedbackDeleted'));
+            loadTab(currentTab);
           } catch {
             /* handled */
           }

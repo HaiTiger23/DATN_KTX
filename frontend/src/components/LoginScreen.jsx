@@ -60,7 +60,7 @@ export default function LoginScreen() {
     try {
       const email = registerForm.getFieldValue('email');
       if (!email) {
-        showToast('Vui lòng nhập email trước khi nhận mã OTP', 'error');
+        showToast(t('toast.emailRequiredOtp'), 'error');
         return;
       }
       setOtpLoading(true);
@@ -77,7 +77,7 @@ export default function LoginScreen() {
     try {
       const email = forgotForm.getFieldValue('email');
       if (!email) {
-        showToast('Vui lòng nhập email trước khi nhận mã OTP', 'error');
+        showToast(t('toast.emailRequiredOtp'), 'error');
         return;
       }
       setOtpLoading(true);
