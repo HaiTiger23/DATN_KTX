@@ -19,15 +19,24 @@ export const getMyRoomInvoices = async (req, res) => {
       return res.json({ room: null, data: [], pagination: { total: 0, page, limit } });
     }
 
-    const { status, month } = req.query;
+    const { status, month, sort } = req.query;
+
     const query = { room_id: contract.room_id._id };
     if (status) query.status = status;
     if (month) query.month = month;
 
+    let sortOption = { createdAt: -1 };
+    if (sort) {
+      if (sort === 'month_desc') sortOption = { month: -1 };
+      else if (sort === 'month_asc') sortOption = { month: 1 };
+      else if (sort === 'amount_desc') sortOption = { total_amount: -1 };
+      else if (sort === 'amount_asc') sortOption = { total_amount: 1 };
+    }
+
     const [data, total] = await Promise.all([
       Invoice.find(query)
         .populate('paid_by', 'fullname mssv')
-        .sort({ createdAt: -1 })
+        .sort(sortOption)
         .skip(skip)
         .limit(limit),
       Invoice.countDocuments(query),

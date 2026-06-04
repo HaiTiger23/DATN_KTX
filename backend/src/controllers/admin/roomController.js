@@ -20,7 +20,19 @@ const getRooms = async (req, res) => {
         { building: { $regex: search, $options: 'i' } }
       ];
     }
-    if (status) query.status = status;
+    if (status) {
+      if (status === 'Maintenance') {
+        query.status = 'Maintenance';
+      } else if (status === 'Full') {
+        query.status = { $ne: 'Maintenance' };
+        query.$expr = { $gte: ["$current_people", "$capacity"] };
+      } else if (status === 'Available') {
+        query.status = { $ne: 'Maintenance' };
+        query.$expr = { $lt: ["$current_people", "$capacity"] };
+      } else {
+        query.status = status;
+      }
+    }
     if (floor) query.floor = parseInt(floor);
     if (roomType) query.roomType = roomType;
 

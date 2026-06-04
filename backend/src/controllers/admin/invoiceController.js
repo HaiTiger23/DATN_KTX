@@ -9,11 +9,12 @@ export const getInvoices = async (req, res) => {
     const limit = Math.max(1, parseInt(req.query.limit) || 10);
     const skip  = (page - 1) * limit;
 
-    const { status, month, search, sort } = req.query;
+    const { status, month, search, sort, room_id } = req.query;
 
     const query = {};
     if (status) query.status = status;
     if (month) query.month = month;
+    if (room_id) query.room_id = room_id;
     if (search) {
       const [rooms, students] = await Promise.all([
         Room.find({ room_code: { $regex: search, $options: 'i' } }).select('_id'),
@@ -91,6 +92,56 @@ export const createInvoice = async (req, res) => {
     });
 
     res.status(201).json(invoice);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// POST /api/admin/invoices/bulk
+export const createBulkInvoices = async (req, res) => {
+  try {
+    const { invoices } = req.body;
+    if (!invoices || !Array.isArray(invoices) || invoices.length === 0) {
+      return res.status(400).json({ message: 'Dữ liệu không hợp lệ' });
+    }
+
+    const createdInvoices = [];
+    let skipped = 0;
+
+    for (const inv of invoices) {
+      const { room_id, month, electricity_cost, water_cost, additional_cost } = inv;
+      if (!room_id || !month || electricity_cost === undefined || water_cost === undefined) {
+        skipped++;
+        continue;
+      }
+
+      const room = await Room.findById(room_id);
+      if (!room) {
+        skipped++;
+        continue;
+      }
+
+      const existing = await Invoice.findOne({ room_id, month });
+      if (existing) {
+        skipped++;
+        continue;
+      }
+
+      const total_amount = Number(electricity_cost) + Number(water_cost) + Number(additional_cost || 0) + Number(room.price);
+      const invoice_code = 'HoaDon-' + Date.now().toString().slice(-6) + Math.floor(Math.random() * 1000);
+
+      const invoice = await Invoice.create({
+        invoice_code,
+        room_id, month,
+        electricity_cost: Number(electricity_cost),
+        water_cost:       Number(water_cost),
+        additional_cost:  Number(additional_cost || 0),
+        total_amount,
+      });
+      createdInvoices.push(invoice);
+    }
+
+    res.status(201).json({ message: `Tạo thành công ${createdInvoices.length} hóa đơn, bỏ qua ${skipped} hóa đơn`, created: createdInvoices.length, skipped, data: createdInvoices });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

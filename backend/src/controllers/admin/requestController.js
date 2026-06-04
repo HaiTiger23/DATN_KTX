@@ -1,6 +1,7 @@
 import Request from '../../models/Request.js';
 import Room from '../../models/Room.js';
 import Contract from '../../models/Contract.js';
+import User from '../../models/User.js';
 
 // @desc    Get all pending requests
 // @route   GET /api/admin/requests
@@ -11,12 +12,35 @@ const getRequests = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const { status, type, sort } = req.query;
+    const { status, type, sort, search, room_id } = req.query;
     const query = {};
     if (status) query.status = status;
-    else query.status = 'Pending'; // Default to Pending if no status filter
 
     if (type) query.type = type;
+    if (room_id) query.room_id = room_id;
+
+    if (search) {
+      const [rooms, students] = await Promise.all([
+        Room.find({ 
+          $or: [
+            { room_code: { $regex: search, $options: 'i' } },
+            { building: { $regex: search, $options: 'i' } }
+          ]
+        }).select('_id'),
+        User.find({ 
+          $or: [
+            { fullname: { $regex: search, $options: 'i' } },
+            { mssv: { $regex: search, $options: 'i' } },
+            { email: { $regex: search, $options: 'i' } }
+          ]
+        }).select('_id')
+      ]);
+
+      query.$or = [
+        { room_id: { $in: rooms.map(r => r._id) } },
+        { student_id: { $in: students.map(s => s._id) } }
+      ];
+    }
 
     let sortOption = { createdAt: -1 };
     if (sort === 'oldest') sortOption = { createdAt: 1 };

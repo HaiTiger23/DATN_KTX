@@ -28,6 +28,9 @@ const contractSchema = new mongoose.Schema({
   end_date: {
     type: Date,
     required: true,
+  },
+  reason: {
+    type: String,
   }
 }, {
   timestamps: true,

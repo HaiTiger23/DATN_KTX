@@ -42,7 +42,7 @@ export default function StudentRequestsTab({ requests, pagination }) {
       title: t('studentRequests.status'),
       dataIndex: 'status',
       key: 'status',
-      render: (status) => <Tag color={statusColor(status)}>{status}</Tag>,
+      render: (status) => <Tag color={statusColor(status)}>{t('filter.' + status.toLowerCase())}</Tag>,
     },
   ];
 

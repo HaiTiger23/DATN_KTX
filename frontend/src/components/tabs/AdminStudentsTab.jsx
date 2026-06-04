@@ -47,7 +47,7 @@ export default function AdminStudentsTab({ students, onEdit, onDelete, onResetPa
       title: t('students.status'),
       dataIndex: 'status',
       key: 'status',
-      render: (status) => <Tag color={statusColor(status)}>{status}</Tag>,
+      render: (status) => <Tag color={statusColor(status)}>{t('filter.' + status.toLowerCase())}</Tag>,
     },
     {
       title: t('students.actions'),

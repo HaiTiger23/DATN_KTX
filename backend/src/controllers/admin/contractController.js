@@ -11,9 +11,10 @@ const getContracts = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const { status, search, sort } = req.query;
+    const { status, search, sort, room_id } = req.query;
     const query = {};
     if (status) query.status = status;
+    if (room_id) query.room_id = room_id;
     if (search) {
       const [rooms, students] = await Promise.all([
         Room.find({ room_code: { $regex: search, $options: 'i' } }).select('_id'),
@@ -69,6 +70,9 @@ const endContract = async (req, res) => {
     }
 
     contract.status = 'Ended';
+    if (req.body.reason) {
+      contract.reason = req.body.reason;
+    }
     const updatedContract = await contract.save();
 
     // BUG FIX: Dùng $inc atomic thay vì read-modify-write để tránh race condition

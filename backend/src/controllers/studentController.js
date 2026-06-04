@@ -83,10 +83,20 @@ export const getMyRequests = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const { status, type, sort } = req.query;
+    const { status, type, sort, search } = req.query;
     const query = { student_id: req.user._id };
     if (status) query.status = status;
     if (type) query.type = type;
+
+    if (search) {
+      const rooms = await Room.find({ 
+        $or: [
+          { room_code: { $regex: search, $options: 'i' } },
+          { building: { $regex: search, $options: 'i' } }
+        ]
+      }).select('_id');
+      query.room_id = { $in: rooms.map(r => r._id) };
+    }
 
     let sortOption = { createdAt: -1 };
     if (sort === 'oldest') sortOption = { createdAt: 1 };
@@ -111,9 +121,19 @@ export const getMyContracts = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const { status, sort } = req.query;
+    const { status, sort, search } = req.query;
     const query = { student_id: req.user._id };
     if (status) query.status = status;
+
+    if (search) {
+      const rooms = await Room.find({ 
+        $or: [
+          { room_code: { $regex: search, $options: 'i' } },
+          { building: { $regex: search, $options: 'i' } }
+        ]
+      }).select('_id');
+      query.room_id = { $in: rooms.map(r => r._id) };
+    }
 
     let sortOption = { createdAt: -1 };
     if (sort === 'oldest') sortOption = { createdAt: 1 };

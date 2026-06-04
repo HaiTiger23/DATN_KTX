@@ -1,56 +1,98 @@
-import { Button, Card, Col, Empty, Row, Tag, Typography } from 'antd';
+import { Button, Table, Tag, Typography, Space } from 'antd';
 import { CheckOutlined, CloseOutlined } from '@ant-design/icons';
-import { User, Bed, Clock, Calendar } from 'lucide-react';
 import { formatDate } from '../../api';
 import { useLanguage } from '../../context/LanguageContext';
+
+function statusColor(status) {
+  if (status === 'Pending') return 'processing';
+  if (status === 'Approved') return 'success';
+  if (status === 'Rejected') return 'error';
+  return 'default';
+}
 
 export default function AdminRequestsTab({ requests, onHandle, pagination }) {
   const { t } = useLanguage();
 
-  if (requests.length === 0) {
-    return <Empty description={t('requests.empty')} />;
-  }
+  const columns = [
+    {
+      title: t('requests.student'),
+      dataIndex: 'student',
+      key: 'student',
+      render: (_, r) => (
+        <div>
+          <Typography.Text strong>{r.student_id?.fullname || t('common.na')}</Typography.Text>
+          <br />
+          <Typography.Text type="secondary" style={{ fontSize: 12 }}>{r.student_id?.mssv || t('common.na')}</Typography.Text>
+        </div>
+      ),
+    },
+    {
+      title: t('requests.room'),
+      dataIndex: 'room',
+      key: 'room',
+      render: (_, r) => (
+        <div>
+          <Typography.Text strong>{r.room_id?.room_code || t('common.na')}</Typography.Text>
+          <br />
+          <Typography.Text type="secondary" style={{ fontSize: 12 }}>{r.room_id?.building || t('common.na')}</Typography.Text>
+        </div>
+      ),
+    },
+    {
+      title: t('filter.type'),
+      key: 'type',
+      render: (_, r) => (
+        <Typography.Text>
+          {r.type === 'Cancellation' ? t('requests.cancelContract') : t('requests.register')}
+        </Typography.Text>
+      ),
+    },
+    {
+      title: t('requests.term'),
+      key: 'months',
+      render: (_, r) => (
+        r.type === 'Registration' ? <Typography.Text>{t('requests.months', { n: r.months || 6 })}</Typography.Text> : '-'
+      ),
+    },
+    {
+      title: t('requests.sentAt'),
+      key: 'createdAt',
+      render: (_, r) => <Typography.Text>{formatDate(r.createdAt)}</Typography.Text>,
+    },
+    {
+      title: t('filter.status'),
+      key: 'status',
+      render: (_, r) => (
+        <Tag color={statusColor(r.status)}>{t('filter.' + r.status.toLowerCase())}</Tag>
+      ),
+    },
+    {
+      title: '',
+      key: 'action',
+      render: (_, r) => (
+        r.status === 'Pending' ? (
+          <Space>
+            <Button size="small" type="primary" icon={<CheckOutlined />} onClick={() => onHandle(r._id, 'approve')}>
+              {t('requests.approve')}
+            </Button>
+            <Button size="small" danger icon={<CloseOutlined />} onClick={() => onHandle(r._id, 'reject')}>
+              {t('requests.reject')}
+            </Button>
+          </Space>
+        ) : null
+      ),
+    },
+  ];
 
   return (
-    <Row gutter={[16, 16]}>
-      {requests.map((r) => (
-        <Col xs={24} md={12} lg={8} key={r._id}>
-          <Card
-            title={r.type === 'Cancellation' ? t('requests.cancelContract') : t('requests.register')}
-            extra={<Tag color="processing">{t('requests.pending')}</Tag>}
-            actions={[
-              <Button key="reject" danger type="link" icon={<CloseOutlined />} onClick={() => onHandle(r._id, 'reject')}>
-                {t('requests.reject')}
-              </Button>,
-              <Button key="approve" type="link" icon={<CheckOutlined />} onClick={() => onHandle(r._id, 'approve')}>
-                {t('requests.approve')}
-              </Button>,
-            ]}
-          >
-            <Typography.Paragraph className="ktx-tab-p-sm">
-              <User size={16} style={{ marginRight: 6, verticalAlign: '-3px' }} /> {t('requests.student')}{' '}
-              <Typography.Text strong>
-                {r.student_id?.fullname || t('common.na')} ({r.student_id?.mssv || t('common.na')})
-              </Typography.Text>
-            </Typography.Paragraph>
-            <Typography.Paragraph className="ktx-tab-p-sm">
-              <Bed size={16} style={{ marginRight: 6, verticalAlign: '-3px' }} /> {t('requests.room')}{' '}
-              <Typography.Text strong>
-                {r.room_id?.room_code || t('common.na')} — {r.room_id?.building || t('common.na')}
-              </Typography.Text>
-            </Typography.Paragraph>
-
-            {r.type === 'Registration' && (
-              <Typography.Paragraph className="ktx-tab-p-sm">
-                <Clock size={16} style={{ marginRight: 6, verticalAlign: '-3px' }} /> {t('requests.term')} <Typography.Text strong>{t('requests.months', { n: r.months || 6 })}</Typography.Text>
-              </Typography.Paragraph>
-            )}
-            <Typography.Paragraph className="ktx-tab-p-last">
-              <Calendar size={16} style={{ marginRight: 6, verticalAlign: '-3px' }} /> {t('requests.sentAt')} <Typography.Text strong>{formatDate(r.createdAt)}</Typography.Text>
-            </Typography.Paragraph>
-          </Card>
-        </Col>
-      ))}
-    </Row>
+    <div style={{ background: '#fff', borderRadius: '12px', padding: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
+      <Table 
+        columns={columns} 
+        dataSource={requests} 
+        rowKey="_id" 
+        pagination={pagination}
+        scroll={{ x: 800 }}
+      />
+    </div>
   );
 }

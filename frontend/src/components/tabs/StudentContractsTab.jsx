@@ -1,4 +1,4 @@
-import { Button, Empty, Table, Tag } from 'antd';
+import { Button, Empty, Table, Tag, Tooltip } from 'antd';
 import { formatDate } from '../../api';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -47,7 +47,17 @@ export default function StudentContractsTab({ contracts, onCancelContract, pagin
       title: t('contracts.status'),
       dataIndex: 'status',
       key: 'status',
-      render: (status) => <Tag color={statusColor(status)}>{status}</Tag>,
+      render: (status, c) => {
+        const tag = <Tag color={statusColor(status)}>{t('filter.' + status.toLowerCase())}</Tag>;
+        if (status === 'Ended' && c.reason) {
+          return (
+            <Tooltip title={`Lý do: ${c.reason}`}>
+              {tag}
+            </Tooltip>
+          );
+        }
+        return tag;
+      },
     },
     {
       title: t('contracts.actions'),
