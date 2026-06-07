@@ -11,15 +11,20 @@ function getToken() {
  * @param {(msg: string, type?: string) => void} showToast
  */
 export async function fetchAPI(endpoint, method = 'GET', body = null, showToast = () => {}) {
-  const headers = { 'Content-Type': 'application/json' };
+  const headers = {};
   const token = getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
+
+  const isFormData = body instanceof FormData;
+  if (!isFormData) {
+    headers['Content-Type'] = 'application/json';
+  }
 
   try {
     const res = await fetch(`${API_URL}${endpoint}`, {
       method,
       headers,
-      body: body ? JSON.stringify(body) : null,
+      body: body ? (isFormData ? body : JSON.stringify(body)) : null,
     });
 
     const text = await res.text();

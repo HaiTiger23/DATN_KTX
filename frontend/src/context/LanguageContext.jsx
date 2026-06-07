@@ -5,16 +5,26 @@ const LanguageContext = createContext(null);
 
 /**
  * @param {string} key
+ * @param {string | Record<string, string | number>} [fallbackOrVars]
  * @param {Record<string, string | number>} [vars]
  */
-function translate(locale, key, vars) {
+function translate(locale, key, fallbackOrVars, vars) {
+  let fallback = key;
+  let actualVars = vars;
+
+  if (typeof fallbackOrVars === 'string') {
+    fallback = fallbackOrVars;
+  } else if (fallbackOrVars !== undefined) {
+    actualVars = fallbackOrVars;
+  }
+
   const dict = translations[locale] || translations.vi;
   let str = dict[key];
   if (str === undefined) {
-    str = translations.vi[key] ?? key;
+    str = translations.vi[key] ?? fallback;
   }
-  if (vars && typeof str === 'string') {
-    return str.replace(/\{(\w+)\}/g, (_, k) => (vars[k] !== undefined ? String(vars[k]) : `{${k}}`));
+  if (actualVars && typeof str === 'string') {
+    return str.replace(/\{(\w+)\}/g, (_, k) => (actualVars[k] !== undefined ? String(actualVars[k]) : `{${k}}`));
   }
   return str;
 }
@@ -36,7 +46,7 @@ export function LanguageProvider({ children }) {
   }, [locale]);
 
   const t = useCallback(
-    (key, vars) => translate(locale, key, vars),
+    (key, fallbackOrVars, vars) => translate(locale, key, fallbackOrVars, vars),
     [locale],
   );
 

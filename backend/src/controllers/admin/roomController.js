@@ -1,6 +1,7 @@
 import Room from '../../models/Room.js';
 import Contract from '../../models/Contract.js';
 import User from '../../models/User.js';
+import { uploadToCloudinary } from '../../config/cloudinary.js';
 
 // @desc    Get all rooms
 // @route   GET /api/admin/rooms
@@ -70,7 +71,9 @@ const getRooms = async (req, res) => {
 // @access  Private/Admin
 const createRoom = async (req, res) => {
   try {
-    const { room_code, building, floor, capacity, price, description, images, amenities, roomType } = req.body;
+    const { room_code, building, floor, capacity, price, description, detailed_description, roomType } = req.body;
+    let amenities = req.body.amenities || [];
+    if (!Array.isArray(amenities)) amenities = [amenities];
 
     if (!room_code || !building || floor === undefined || !capacity || !price) {
       return res.status(400).json({ message: 'room_code, building, floor, capacity và price là bắt buộc' });
@@ -81,11 +84,20 @@ const createRoom = async (req, res) => {
       return res.status(400).json({ message: 'Mã phòng đã tồn tại' });
     }
 
+    let imageUrls = [];
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        const url = await uploadToCloudinary(file.buffer, 'ktx/rooms');
+        imageUrls.push(url);
+      }
+    }
+
     const room = await Room.create({ 
       room_code, building, floor, capacity, price, 
       description: description || '',
-      images: images || [],
-      amenities: amenities || [],
+      detailed_description: detailed_description || '',
+      images: imageUrls,
+      amenities: amenities,
       roomType: roomType || 'Standard'
     });
     res.status(201).json(room);
@@ -105,13 +117,32 @@ const updateRoom = async (req, res) => {
       return res.status(404).json({ message: 'Không tìm thấy phòng' });
     }
 
+    let amenities = req.body.amenities || [];
+    if (req.body.amenities && !Array.isArray(req.body.amenities)) amenities = [req.body.amenities];
+
+    let imageUrls = [];
+    if (req.body.existingImages) {
+        if (Array.isArray(req.body.existingImages)) {
+            imageUrls.push(...req.body.existingImages);
+        } else {
+            imageUrls.push(req.body.existingImages);
+        }
+    }
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        const url = await uploadToCloudinary(file.buffer, 'ktx/rooms');
+        imageUrls.push(url);
+      }
+    }
+
     room.price = req.body.price ?? room.price;
     room.capacity = req.body.capacity ?? room.capacity;
     room.building = req.body.building ?? room.building;
     room.floor = req.body.floor ?? room.floor;
     room.description = req.body.description ?? room.description;
-    room.images = req.body.images ?? room.images;
-    room.amenities = req.body.amenities ?? room.amenities;
+    room.detailed_description = req.body.detailed_description ?? room.detailed_description;
+    room.images = imageUrls;
+    room.amenities = req.body.amenities ? amenities : room.amenities;
     room.roomType = req.body.roomType ?? room.roomType;
 
     if (room.capacity < room.current_people) {

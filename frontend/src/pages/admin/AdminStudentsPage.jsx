@@ -6,18 +6,28 @@ import { useApi } from '../../hooks/useApi';
 import { useLanguage } from '../../context/LanguageContext';
 import { exportToExcel } from '../../utils/exportUtils';
 import { useToast } from '../../context/ToastContext';
+import { useLocation } from 'react-router-dom';
 
 export default function AdminStudentsPage() {
   const { t } = useLanguage();
   const api = useApi();
   const { showToast } = useToast();
+  const location = useLocation();
   
   const [data, setData] = useState({ students: [] });
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [total, setTotal] = useState(0);
-  const [filters, setFilters] = useState({ search: '', status: '', sort: '', room_id: '' });
+  const [filters, setFilters] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return {
+      search: '',
+      status: '',
+      sort: '',
+      room_id: params.get('room_id') || ''
+    };
+  });
   const [allRooms, setAllRooms] = useState([]);
 
   // Modals state
@@ -59,7 +69,39 @@ export default function AdminStudentsPage() {
   }, []);
 
   useEffect(() => {
-    loadData();
+    const params = new URLSearchParams(location.search);
+    const roomId = params.get('room_id');
+    if (roomId && filters.room_id !== roomId) {
+      setFilters(prev => ({ ...prev, room_id: roomId }));
+    } else if (!roomId && filters.room_id) {
+      setFilters(prev => ({ ...prev, room_id: '' }));
+    }
+  }, [location.search]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchFilteredData = async () => {
+      setLoading(true);
+      try {
+        let q = `?page=${page}&limit=${limit}`;
+        if (filters.search) q += `&search=${encodeURIComponent(filters.search)}`;
+        if (filters.status) q += `&status=${encodeURIComponent(filters.status)}`;
+        if (filters.sort) q += `&sort=${encodeURIComponent(filters.sort)}`;
+        if (filters.room_id) q += `&room_id=${encodeURIComponent(filters.room_id)}`;
+
+        const res = await api(`/admin/students${q}`);
+        if (isMounted) {
+          setData({ students: res.data });
+          setTotal(res.pagination?.total || 0);
+        }
+      } catch (err) {
+        if (isMounted) setData({ error: true });
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+    fetchFilteredData();
+    return () => { isMounted = false; };
   }, [page, limit, filters]);
 
   const handleModalSubmit = async () => {

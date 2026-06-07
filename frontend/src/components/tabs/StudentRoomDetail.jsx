@@ -2,6 +2,7 @@ import { Button, Col, Row, Space, Tag, Typography, Carousel, Divider, Image } fr
 import { ArrowLeftOutlined, EnvironmentOutlined, InfoCircleOutlined, AppstoreOutlined } from '@ant-design/icons';
 import { formatMoney } from '../../api';
 import { useLanguage } from '../../context/LanguageContext';
+import FeedbackRichBody from '../FeedbackRichBody';
 
 export default function StudentRoomDetail({ room, activeRoomId, pendingRoomId, onRegister, onBack }) {
   const { t } = useLanguage();
@@ -95,6 +96,16 @@ export default function StudentRoomDetail({ room, activeRoomId, pendingRoomId, o
             {r.description && (
               <div style={{ marginTop: 8, background: '#fafafa', padding: 16, borderRadius: 8 }}>
                 <Typography.Text style={{ fontSize: 15, whiteSpace: 'pre-line' }}>{r.description}</Typography.Text>
+              </div>
+            )}
+
+            {r.detailed_description && (
+              <div style={{ marginTop: 16, padding: 16, background: '#fff', borderRadius: 8, border: '1px solid #f0f0f0' }}>
+                <Typography.Text style={{ fontSize: 16, display: 'block', marginBottom: 12 }}>
+                  <InfoCircleOutlined style={{ marginRight: 8, color: '#1890ff' }} />
+                  <strong>{t('room.detailedDescription', 'Thông tin chi tiết')}</strong>
+                </Typography.Text>
+                <FeedbackRichBody content={r.detailed_description} />
               </div>
             )}
           </Space>

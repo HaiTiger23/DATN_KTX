@@ -31,6 +31,10 @@ const roomSchema = new mongoose.Schema({
     type: String,
     default: '',
   },
+  detailed_description: {
+    type: String,
+    default: '',
+  },
   images: [{
     type: String,
   }],

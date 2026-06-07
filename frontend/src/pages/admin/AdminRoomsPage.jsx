@@ -5,10 +5,13 @@ import AdminRoomsTab from '../../components/tabs/AdminRoomsTab';
 import { useApi } from '../../hooks/useApi';
 import { useLanguage } from '../../context/LanguageContext';
 import { exportToExcel } from '../../utils/exportUtils';
+import { useNavigate } from 'react-router-dom';
+import RichTextEditor from '../../components/RichTextEditor';
 
 export default function AdminRoomsPage() {
   const { t } = useLanguage();
   const api = useApi();
+  const navigate = useNavigate();
   const [data, setData] = useState({ rooms: [] });
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
@@ -21,7 +24,7 @@ export default function AdminRoomsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState('');
   const [editingId, setEditingId] = useState(null);
-  const [roomForm, setRoomForm] = useState({ room_code: '', building: '', floor: 1, capacity: 4, price: 0, amenities: [], description: '', roomType: 'Standard' });
+  const [roomForm, setRoomForm] = useState({ room_code: '', building: '', floor: 1, capacity: 4, price: 0, amenities: [], description: '', detailed_description: '', roomType: 'Standard' });
   const [roomFiles, setRoomFiles] = useState([]);
 
   // Utilities
@@ -52,13 +55,17 @@ export default function AdminRoomsPage() {
         const formData = new FormData();
         Object.keys(roomForm).forEach(k => {
           if (k === 'amenities') {
-            roomForm[k].forEach(a => formData.append('amenities[]', a));
+            roomForm[k].forEach(a => formData.append('amenities', a));
           } else {
             formData.append(k, roomForm[k]);
           }
         });
         roomFiles.forEach(f => {
-          if (f.originFileObj) formData.append('images', f.originFileObj);
+          if (f.originFileObj) {
+            formData.append('images', f.originFileObj);
+          } else if (f.url) {
+            formData.append('existingImages', f.url);
+          }
         });
 
         if (modalType === 'add_room') {
@@ -76,7 +83,7 @@ export default function AdminRoomsPage() {
 
   const openAddRoom = () => {
     setModalType('add_room');
-    setRoomForm({ room_code: '', building: '', floor: 1, capacity: 4, price: 0, amenities: [], description: '', roomType: 'Standard' });
+    setRoomForm({ room_code: '', building: '', floor: 1, capacity: 4, price: 0, amenities: [], description: '', detailed_description: '', roomType: 'Standard' });
     setRoomFiles([]);
     setEditingId(null);
     setModalOpen(true);
@@ -92,6 +99,7 @@ export default function AdminRoomsPage() {
       price: room.price,
       amenities: room.amenities || [],
       description: room.description || '',
+      detailed_description: room.detailed_description || '',
       roomType: room.roomType || 'Standard'
     });
     setRoomFiles((room.images || []).map((url, idx) => ({
@@ -317,6 +325,13 @@ export default function AdminRoomsPage() {
           <Form.Item label={t('modal.description')}>
             <Input.TextArea value={roomForm.description} onChange={(e) => setRoomForm((f) => ({ ...f, description: e.target.value }))} />
           </Form.Item>
+          <Form.Item label={t('modal.detailedDescription', 'Mô tả chi tiết')}>
+            <RichTextEditor
+              value={roomForm.detailed_description}
+              onChange={(val) => setRoomForm((f) => ({ ...f, detailed_description: val }))}
+              placeholder={t('modal.detailedDescriptionHint', 'Nhập mô tả chi tiết phòng...')}
+            />
+          </Form.Item>
           <Form.Item label={t('modal.amenities')}>
             <Select 
               mode="tags" 
@@ -356,7 +371,11 @@ export default function AdminRoomsPage() {
           rooms={data.rooms || []}
           onToggleStatus={toggleRoomStatus}
           onEdit={openEditRoom}
-          onNavigate={(target) => console.log('Navigate', target)}
+          onNavigate={(target, params) => {
+            if (target === 'students' && params?.room_id) {
+              navigate(`/admin/students?room_id=${params.room_id}`);
+            }
+          }}
           pagination={{ current: page, pageSize: limit, total, onChange: (p, s) => { setPage(p); setLimit(s); }, showSizeChanger: true }}
         />
       </div>
