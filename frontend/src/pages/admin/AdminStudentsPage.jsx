@@ -35,7 +35,7 @@ export default function AdminStudentsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState('');
   const [editingId, setEditingId] = useState(null);
-  const [studentForm, setStudentForm] = useState({ fullname: '', email: '', password: '', phone: '', address: '', mssv: '', cccd: '' });
+  const [studentForm, setStudentForm] = useState({ fullname: '', email: '', password: '', phone: '', address: '', mssv: '', cccd: '', status: 'Active' });
 
   const loadData = async () => {
     setLoading(true);
@@ -147,7 +147,8 @@ export default function AdminStudentsPage() {
           fullname: studentForm.fullname,
           email: studentForm.email,
           phone: studentForm.phone,
-          address: studentForm.address
+          address: studentForm.address,
+          status: studentForm.status
         };
         if (studentForm.password) body.password = studentForm.password;
         await api(`/admin/students/${editingId}`, 'PUT', body);
@@ -162,7 +163,7 @@ export default function AdminStudentsPage() {
 
   const openAddStudent = () => {
     setModalType('add_student');
-    setStudentForm({ fullname: '', email: '', password: '', phone: '', address: '', mssv: '', cccd: '' });
+    setStudentForm({ fullname: '', email: '', password: '', phone: '', address: '', mssv: '', cccd: '', status: 'Active' });
     setEditingId(null);
     setModalOpen(true);
   };
@@ -176,7 +177,8 @@ export default function AdminStudentsPage() {
       phone: student.phone || '',
       address: student.address || '',
       mssv: student.mssv || '',
-      cccd: student.cccd || ''
+      cccd: student.cccd || '',
+      status: student.status || 'Active'
     });
     setEditingId(student._id);
     setModalOpen(true);
@@ -394,6 +396,16 @@ export default function AdminStudentsPage() {
                 </Form.Item>
                 <Form.Item label={t('modal.address', 'Địa chỉ')}>
                   <Input value={studentForm.address} onChange={(e) => setStudentForm((f) => ({ ...f, address: e.target.value }))} />
+                </Form.Item>
+                <Form.Item label={t('modal.status', 'Trạng thái')}>
+                  <Select
+                    value={studentForm.status}
+                    onChange={(v) => setStudentForm((f) => ({ ...f, status: v }))}
+                    options={[
+                      { label: 'Hoạt động', value: 'Active' },
+                      { label: 'Đã khóa', value: 'Inactive' }
+                    ]}
+                  />
                 </Form.Item>
               </>
             )}

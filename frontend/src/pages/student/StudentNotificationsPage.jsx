@@ -34,6 +34,7 @@ export default function StudentNotificationsPage() {
         ...prev,
         notifications: prev.notifications.map(n => n._id === id ? { ...n, isRead: true } : n)
       }));
+      window.dispatchEvent(new Event('notification_read'));
     } catch {
       // ignore
     }

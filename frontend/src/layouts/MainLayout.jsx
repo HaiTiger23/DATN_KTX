@@ -141,7 +141,11 @@ export default function MainLayout() {
       };
       fetchNotifs();
       const intv = setInterval(fetchNotifs, 10000);
-      return () => clearInterval(intv);
+      window.addEventListener('notification_read', fetchNotifs);
+      return () => {
+        clearInterval(intv);
+        window.removeEventListener('notification_read', fetchNotifs);
+      };
     } else if (user?.role === 'Admin') {
       const fetchPendingReqs = async () => {
         try {
@@ -214,7 +218,7 @@ export default function MainLayout() {
           </Typography.Title>
           <Space wrap>
             {user?.role === 'Student' && (
-              <Badge count={unreadList.length} overflowCount={99}>
+              <Badge count={unreadList.length} overflowCount={99} offset={[-2, 6]}>
                 <Button icon={<BellOutlined />} onClick={() => navigate('/student/notifications')} />
               </Badge>
             )}
