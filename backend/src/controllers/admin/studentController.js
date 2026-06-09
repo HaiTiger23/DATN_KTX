@@ -65,17 +65,25 @@ const getStudents = async (req, res) => {
 // @access  Private/Admin
 const createStudent = async (req, res) => {
   try {
-    const { email, password, mssv, fullname, cccd, phone, address } = req.body;
+    let mssv = req.body.mssv?.trim() || undefined;
+    let cccd = req.body.cccd?.trim() || undefined;
 
     // BUG FIX: Validate các field bắt buộc trước
     if (!email || !password || !fullname) {
       return res.status(400).json({ message: 'Email, password và fullname là bắt buộc' });
     }
 
-    const userExists = await User.findOne({ $or: [{ email }, { mssv }, { cccd }] });
+    const orConditions = [{ email }];
+    if (mssv) orConditions.push({ mssv });
+    if (cccd) orConditions.push({ cccd });
+
+    const userExists = await User.findOne({ $or: orConditions });
 
     if (userExists) {
-      return res.status(400).json({ message: 'Sinh viên với email, mssv hoặc cccd này đã tồn tại' });
+      if (userExists.email === email) return res.status(400).json({ message: 'Email này đã được sử dụng' });
+      if (mssv && userExists.mssv === mssv) return res.status(400).json({ message: 'MSSV này đã tồn tại trong hệ thống' });
+      if (cccd && userExists.cccd === cccd) return res.status(400).json({ message: 'CCCD này đã tồn tại trong hệ thống' });
+      return res.status(400).json({ message: 'Sinh viên này đã tồn tại' });
     }
 
     const student = await User.create({
@@ -116,6 +124,21 @@ const updateStudent = async (req, res) => {
     student.phone = req.body.phone || student.phone;
     student.address = req.body.address || student.address;
     student.status = req.body.status || student.status;
+    
+    let newMssv = req.body.mssv?.trim() || undefined;
+    let newCccd = req.body.cccd?.trim() || undefined;
+
+    if (newMssv && newMssv !== student.mssv) {
+        const mssvExists = await User.findOne({ mssv: newMssv });
+        if (mssvExists) return res.status(400).json({ message: 'MSSV này đã tồn tại trong hệ thống' });
+        student.mssv = newMssv;
+    }
+    
+    if (newCccd && newCccd !== student.cccd) {
+        const cccdExists = await User.findOne({ cccd: newCccd });
+        if (cccdExists) return res.status(400).json({ message: 'CCCD này đã tồn tại trong hệ thống' });
+        student.cccd = newCccd;
+    }
 
     if (req.body.password) {
       student.password = req.body.password;

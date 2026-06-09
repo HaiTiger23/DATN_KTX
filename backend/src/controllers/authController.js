@@ -113,17 +113,27 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ message: 'Mã OTP không hợp lệ hoặc đã hết hạn' });
     }
 
-    const userExists = await User.findOne({ email });
+    let cleanMssv = mssv?.trim() || undefined;
+    let cleanCccd = cccd?.trim() || undefined;
+
+    const orConditions = [{ email }];
+    if (cleanMssv) orConditions.push({ mssv: cleanMssv });
+    if (cleanCccd) orConditions.push({ cccd: cleanCccd });
+
+    const userExists = await User.findOne({ $or: orConditions });
     if (userExists) {
-      return res.status(400).json({ message: 'Email đã được sử dụng' });
+      if (userExists.email === email) return res.status(400).json({ message: 'Email đã được sử dụng' });
+      if (cleanMssv && userExists.mssv === cleanMssv) return res.status(400).json({ message: 'MSSV này đã tồn tại trong hệ thống' });
+      if (cleanCccd && userExists.cccd === cleanCccd) return res.status(400).json({ message: 'CCCD này đã tồn tại trong hệ thống' });
+      return res.status(400).json({ message: 'Tài khoản đã tồn tại' });
     }
 
     const user = await User.create({
       fullname,
       email,
       password,
-      mssv,
-      cccd,
+      mssv: cleanMssv,
+      cccd: cleanCccd,
       role: 'Student'
     });
 
