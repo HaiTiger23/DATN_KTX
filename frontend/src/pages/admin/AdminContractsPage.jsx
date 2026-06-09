@@ -7,18 +7,27 @@ import { useApi } from '../../hooks/useApi';
 import { useLanguage } from '../../context/LanguageContext';
 import { exportToExcel } from '../../utils/exportUtils';
 import { useToast } from '../../context/ToastContext';
+import { useLocation } from 'react-router-dom';
 
 export default function AdminContractsPage() {
   const { t } = useLanguage();
   const api = useApi();
   const { showToast } = useToast();
-  
+  const location = useLocation();
   const [data, setData] = useState({ contracts: [] });
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [total, setTotal] = useState(0);
-  const [filters, setFilters] = useState({ search: '', status: '', sort: '', room_id: '' });
+  const [filters, setFilters] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return { 
+      search: params.get('search') || '', 
+      status: '', 
+      sort: '', 
+      room_id: '' 
+    };
+  });
   const [allRooms, setAllRooms] = useState([]);
   const [allStudents, setAllStudents] = useState([]);
   const [agentSettings, setAgentSettings] = useState({});
@@ -68,6 +77,14 @@ export default function AdminContractsPage() {
   useEffect(() => {
     loadRoomsAndStudents();
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const searchParam = params.get('search');
+    if (searchParam !== null && searchParam !== filters.search) {
+      setFilters(prev => ({ ...prev, search: searchParam }));
+    }
+  }, [location.search]);
 
   useEffect(() => {
     loadData();

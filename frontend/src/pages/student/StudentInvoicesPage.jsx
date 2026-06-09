@@ -20,7 +20,7 @@ export default function StudentInvoicesPage() {
     setLoading(true);
     try {
       const res = await api(`/student/invoices?page=${page}&limit=${limit}`);
-      setData({ invoices: res.data, invoiceRoom: res.invoiceRoom });
+      setData({ invoices: res.data, invoiceRoom: res.room });
       setTotal(res.pagination?.total || 0);
     } catch (err) {
       setData({ error: true });

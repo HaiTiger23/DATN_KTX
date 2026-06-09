@@ -25,6 +25,8 @@ export default function StudentRoomsPage() {
       let q = `?page=${page}&limit=${limit}`;
       if (roomFilters.search) q += `&search=${encodeURIComponent(roomFilters.search)}`;
       if (roomFilters.sort) q += `&sort=${encodeURIComponent(roomFilters.sort)}`;
+      if (roomFilters.floor) q += `&floor=${encodeURIComponent(roomFilters.floor)}`;
+      if (roomFilters.roomType) q += `&roomType=${encodeURIComponent(roomFilters.roomType)}`;
 
       const res = await api(`/student/rooms${q}`);
       setData({ 

@@ -6,14 +6,15 @@ import { useApi } from '../../hooks/useApi';
 import { useLanguage } from '../../context/LanguageContext';
 import { exportToExcel } from '../../utils/exportUtils';
 import { useToast } from '../../context/ToastContext';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 export default function AdminStudentsPage() {
   const { t } = useLanguage();
   const api = useApi();
   const { showToast } = useToast();
   const location = useLocation();
-  
+  const navigate = useNavigate();
+
   const [data, setData] = useState({ students: [] });
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
@@ -35,7 +36,7 @@ export default function AdminStudentsPage() {
   const [modalType, setModalType] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [studentForm, setStudentForm] = useState({ fullname: '', email: '', password: '', phone: '', address: '', mssv: '', cccd: '' });
-  
+
   const loadData = async () => {
     setLoading(true);
     try {
@@ -175,8 +176,8 @@ export default function AdminStudentsPage() {
       okType: 'danger',
       onOk: async () => {
         try {
-          await api(`/admin/students/${id}/reset-password`, 'PUT');
-          showToast(t('toast.passwordResetSuccess'));
+          await api(`/admin/students/${id}/reset-password`, 'POST');
+          showToast(t('Đã reset mật khẩu thành 123456'));
         } catch (err) {
           showToast(err.message, 'error');
         }
@@ -225,18 +226,18 @@ export default function AdminStudentsPage() {
     ];
 
     return (
-      <div className="ktx-filter-bar" style={{ 
-        marginBottom: 24, 
-        background: 'rgba(255, 255, 255, 0.8)', 
+      <div className="ktx-filter-bar" style={{
+        marginBottom: 24,
+        background: 'rgba(255, 255, 255, 0.8)',
         backdropFilter: 'blur(10px)',
-        padding: '20px', 
-        borderRadius: '12px', 
+        padding: '20px',
+        borderRadius: '12px',
         border: '1px solid rgba(0, 0, 0, 0.06)',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.03)' 
+        boxShadow: '0 4px 20px rgba(0,0,0,0.03)'
       }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', flex: 1 }}>
-            <Input 
+            <Input
               prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
               placeholder={t('filter.search')}
               allowClear
@@ -244,7 +245,7 @@ export default function AdminStudentsPage() {
               onChange={e => setFilters(prev => ({ ...prev, search: e.target.value }))}
               style={{ borderRadius: '8px', width: '240px' }}
             />
-            <Select 
+            <Select
               showSearch
               style={{ width: '180px', borderRadius: '8px' }}
               placeholder={t('filter.selectRoom')}
@@ -254,7 +255,7 @@ export default function AdminStudentsPage() {
               options={allRooms}
               optionFilterProp="label"
             />
-            <Select 
+            <Select
               style={{ width: '160px', borderRadius: '8px' }}
               placeholder={t('filter.status')}
               allowClear
@@ -262,7 +263,7 @@ export default function AdminStudentsPage() {
               onChange={v => setFilters(prev => ({ ...prev, status: v || '' }))}
               options={statusOptions}
             />
-            <Select 
+            <Select
               style={{ width: '160px', borderRadius: '8px' }}
               placeholder={t('filter.sort')}
               value={filters.sort || ''}
@@ -271,13 +272,13 @@ export default function AdminStudentsPage() {
             />
           </div>
           <div>
-            <Button 
-              type="primary" 
-              icon={<DownloadOutlined />} 
-              style={{ 
-                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', 
-                border: 'none', 
-                borderRadius: '10px', 
+            <Button
+              type="primary"
+              icon={<DownloadOutlined />}
+              style={{
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                border: 'none',
+                borderRadius: '10px',
                 boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)',
                 height: '40px',
                 padding: '0 24px',
@@ -288,13 +289,13 @@ export default function AdminStudentsPage() {
             >
               Xuất Excel
             </Button>
-            <Button 
-              type="primary" 
-              icon={<PlusOutlined />} 
-              style={{ 
-                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', 
-                border: 'none', 
-                borderRadius: '10px', 
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              style={{
+                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                border: 'none',
+                borderRadius: '10px',
                 boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)',
                 height: '40px',
                 padding: '0 24px',
@@ -325,7 +326,7 @@ export default function AdminStudentsPage() {
             <Spin size="large" />
           </div>
         )}
-        
+
         <Modal
           title={modalType === 'add_student' ? t('modal.addStudent', 'Thêm sinh viên') : t('modal.editStudent', 'Sửa sinh viên')}
           open={modalOpen}
@@ -376,7 +377,11 @@ export default function AdminStudentsPage() {
           onEdit={openEditStudent}
           onDelete={deleteStudent}
           onResetPassword={resetStudentPassword}
-          onNavigate={(target) => console.log('Navigate', target)}
+          onNavigate={(target, params) => {
+            if (target === 'contracts' && params?.search) {
+              navigate(`/admin/contracts?search=${params.search}`);
+            }
+          }}
           pagination={{ current: page, pageSize: limit, total, onChange: (p, s) => { setPage(p); setLimit(s); }, showSizeChanger: true }}
         />
       </div>
