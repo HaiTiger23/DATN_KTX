@@ -52,6 +52,18 @@ export default function AdminRoomsPage() {
   const handleModalSubmit = async () => {
     try {
       if (modalType === 'add_room' || modalType === 'edit_room') {
+        if (!roomForm.room_code || !roomForm.room_code.trim() || !roomForm.building || !roomForm.building.trim()) {
+          showToast('Mã phòng và tòa nhà không được để trống', 'error');
+          return;
+        }
+        if (roomForm.capacity <= 0) {
+          showToast('Sức chứa phải lớn hơn 0', 'error');
+          return;
+        }
+        if (roomForm.price < 0) {
+          showToast('Giá phòng không hợp lệ', 'error');
+          return;
+        }
         const formData = new FormData();
         Object.keys(roomForm).forEach(k => {
           if (k === 'amenities') {

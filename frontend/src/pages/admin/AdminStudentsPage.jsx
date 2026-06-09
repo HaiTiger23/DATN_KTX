@@ -108,13 +108,41 @@ export default function AdminStudentsPage() {
   const handleModalSubmit = async () => {
     try {
       if (modalType === 'add_student') {
-        if (!studentForm.password) {
-          showToast(t('toast.missingPassword'), 'error');
+        if (!studentForm.fullname || !studentForm.fullname.trim()) {
+          showToast('Họ và tên không được để trống', 'error');
+          return;
+        }
+        if (!studentForm.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(studentForm.email)) {
+          showToast('Email không hợp lệ', 'error');
+          return;
+        }
+        if (!studentForm.password || studentForm.password.length < 6) {
+          showToast('Mật khẩu phải có ít nhất 6 ký tự', 'error');
+          return;
+        }
+        if (studentForm.cccd && !/^\d{12}$/.test(studentForm.cccd)) {
+          showToast('CCCD phải là 12 chữ số', 'error');
           return;
         }
         await api('/admin/students', 'POST', studentForm);
         showToast(t('toast.studentAdded'));
       } else if (modalType === 'edit_student') {
+        if (!studentForm.fullname || !studentForm.fullname.trim()) {
+          showToast('Họ và tên không được để trống', 'error');
+          return;
+        }
+        if (!studentForm.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(studentForm.email)) {
+          showToast('Email không hợp lệ', 'error');
+          return;
+        }
+        if (studentForm.password && studentForm.password.length < 6) {
+          showToast('Mật khẩu mới phải có ít nhất 6 ký tự', 'error');
+          return;
+        }
+        if (studentForm.phone && !/^\d{10,11}$/.test(studentForm.phone)) {
+          showToast('Số điện thoại không hợp lệ', 'error');
+          return;
+        }
         const body = {
           fullname: studentForm.fullname,
           email: studentForm.email,

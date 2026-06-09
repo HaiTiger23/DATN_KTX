@@ -97,9 +97,21 @@ export default function AdminContractsPage() {
           showToast(t('toast.missingFields'), 'error');
           return;
         }
+        if (new Date(contractForm.start_date) >= new Date(contractForm.end_date)) {
+          showToast('Ngày bắt đầu phải trước ngày kết thúc', 'error');
+          return;
+        }
         await api('/admin/contracts', 'POST', contractForm);
         showToast(t('toast.contractCreated'));
       } else if (modalType === 'edit_contract') {
+        if (!contractForm.start_date || !contractForm.end_date) {
+          showToast(t('toast.missingFields'), 'error');
+          return;
+        }
+        if (new Date(contractForm.start_date) >= new Date(contractForm.end_date)) {
+          showToast('Ngày bắt đầu phải trước ngày kết thúc', 'error');
+          return;
+        }
         const body = {
           start_date: contractForm.start_date,
           end_date: contractForm.end_date
