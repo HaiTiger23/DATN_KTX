@@ -25,15 +25,14 @@ export default function AdminSettingsPage() {
     setLoading(true);
     try {
       const res = await api('/admin/settings');
-      if (res.data) {
-        setGeminiKey(res.data.geminiApiKey || '');
-        setAgentSettings({
-          max_responses: res.data.max_responses ?? 5,
-          response_mode: res.data.response_mode || 'concise',
-          temperature: res.data.temperature ?? 0.7,
-          auto_translate: res.data.auto_translate || false,
-          use_internet: res.data.use_internet !== false
-        });
+      if (res) {
+        const { geminiApiKey, _id, createdAt, updatedAt, __v, ...restSettings } = res;
+        setGeminiKey(geminiApiKey || '');
+        setAgentSettings((prev) => ({
+          ...prev,
+          ...restSettings,
+          use_internet: restSettings.use_internet !== false
+        }));
       }
     } catch (err) {
       setError(true);

@@ -28,6 +28,12 @@ export const updateSettings = async (req, res) => {
         if (req.body.smtpPort !== undefined) setting.smtpPort = req.body.smtpPort;
         if (req.body.smtpUser !== undefined) setting.smtpUser = req.body.smtpUser;
         if (req.body.smtpPass !== undefined) setting.smtpPass = req.body.smtpPass;
+        
+        if (req.body.contractBqlName !== undefined) setting.contractBqlName = req.body.contractBqlName;
+        if (req.body.contractRepName !== undefined) setting.contractRepName = req.body.contractRepName;
+        if (req.body.contractRepRole !== undefined) setting.contractRepRole = req.body.contractRepRole;
+        if (req.body.contractRepPhone !== undefined) setting.contractRepPhone = req.body.contractRepPhone;
+        if (req.body.contractTerms !== undefined) setting.contractTerms = req.body.contractTerms;
 
         const updatedSetting = await setting.save();
         res.json(setting);

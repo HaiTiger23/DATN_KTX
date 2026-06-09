@@ -25,7 +25,12 @@ const settingSchema = new mongoose.Schema({
   smtpHost: { type: String, default: '' },
   smtpPort: { type: Number, default: 587 },
   smtpUser: { type: String, default: '' },
-  smtpPass: { type: String, default: '' }
+  smtpPass: { type: String, default: '' },
+  contractBqlName: { type: String, default: '' },
+  contractRepName: { type: String, default: '' },
+  contractRepRole: { type: String, default: '' },
+  contractRepPhone: { type: String, default: '' },
+  contractTerms: { type: String, default: '' }
 }, {
   timestamps: true,
 });
