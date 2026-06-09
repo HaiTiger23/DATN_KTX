@@ -203,7 +203,7 @@ export default function StudentRoomsTab({ rooms, activeRoomId, pendingRoomId, on
                   {r.amenities && r.amenities.length > 0 && (
                     <div style={{ marginBottom: 8 }}>
                       <Typography.Text type="secondary" style={{ fontSize: 13 }}>{t('studentRooms.amenities')}</Typography.Text>
-                      <div style={{ marginTop: 4, display: 'flex', gap: 5 }}>
+                      <div style={{ marginTop: 4, display: 'flex', flexWrap: 'wrap', gap: 5 }}>
                         {r.amenities.map(a => <Tag key={a} style={{ marginBottom: 4 }}>{a}</Tag>)}
                       </div>
                     </div>

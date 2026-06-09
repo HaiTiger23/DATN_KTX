@@ -215,7 +215,7 @@ export default function MainLayout() {
           <Space wrap>
             {user?.role === 'Student' && (
               <Badge count={unreadList.length} overflowCount={99}>
-                <Button icon={<BellOutlined />} onClick={() => navigate('/student/student_notifications')} />
+                <Button icon={<BellOutlined />} onClick={() => navigate('/student/notifications')} />
               </Badge>
             )}
             <LanguageSwitcher />
