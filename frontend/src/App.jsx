@@ -22,7 +22,7 @@ import AdminSettingsPage from './pages/admin/AdminSettingsPage';
 // Shared Pages
 import ProfilePage from './pages/shared/ProfilePage';
 
-// Student Pages
+import StudentMyRoomPage from './pages/student/StudentMyRoomPage';
 import StudentRoomsPage from './pages/student/StudentRoomsPage';
 import StudentRequestsPage from './pages/student/StudentRequestsPage';
 import StudentContractsPage from './pages/student/StudentContractsPage';
@@ -40,7 +40,7 @@ function Routes() {
       <RouterRoutes>
         {/* New Refactored Routes */}
         <Route path="/" element={<MainLayout />}>
-          <Route index element={<Navigate to={user?.role === 'Admin' ? '/admin/stats' : '/student/rooms'} replace />} />
+          <Route index element={<Navigate to={user?.role === 'Admin' ? '/admin/stats' : '/student/my-room'} replace />} />
           {user?.role === 'Admin' && (
             <>
               <Route path="admin/stats" element={<AdminStatsPage />} />
@@ -57,6 +57,7 @@ function Routes() {
           )}
           {user?.role === 'Student' && (
             <>
+              <Route path="student/my-room" element={<StudentMyRoomPage />} />
               <Route path="student/rooms" element={<StudentRoomsPage />} />
               <Route path="student/requests" element={<StudentRequestsPage />} />
               <Route path="student/contracts" element={<StudentContractsPage />} />

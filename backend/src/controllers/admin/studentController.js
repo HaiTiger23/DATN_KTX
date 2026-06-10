@@ -65,6 +65,7 @@ const getStudents = async (req, res) => {
 // @access  Private/Admin
 const createStudent = async (req, res) => {
   try {
+    const { email, password, fullname, phone, address } = req.body;
     let mssv = req.body.mssv?.trim() || undefined;
     let cccd = req.body.cccd?.trim() || undefined;
 

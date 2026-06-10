@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import {
+  Home,
   Bed,
   Users,
   ClipboardList,
@@ -37,6 +38,7 @@ const ADMIN_NAV = [
 ];
 
 const STUDENT_NAV = [
+  'student_my_room',
   'student_rooms',
   'student_requests',
   'student_contracts',
@@ -48,6 +50,8 @@ const STUDENT_NAV = [
 const getNavIcon = (target) => {
   const iconProps = { size: 18 };
   switch (target) {
+    case 'student_my_room':
+      return <Home {...iconProps} />;
     case 'stats':
       return <PieChart {...iconProps} />;
     case 'rooms':

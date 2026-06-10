@@ -2,6 +2,7 @@ import express from 'express';
 import { protect } from '../middleware/authMiddleware.js';
 import {
     getAvailableRooms,
+    getMyCurrentRoom,
     submitRequest,
     getMyRequests,
     getMyContracts,
@@ -22,6 +23,7 @@ const router = express.Router();
 router.use(protect); // All student routes require authentication
 
 router.get('/rooms', getAvailableRooms);
+router.get('/my-room', getMyCurrentRoom);
 router.route('/requests')
     .get(getMyRequests)
     .post(submitRequest);

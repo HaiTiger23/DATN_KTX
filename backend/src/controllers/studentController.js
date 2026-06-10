@@ -44,6 +44,39 @@ export const getAvailableRooms = async (req, res) => {
     }
 };
 
+// @desc Get my current room
+// @route GET /api/student/my-room
+export const getMyCurrentRoom = async (req, res) => {
+    try {
+        const activeContract = await Contract.findOne({ student_id: req.user._id, status: 'Active' })
+            .populate('room_id');
+        
+        if (!activeContract || !activeContract.room_id) {
+            return res.json({ data: null });
+        }
+
+        const room = activeContract.room_id;
+        
+        const roommateContracts = await Contract.find({ 
+            room_id: room._id, 
+            status: 'Active',
+            student_id: { $ne: req.user._id }
+        }).populate('student_id', 'fullname email phone mssv');
+
+        const roommates = roommateContracts.map(c => c.student_id);
+
+        res.json({
+            data: {
+                room,
+                contract: activeContract,
+                roommates
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 // @desc Submit a room request
 // @route POST /api/student/requests
 export const submitRequest = async (req, res) => {
