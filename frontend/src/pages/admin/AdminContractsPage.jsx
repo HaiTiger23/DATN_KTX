@@ -160,6 +160,16 @@ export default function AdminContractsPage() {
     setModalOpen(true);
   };
 
+  const handleDeleteContract = async (id) => {
+    try {
+      await api(`/admin/contracts/${id}`, 'DELETE');
+      showToast('Đã xóa hợp đồng thành công');
+      loadData();
+    } catch (err) {
+      Modal.error({ title: t('dashboard.loadError'), content: err.message });
+    }
+  };
+
   const handleExportExcel = async () => {
     try {
       let q = `?limit=10000`;
@@ -418,6 +428,7 @@ export default function AdminContractsPage() {
           contracts={data.contracts || []}
           onEndContract={openEndContract}
           onEditContract={openEditContract}
+          onDeleteContract={handleDeleteContract}
           onViewContract={(c) => {
             setViewingContract(c);
             setModalType('view_contract');

@@ -156,4 +156,29 @@ const updateContract = async (req, res) => {
   }
 };
 
-export { getContracts, endContract, createContract, updateContract };
+// @desc    Delete contract
+// @route   DELETE /api/admin/contracts/:id
+// @access  Private/Admin
+const deleteContract = async (req, res) => {
+  try {
+    const contract = await Contract.findById(req.params.id);
+
+    if (!contract) {
+      return res.status(404).json({ message: 'Không tìm thấy hợp đồng' });
+    }
+
+    if (contract.status === 'Active') {
+      await Room.findOneAndUpdate(
+        { _id: contract.room_id, current_people: { $gt: 0 } },
+        { $inc: { current_people: -1 } }
+      );
+    }
+
+    await contract.deleteOne();
+    res.json({ message: 'Đã xóa hợp đồng thành công' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export { getContracts, endContract, createContract, updateContract, deleteContract };

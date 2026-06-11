@@ -1,4 +1,5 @@
-import { Button, Table, Tag, Typography, Tooltip } from 'antd';
+import { Button, Table, Tag, Typography, Tooltip, Popconfirm } from 'antd';
+import { DeleteOutlined } from '@ant-design/icons';
 import { formatDate } from '../../api';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -8,7 +9,7 @@ function statusColor(status) {
   return 'processing';
 }
 
-export default function AdminContractsTab({ contracts, onEndContract, onEditContract, onViewContract, pagination }) {
+export default function AdminContractsTab({ contracts, onEndContract, onEditContract, onViewContract, onDeleteContract, pagination }) {
   const { t } = useLanguage();
 
   const columns = [
@@ -82,6 +83,9 @@ export default function AdminContractsTab({ contracts, onEndContract, onEditCont
               </Button>
             </>
           )}
+          <Popconfirm title={t('contracts.confirmDelete', 'Bạn có chắc muốn xoá hợp đồng này?')} onConfirm={() => onDeleteContract(c._id)}>
+            <Button size="small" danger icon={<DeleteOutlined />} />
+          </Popconfirm>
         </div>
       ),
     },
