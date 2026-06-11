@@ -178,3 +178,16 @@ export const rejectPayment = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+// DELETE /api/admin/invoices/:id
+export const deleteInvoice = async (req, res) => {
+  try {
+    const invoice = await Invoice.findById(req.params.id);
+    if (!invoice) return res.status(404).json({ message: 'Không tìm thấy hóa đơn' });
+
+    await invoice.deleteOne();
+    res.json({ message: 'Đã xóa hóa đơn thành công' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

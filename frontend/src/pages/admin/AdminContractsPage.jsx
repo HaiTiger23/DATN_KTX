@@ -21,11 +21,11 @@ export default function AdminContractsPage() {
   const [total, setTotal] = useState(0);
   const [filters, setFilters] = useState(() => {
     const params = new URLSearchParams(window.location.search);
-    return { 
-      search: params.get('search') || '', 
-      status: '', 
-      sort: '', 
-      room_id: '' 
+    return {
+      search: params.get('search') || '',
+      status: '',
+      sort: '',
+      room_id: ''
     };
   });
   const [allRooms, setAllRooms] = useState([]);
@@ -160,16 +160,6 @@ export default function AdminContractsPage() {
     setModalOpen(true);
   };
 
-  const handleDeleteContract = async (id) => {
-    try {
-      await api(`/admin/contracts/${id}`, 'DELETE');
-      showToast('Đã xóa hợp đồng thành công');
-      loadData();
-    } catch (err) {
-      Modal.error({ title: t('dashboard.loadError'), content: err.message });
-    }
-  };
-
   const handleExportExcel = async () => {
     try {
       let q = `?limit=10000`;
@@ -205,18 +195,18 @@ export default function AdminContractsPage() {
     ];
 
     return (
-      <div className="ktx-filter-bar" style={{ 
-        marginBottom: 24, 
-        background: 'rgba(255, 255, 255, 0.8)', 
+      <div className="ktx-filter-bar" style={{
+        marginBottom: 24,
+        background: 'rgba(255, 255, 255, 0.8)',
         backdropFilter: 'blur(10px)',
-        padding: '20px', 
-        borderRadius: '12px', 
+        padding: '20px',
+        borderRadius: '12px',
         border: '1px solid rgba(0, 0, 0, 0.06)',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.03)' 
+        boxShadow: '0 4px 20px rgba(0,0,0,0.03)'
       }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', flex: 1 }}>
-            <Input 
+            <Input
               prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
               placeholder={t('filter.searchRoom')}
               allowClear
@@ -224,7 +214,7 @@ export default function AdminContractsPage() {
               onChange={e => setFilters(prev => ({ ...prev, search: e.target.value }))}
               style={{ borderRadius: '8px', width: '240px' }}
             />
-            <Select 
+            <Select
               showSearch
               style={{ width: '180px', borderRadius: '8px' }}
               placeholder={t('filter.selectRoom')}
@@ -234,7 +224,7 @@ export default function AdminContractsPage() {
               options={allRooms}
               optionFilterProp="label"
             />
-            <Select 
+            <Select
               style={{ width: '160px', borderRadius: '8px' }}
               placeholder={t('filter.status')}
               allowClear
@@ -242,7 +232,7 @@ export default function AdminContractsPage() {
               onChange={v => setFilters(prev => ({ ...prev, status: v || '' }))}
               options={statusOptions}
             />
-            <Select 
+            <Select
               style={{ width: '160px', borderRadius: '8px' }}
               placeholder={t('filter.sort')}
               value={filters.sort || ''}
@@ -251,13 +241,13 @@ export default function AdminContractsPage() {
             />
           </div>
           <div>
-            <Button 
-              type="primary" 
-              icon={<DownloadOutlined />} 
-              style={{ 
-                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', 
-                border: 'none', 
-                borderRadius: '10px', 
+            <Button
+              type="primary"
+              icon={<DownloadOutlined />}
+              style={{
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                border: 'none',
+                borderRadius: '10px',
                 boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)',
                 height: '40px',
                 padding: '0 24px',
@@ -268,13 +258,13 @@ export default function AdminContractsPage() {
             >
               Xuất Excel
             </Button>
-            <Button 
-              type="primary" 
-              icon={<PlusOutlined />} 
-              style={{ 
-                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', 
-                border: 'none', 
-                borderRadius: '10px', 
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              style={{
+                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                border: 'none',
+                borderRadius: '10px',
                 boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)',
                 height: '40px',
                 padding: '0 24px',
@@ -305,13 +295,13 @@ export default function AdminContractsPage() {
             <Spin size="large" />
           </div>
         )}
-        
+
         <Modal
           title={
             modalType === 'add_contract' ? t('modal.addContract', 'Tạo hợp đồng') :
-            modalType === 'edit_contract' ? t('modal.editContract', 'Gia hạn hợp đồng') :
-            modalType === 'end_contract' ? 'Xác nhận kết thúc hợp đồng' :
-            t('modal.viewContract', 'Chi tiết hợp đồng')
+              modalType === 'edit_contract' ? t('modal.editContract', 'Gia hạn hợp đồng') :
+                modalType === 'end_contract' ? 'Xác nhận kết thúc hợp đồng' :
+                  t('modal.viewContract', 'Chi tiết hợp đồng')
           }
           open={modalOpen}
           onOk={modalType === 'view_contract' ? () => setModalOpen(false) : handleModalSubmit}
@@ -324,64 +314,64 @@ export default function AdminContractsPage() {
         >
           {(modalType === 'add_contract' || modalType === 'edit_contract') ? (
             <Form layout="vertical">
-            {modalType === 'add_contract' && (
-              <>
-                <Form.Item label={t('contracts.selectStudent', 'Chọn sinh viên')} required>
-                  <Select
-                    showSearch
-                    optionFilterProp="label"
-                    value={contractForm.student_id || undefined}
-                    onChange={(v) => setContractForm(f => ({ ...f, student_id: v }))}
-                    options={allStudents}
-                    placeholder="MSSV hoặc Tên"
-                  />
-                </Form.Item>
-                <Form.Item label={t('contracts.selectRoom', 'Chọn phòng')} required>
-                  <Select
-                    showSearch
-                    optionFilterProp="label"
-                    value={contractForm.room_id || undefined}
-                    onChange={(v) => setContractForm(f => ({ ...f, room_id: v }))}
-                    options={allRooms}
-                    placeholder="Tòa nhà - Phòng"
-                  />
-                </Form.Item>
-              </>
-            )}
-            <Form.Item label={t('contracts.from', 'Ngày bắt đầu')} required>
-              <Input type="date" value={contractForm.start_date} onChange={(e) => setContractForm(f => ({ ...f, start_date: e.target.value }))} />
-            </Form.Item>
-            <Form.Item label={t('contracts.to', 'Ngày kết thúc')} required>
-              <Input type="date" value={contractForm.end_date} onChange={(e) => setContractForm(f => ({ ...f, end_date: e.target.value }))} />
-            </Form.Item>
+              {modalType === 'add_contract' && (
+                <>
+                  <Form.Item label={t('contracts.selectStudent', 'Chọn sinh viên')} required>
+                    <Select
+                      showSearch
+                      optionFilterProp="label"
+                      value={contractForm.student_id || undefined}
+                      onChange={(v) => setContractForm(f => ({ ...f, student_id: v }))}
+                      options={allStudents}
+                      placeholder="MSSV hoặc Tên"
+                    />
+                  </Form.Item>
+                  <Form.Item label={t('contracts.selectRoom', 'Chọn phòng')} required>
+                    <Select
+                      showSearch
+                      optionFilterProp="label"
+                      value={contractForm.room_id || undefined}
+                      onChange={(v) => setContractForm(f => ({ ...f, room_id: v }))}
+                      options={allRooms}
+                      placeholder="Tòa nhà - Phòng"
+                    />
+                  </Form.Item>
+                </>
+              )}
+              <Form.Item label={t('contracts.from', 'Ngày bắt đầu')} required>
+                <Input type="date" value={contractForm.start_date} onChange={(e) => setContractForm(f => ({ ...f, start_date: e.target.value }))} />
+              </Form.Item>
+              <Form.Item label={t('contracts.to', 'Ngày kết thúc')} required>
+                <Input type="date" value={contractForm.end_date} onChange={(e) => setContractForm(f => ({ ...f, end_date: e.target.value }))} />
+              </Form.Item>
             </Form>
           ) : null}
           {modalType === 'end_contract' && (
             <Form layout="vertical">
               <Form.Item label="Lý do kết thúc" required>
-                <Input.TextArea 
-                  rows={4} 
-                  value={contractForm.reason} 
-                  onChange={(e) => setContractForm(f => ({ ...f, reason: e.target.value }))} 
-                  placeholder="Vui lòng nhập lý do (VD: Sinh viên đã tốt nghiệp, vi phạm nội quy...)" 
+                <Input.TextArea
+                  rows={4}
+                  value={contractForm.reason}
+                  onChange={(e) => setContractForm(f => ({ ...f, reason: e.target.value }))}
+                  placeholder="Vui lòng nhập lý do (VD: Sinh viên đã tốt nghiệp, vi phạm nội quy...)"
                 />
               </Form.Item>
             </Form>
           )}
           {modalType === 'view_contract' && (
             <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '12px' }}>
-              <div style={{ 
-                background: 'white', padding: '30px 24px', borderRadius: '8px', 
-                boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0', 
-                fontFamily: 'Times New Roman, serif', color: '#0f172a' 
+              <div style={{
+                background: 'white', padding: '30px 24px', borderRadius: '8px',
+                boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0',
+                fontFamily: 'Times New Roman, serif', color: '#0f172a'
               }}>
                 <div style={{ textAlign: 'center', marginBottom: '24px' }}>
                   <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold' }}>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</h3>
                   <h4 style={{ margin: 0, fontSize: '15px', textDecoration: 'underline' }}>Độc lập - Tự do - Hạnh phúc</h4>
                 </div>
-                
+
                 <h2 style={{ textAlign: 'center', fontSize: '18px', fontWeight: 'bold', marginBottom: '24px' }}>HỢP ĐỒNG THUÊ CHỖ Ở KÝ TÚC XÁ</h2>
-                
+
                 <div style={{ fontSize: '15px', lineHeight: '1.6' }}>
                   <p style={{ margin: '8px 0' }}><strong>Bên A (Cho thuê):</strong> {agentSettings?.contractBqlName || 'Ban Quản lý Ký túc xá'}</p>
                   <p style={{ margin: '8px 0' }}><strong>Người đại diện:</strong> {agentSettings?.contractRepName || '..............................'} - <strong>Chức vụ:</strong> {agentSettings?.contractRepRole || '..............................'}</p>
@@ -399,19 +389,19 @@ export default function AdminContractsPage() {
               </div>
 
               <div style={{ textAlign: 'center', marginTop: '24px' }}>
-                <Button 
-                  type="primary" 
+                <Button
+                  type="primary"
                   size="large"
                   onClick={() => {
                     if (printRef.current) {
                       window.print();
                     }
                   }}
-                  style={{ 
-                    background: 'linear-gradient(135deg, #4f46e5 0%, #4338ca 100%)', 
-                    borderColor: '#4338ca', 
-                    borderRadius: '8px', 
-                    boxShadow: '0 4px 14px rgba(79, 70, 229, 0.4)', 
+                  style={{
+                    background: 'linear-gradient(135deg, #4f46e5 0%, #4338ca 100%)',
+                    borderColor: '#4338ca',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 14px rgba(79, 70, 229, 0.4)',
                     padding: '0 40px',
                     fontWeight: 600
                   }}
@@ -428,7 +418,6 @@ export default function AdminContractsPage() {
           contracts={data.contracts || []}
           onEndContract={openEndContract}
           onEditContract={openEditContract}
-          onDeleteContract={handleDeleteContract}
           onViewContract={(c) => {
             setViewingContract(c);
             setModalType('view_contract');

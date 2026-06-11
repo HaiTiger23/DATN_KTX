@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Button, Table, Tag, Space, Image, Typography, Tooltip, Modal } from 'antd';
+import { Button, Table, Tag, Space, Image, Typography, Tooltip, Modal, Popconfirm } from 'antd';
+import { DeleteOutlined } from '@ant-design/icons';
 import { formatMoney, formatDate } from '../../api';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -9,7 +10,7 @@ function statusColor(s) {
   return 'default';
 }
 
-export default function AdminInvoicesTab({ invoices, pagination, onConfirm, onReject }) {
+export default function AdminInvoicesTab({ invoices, pagination, onConfirm, onReject, onDelete }) {
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const { t } = useLanguage();
 
@@ -95,6 +96,9 @@ export default function AdminInvoicesTab({ invoices, pagination, onConfirm, onRe
             {inv.status === 'Paid' && (
               <Tag color="success" style={{ margin: 0 }}>✅ {t('invoices.paidComplete')}</Tag>
             )}
+            <Popconfirm title="Bạn có chắc muốn xoá hóa đơn này?" onConfirm={() => onDelete(inv._id)}>
+              <Button size="small" danger icon={<DeleteOutlined />} />
+            </Popconfirm>
           </Space>
         );
       },

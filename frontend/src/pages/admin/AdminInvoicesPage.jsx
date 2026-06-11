@@ -129,7 +129,7 @@ export default function AdminInvoicesPage() {
     }
   };
 
-  const confirmInvoice = async (id) => {
+  const handleConfirm = async (id) => {
     Modal.confirm({
       title: t('confirm.paymentConfirm'),
       onOk: async () => {
@@ -144,7 +144,7 @@ export default function AdminInvoicesPage() {
     });
   };
 
-  const rejectInvoice = async (id) => {
+  const handleReject = async (id) => {
     Modal.confirm({
       title: t('confirm.receiptReject'),
       okType: 'danger',
@@ -158,6 +158,16 @@ export default function AdminInvoicesPage() {
         }
       },
     });
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await api(`/admin/invoices/${id}`, 'DELETE');
+      showToast('Đã xóa hóa đơn thành công');
+      loadData();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
   };
 
   const handleExportExcel = async () => {
@@ -429,10 +439,11 @@ export default function AdminInvoicesPage() {
 
       <AdminInvoicesTab
         invoices={data.invoices || []}
-          onConfirm={confirmInvoice}
-          onReject={rejectInvoice}
-          pagination={{ current: page, pageSize: limit, total, onChange: (p, s) => { setPage(p); setLimit(s); }, showSizeChanger: true }}
-        />
+        pagination={{ current: page, pageSize: limit, total, onChange: (p, s) => { setPage(p); setLimit(s); }, showSizeChanger: true }}
+        onConfirm={handleConfirm}
+        onReject={handleReject}
+        onDelete={handleDelete}
+      />
       </div>
     </div>
   );

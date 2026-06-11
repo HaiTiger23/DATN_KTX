@@ -18,7 +18,7 @@ const getContracts = async (req, res) => {
     if (search) {
       const [rooms, students] = await Promise.all([
         Room.find({ room_code: { $regex: search, $options: 'i' } }).select('_id'),
-        User.find({ 
+        User.find({
           $or: [
             { fullname: { $regex: search, $options: 'i' } },
             { mssv: { $regex: search, $options: 'i' } },
@@ -156,29 +156,4 @@ const updateContract = async (req, res) => {
   }
 };
 
-// @desc    Delete contract
-// @route   DELETE /api/admin/contracts/:id
-// @access  Private/Admin
-const deleteContract = async (req, res) => {
-  try {
-    const contract = await Contract.findById(req.params.id);
-
-    if (!contract) {
-      return res.status(404).json({ message: 'Không tìm thấy hợp đồng' });
-    }
-
-    if (contract.status === 'Active') {
-      await Room.findOneAndUpdate(
-        { _id: contract.room_id, current_people: { $gt: 0 } },
-        { $inc: { current_people: -1 } }
-      );
-    }
-
-    await contract.deleteOne();
-    res.json({ message: 'Đã xóa hợp đồng thành công' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-export { getContracts, endContract, createContract, updateContract, deleteContract };
+export { getContracts, endContract, createContract, updateContract };
