@@ -3,12 +3,6 @@ import { SettingOutlined } from '@ant-design/icons';
 import { useLanguage } from '../../context/LanguageContext';
 import RichTextEditor from '../RichTextEditor';
 
-const PENDING_BLOCKS = [
-  { id: 'email', titleKey: 'settings.blockEmailTitle', leadKey: 'settings.blockEmailLead' },
-  { id: 'rent', titleKey: 'settings.blockRentTitle', leadKey: 'settings.blockRentLead' },
-  { id: 'limits', titleKey: 'settings.blockLimitsTitle', leadKey: 'settings.blockLimitsLead' },
-];
-
 export default function AdminSettingsTab({ geminiKey, setGeminiKey, agentSettings, setAgentSettings, onSave }) {
   const { t } = useLanguage();
 
@@ -193,17 +187,6 @@ export default function AdminSettingsTab({ geminiKey, setGeminiKey, agentSetting
         </Space>
       </Card>
 
-      <Row gutter={[16, 16]}>
-        {PENDING_BLOCKS.map((block) => (
-          <Col xs={24} md={8} key={block.id}>
-            <Card title={t(block.titleKey)}>
-              <Typography.Paragraph type="secondary">{t(block.leadKey)}</Typography.Paragraph>
-              <Tag>{t('settings.pendingBadge')}</Tag>
-              <Typography.Paragraph className="ktx-settings-pending-note">{t('settings.pendingNote')}</Typography.Paragraph>
-            </Card>
-          </Col>
-        ))}
-      </Row>
     </Space>
   );
 }
