@@ -49,7 +49,8 @@ export const chatWithBot = async (req, res) => {
                     properties: {
                         floor: { type: "integer", description: "Số tầng (ví dụ: 1, 2, 3)" },
                         roomType: { type: "string", description: "Loại phòng ('Standard', 'Service', 'VIP')" },
-                        capacity: { type: "integer", description: "Sức chứa/Số chỗ của phòng (ví dụ: 4, 6, 8, 10)" }
+                        capacity: { type: "integer", description: "Sức chứa/Số chỗ của phòng (ví dụ: 4, 6, 8, 10)" },
+                        maxPrice: { type: "integer", description: "Mức giá tối đa mà sinh viên muốn tìm (ví dụ: 1000000, 2000000)" }
                     }
                 }
             });
@@ -160,6 +161,7 @@ Dựa vào thông tin trên và kết quả thực tế từ các công cụ, h�
                     if (args.floor) filter.floor = args.floor;
                     if (args.roomType) filter.roomType = args.roomType;
                     if (args.capacity) filter.capacity = args.capacity;
+                    if (args.maxPrice) filter.price = { $lte: args.maxPrice };
                     
                     // Only find rooms that are not full
                     filter.$expr = { $lt: [ "$current_people", "$capacity" ] };
