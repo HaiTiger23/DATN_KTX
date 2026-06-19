@@ -797,3 +797,19 @@ tr:hover td {
     padding: 4px 12px;
     margin-bottom: 8px;
 }
+
+/* Rich Text Editor Overrides */
+.ktx-editor-wrapper {
+    margin-top: 8px;
+    margin-bottom: 24px;
+}
+.ktx-editor-wrapper .ql-container {
+    min-height: 250px;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+.ktx-editor-wrapper .ql-toolbar {
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+

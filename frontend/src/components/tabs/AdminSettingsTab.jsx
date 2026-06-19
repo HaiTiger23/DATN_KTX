@@ -171,7 +171,7 @@ export default function AdminSettingsTab({ geminiKey, setGeminiKey, agentSetting
         
         <div style={{ marginTop: 24 }}>
           <Typography.Text strong>Các điều khoản hợp đồng</Typography.Text>
-          <div style={{ marginTop: 8, height: 300, marginBottom: 50 }}>
+          <div className="ktx-editor-wrapper">
             <RichTextEditor 
               value={agentSettings?.contractTerms || ''} 
               onChange={(val) => setAgentSettings(prev => ({ ...prev, contractTerms: val }))}
@@ -189,7 +189,7 @@ export default function AdminSettingsTab({ geminiKey, setGeminiKey, agentSetting
 
       <Card title="Nội quy chung (Đăng ký tài khoản)" style={{ marginTop: 24 }}>
         <Typography.Paragraph type="secondary">Cấu hình nội quy chung mà sinh viên phải đồng ý khi đăng ký tài khoản.</Typography.Paragraph>
-        <div style={{ marginTop: 8, height: 300, marginBottom: 50 }}>
+        <div className="ktx-editor-wrapper">
           <RichTextEditor 
             value={agentSettings?.generalRules || ''} 
             onChange={(val) => setAgentSettings(prev => ({ ...prev, generalRules: val }))}
