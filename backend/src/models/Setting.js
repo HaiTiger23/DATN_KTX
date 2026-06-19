@@ -30,7 +30,8 @@ const settingSchema = new mongoose.Schema({
   contractRepName: { type: String, default: '' },
   contractRepRole: { type: String, default: '' },
   contractRepPhone: { type: String, default: '' },
-  contractTerms: { type: String, default: '' }
+  contractTerms: { type: String, default: '' },
+  generalRules: { type: String, default: '' }
 }, {
   timestamps: true,
 });

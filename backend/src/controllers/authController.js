@@ -185,7 +185,7 @@ const updateUserProfile = async (req, res) => {
       
       if (req.body.cccd && req.body.cccd !== user.cccd) {
         const cccdExists = await User.findOne({ cccd: req.body.cccd });
-        if (cccdExists) return res.status(400).json({ message: 'Số CCCD này đã được đăng ký' });
+        if (ccdExists) return res.status(400).json({ message: 'Số CCCD này đã được đăng ký' });
         user.cccd = req.body.cccd;
       }
       
@@ -264,4 +264,16 @@ const resetPassword = async (req, res) => {
   }
 };
 
-export { authUser, registerUser, sendRegisterOtp, getUserProfile, updateUserProfile, forgotPassword, resetPassword };
+// @desc    Get public settings (e.g. general rules)
+// @route   GET /api/auth/public-settings
+// @access  Public
+const getPublicSettings = async (req, res) => {
+  try {
+    const setting = await Setting.findOne();
+    res.json({ generalRules: setting?.generalRules || '' });
+  } catch (error) {
+    res.status(500).json({ message: 'Lỗi khi tải cài đặt hệ thống', error: error.message });
+  }
+};
+
+export { authUser, registerUser, sendRegisterOtp, getUserProfile, updateUserProfile, forgotPassword, resetPassword, getPublicSettings };

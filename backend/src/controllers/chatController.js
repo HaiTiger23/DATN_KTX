@@ -30,8 +30,8 @@ export const chatWithBot = async (req, res) => {
             return res.status(400).json({ message: 'Chatbot chưa được cấu hình API Key. Vui lòng liên hệ Admin.' });
         }
 
-        // Fetch Knowledge Base and Notifications
-        const knowledgeItems = await Knowledge.find();
+        // Fetch Notifications
+        // const knowledgeItems = await Knowledge.find(); (Removed to save token, use RAG)
         const latestNotifications = await Notification.find().sort({ createdAt: -1 }).limit(5);
 
         let context = "Dưới đây là thông tin nội quy và kiến thức về Ký túc xá:\n";
@@ -45,13 +45,21 @@ export const chatWithBot = async (req, res) => {
             context += "\n[KIẾN THỨC CHUNG]\n";
         }
 
-        knowledgeItems.forEach(item => {
-            const answerPlain = knowledgeAnswerAsPlainText(item.answer);
-            context += `Q: ${item.question}\nA: ${answerPlain}\n\n`;
-        });
 
         // Define Tools based on permissions
         const functionDeclarations = [];
+
+        functionDeclarations.push({
+            name: "searchKnowledgeBase",
+            description: "Tra cứu thông tin nội quy, quy định, tiện ích, và các câu hỏi thường gặp về Ký túc xá. Sử dụng khi sinh viên hỏi về quy định, tiện ích, giờ giấc, hoặc các thông tin chung.",
+            parameters: {
+                type: "object",
+                properties: {
+                    keyword: { type: "string", description: "Từ khóa chính để tìm kiếm (ví dụ: 'tiện ích', 'giờ giấc', 'nấu ăn')" }
+                },
+                required: ["keyword"]
+            }
+        });
         
         if (setting.agentAllowCheckRoom) {
             functionDeclarations.push({
@@ -170,7 +178,21 @@ Dựa vào thông tin trên, hãy trả lời sinh viên một cách chuyên ngh
             let functionResponseData = {};
 
             try {
-                if (name === 'checkRoomAvailability' && setting.agentAllowCheckRoom) {
+                if (name === 'searchKnowledgeBase') {
+                    const { keyword } = args;
+                    const regex = new RegExp(keyword, 'i');
+                    const knowledges = await Knowledge.find({ $or: [{ question: regex }, { answer: regex }] }).limit(3);
+                    if (knowledges.length === 0) {
+                        functionResponseData = { message: "Không tìm thấy thông tin nào phù hợp trong cơ sở dữ liệu." };
+                    } else {
+                        const results = knowledges.map(k => ({
+                            question: k.question,
+                            answer: knowledgeAnswerAsPlainText(k.answer)
+                        }));
+                        functionResponseData = { results };
+                    }
+                }
+                else if (name === 'checkRoomAvailability' && setting.agentAllowCheckRoom) {
                     const filter = { status: 'Available' };
                     if (args.floor) filter.floor = args.floor;
                     if (args.roomType) filter.roomType = args.roomType;

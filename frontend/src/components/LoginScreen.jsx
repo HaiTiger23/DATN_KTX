@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Button, Card, Form, Input, Typography, Space } from 'antd';
+import { useState, useEffect } from 'react';
+import { Button, Card, Form, Input, Typography, Space, Checkbox, Modal } from 'antd';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { fetchAPI } from '../api';
@@ -21,6 +21,16 @@ export default function LoginScreen() {
   const [registerForm] = Form.useForm();
   const [forgotForm] = Form.useForm();
 
+  const [generalRules, setGeneralRules] = useState('');
+  const [rulesModalOpen, setRulesModalOpen] = useState(false);
+
+  useEffect(() => {
+    // Fetch public settings for rules
+    fetchAPI('/auth/public-settings', 'GET')
+      .then(res => setGeneralRules(res?.generalRules || ''))
+      .catch(() => {});
+  }, []);
+
   async function onLogin(values) {
     setLoginLoading(true);
     try {
@@ -34,6 +44,10 @@ export default function LoginScreen() {
   }
 
   async function onRegister(values) {
+    if (!values.acceptRules) {
+      showToast('Bạn phải đồng ý với Nội quy chung để đăng ký', 'error');
+      return;
+    }
     setRegisterLoading(true);
     try {
       const data = await fetchAPI(
@@ -174,6 +188,14 @@ export default function LoginScreen() {
                 <Form.Item name="mssv" label={t('login.mssv')}>
                   <Input placeholder="SV001" />
                 </Form.Item>
+                <Form.Item name="acceptRules" valuePropName="checked" rules={[{ required: true, message: 'Vui lòng xác nhận nội quy' }]}>
+                  <Checkbox>
+                    Tôi đã đọc và đồng ý với{' '}
+                    <a onClick={(e) => { e.preventDefault(); setRulesModalOpen(true); }}>
+                      Nội quy chung
+                    </a>
+                  </Checkbox>
+                </Form.Item>
                 <Form.Item>
                   <Button type="primary" htmlType="submit" block loading={registerLoading}>
                     {t('login.register')}
@@ -219,6 +241,24 @@ export default function LoginScreen() {
           </Space>
         </Card>
       </div>
+
+      <Modal
+        title="Nội quy chung"
+        open={rulesModalOpen}
+        onCancel={() => setRulesModalOpen(false)}
+        footer={[
+          <Button key="close" type="primary" onClick={() => setRulesModalOpen(false)}>
+            Đã hiểu
+          </Button>
+        ]}
+        width={700}
+      >
+        <div 
+          className="ktx-rules-content" 
+          dangerouslySetInnerHTML={{ __html: generalRules || 'Chưa có nội quy nào được cấu hình.' }} 
+          style={{ maxHeight: '60vh', overflowY: 'auto' }}
+        />
+      </Modal>
     </>
   );
 }

@@ -187,6 +187,22 @@ export default function AdminSettingsTab({ geminiKey, setGeminiKey, agentSetting
         </Space>
       </Card>
 
+      <Card title="Nội quy chung (Đăng ký tài khoản)" style={{ marginTop: 24 }}>
+        <Typography.Paragraph type="secondary">Cấu hình nội quy chung mà sinh viên phải đồng ý khi đăng ký tài khoản.</Typography.Paragraph>
+        <div style={{ marginTop: 8, height: 300, marginBottom: 50 }}>
+          <RichTextEditor 
+            value={agentSettings?.generalRules || ''} 
+            onChange={(val) => setAgentSettings(prev => ({ ...prev, generalRules: val }))}
+            placeholder="Nhập nội quy chung..."
+          />
+        </div>
+        <Space orientation="vertical" size="small" style={{ marginTop: 16 }}>
+          <Button type="primary" onClick={onSave}>
+            Lưu nội quy chung
+          </Button>
+        </Space>
+      </Card>
+
     </Space>
   );
 }
