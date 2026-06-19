@@ -34,6 +34,7 @@ export const updateSettings = async (req, res) => {
         if (req.body.contractRepRole !== undefined) setting.contractRepRole = req.body.contractRepRole;
         if (req.body.contractRepPhone !== undefined) setting.contractRepPhone = req.body.contractRepPhone;
         if (req.body.contractTerms !== undefined) setting.contractTerms = req.body.contractTerms;
+        if (req.body.generalRules !== undefined) setting.generalRules = req.body.generalRules;
 
         const updatedSetting = await setting.save();
         res.json(setting);
