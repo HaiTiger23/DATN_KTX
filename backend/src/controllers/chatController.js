@@ -5,6 +5,7 @@ import Contract from '../models/Contract.js';
 import Request from '../models/Request.js';
 import Feedback from '../models/Feedback.js';
 import User from '../models/User.js';
+import Notification from '../models/Notification.js';
 
 function knowledgeAnswerAsPlainText(html) {
     if (!html || typeof html !== 'string') return '';
@@ -29,9 +30,21 @@ export const chatWithBot = async (req, res) => {
             return res.status(400).json({ message: 'Chatbot chưa được cấu hình API Key. Vui lòng liên hệ Admin.' });
         }
 
-        // Fetch Knowledge Base
+        // Fetch Knowledge Base and Notifications
         const knowledgeItems = await Knowledge.find();
+        const latestNotifications = await Notification.find().sort({ createdAt: -1 }).limit(5);
+
         let context = "Dưới đây là thông tin nội quy và kiến thức về Ký túc xá:\n";
+        
+        if (latestNotifications.length > 0) {
+            context += "\n[THÔNG BÁO MỚI NHẤT TỪ KTX]\n";
+            latestNotifications.forEach(notif => {
+                const notifPlain = knowledgeAnswerAsPlainText(notif.content);
+                context += `- [Ngày ${new Date(notif.createdAt).toLocaleDateString('vi-VN')}] ${notif.title}: ${notifPlain}\n`;
+            });
+            context += "\n[KIẾN THỨC CHUNG]\n";
+        }
+
         knowledgeItems.forEach(item => {
             const answerPlain = knowledgeAnswerAsPlainText(item.answer);
             context += `Q: ${item.question}\nA: ${answerPlain}\n\n`;
@@ -70,7 +83,7 @@ export const chatWithBot = async (req, res) => {
         if (isAdmin) {
             functionDeclarations.push({
                 name: "getSystemStats",
-                description: "Thống kê tổng quan hệ thống Ký túc xá bao gồm số phòng trống, số lượng sinh viên đang ở, và các đơn yêu cầu/phản ánh đang chờ duyệt.",
+                description: "Thống kê tổng quan hệ thống Ký túc xá bao gồm số phòng trống, số lượng sinh viên đang ở, các đơn yêu cầu đang chờ duyệt, và THỐNG KÊ TỶ LỆ LẤP ĐẦY theo từng khu/tòa nhà.",
                 parameters: { type: "object", properties: {} }
             });
             functionDeclarations.push({
@@ -97,20 +110,21 @@ export const chatWithBot = async (req, res) => {
         let systemInstruction = '';
         if (isAdmin) {
             systemInstruction = `Bạn là Trợ lý quản lý hệ thống Ký túc xá. Nhiệm vụ của bạn là cung cấp số liệu thống kê, tra cứu sinh viên, và báo cáo tình hình cho Ban quản lý.
-Bối cảnh kiến thức chung về quy định KTX:
+Bối cảnh kiến thức và thông báo:
 ${context}
-Hãy trả lời Admin một cách chuyên nghiệp, chính xác dựa trên các công cụ bạn có.`;
+Khi Admin hỏi về thống kê (ví dụ: Còn bao nhiêu phòng trống? Khu nào đông nhất?), HÃY TỰ ĐỘNG GỌI hàm getSystemStats(). Khi nhận được kết quả, hãy phân tích tỷ lệ lấp đầy của các khu và báo cáo chi tiết. Hãy trả lời Admin một cách chuyên nghiệp.`;
         } else {
             systemInstruction = `${setting.aiSystemPrompt || 'Bạn là trợ lý ảo AI Agent hỗ trợ sinh viên tại Ký túc xá.'}
 QUY TẮC QUAN TRỌNG:
-1. Bạn CÓ THỂ sử dụng các công cụ (tools) được cung cấp để tra cứu hoặc thay đổi dữ liệu thực tế.
-2. Nếu sinh viên yêu cầu kiểm tra phòng, kiểm tra hợp đồng hoặc tạo đơn báo hỏng, bạn BẮT BUỘC phải gọi tool tương ứng. KHÔNG ĐƯỢC tự bịa ra thông tin hoặc nói rằng đã làm xong mà không gọi tool.
-3. Chỉ khi tool trả về kết quả, bạn mới dùng kết quả đó để trả lời sinh viên.
+1. Bạn CÓ THỂ sử dụng các công cụ (tools) được cung cấp để tra cứu dữ liệu thực tế.
+2. ƯU TIÊN THÔNG BÁO MỚI NHẤT: Nếu sinh viên hỏi về các vấn đề như điện, nước, giá cả, tuyển sinh... BẮT BUỘC đối chiếu với mục [THÔNG BÁO MỚI NHẤT TỪ KTX] trong Bối cảnh trước. Nếu có thông tin, hãy trích dẫn: "Theo thông báo mới nhất ngày [Ngày], KTX sẽ...".
+3. ĐỀ XUẤT PHÒNG THÔNG MINH: Khi sinh viên hỏi tìm phòng hoặc cung cấp ngân sách, bắt buộc gọi checkRoomAvailability() với maxPrice. ĐÓNG VAI TƯ VẤN VIÊN: Hãy phân tích dựa trên kết quả và CHỦ ĐỘNG ĐỀ XUẤT 1-2 phòng phù hợp nhất (ví dụ phòng có giá rẻ nhất, hoặc phòng đang trống ít người).
+4. KHÔNG ĐƯỢC tự bịa ra thông tin. Chỉ trả lời dựa trên context và kết quả từ tool.
 
-Bối cảnh kiến thức (Knowledge Base):
+Bối cảnh hiện tại:
 ${context}
 
-Dựa vào thông tin trên và kết quả thực tế từ các công cụ, hãy trả lời sinh viên một cách chuyên nghiệp và thân thiện.`;
+Dựa vào thông tin trên, hãy trả lời sinh viên một cách chuyên nghiệp, thông minh và thân thiện.`;
         }
 
         const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
@@ -201,11 +215,27 @@ Dựa vào thông tin trên và kết quả thực tế từ các công cụ, h�
                 }
                 else if (isAdmin && name === 'getSystemStats') {
                     const totalRooms = await Room.countDocuments();
-                    const availableRooms = await Room.countDocuments({ current_people: { $lt: 8 } }); // Tạm ước lượng 8 hoặc có thể filter bằng JS
+                    const availableRooms = await Room.countDocuments({ $expr: { $lt: [ "$current_people", "$capacity" ] } }); 
                     const totalStudents = await Contract.countDocuments({ status: 'Active' });
                     const pendingRequests = await Request.countDocuments({ status: 'Pending' });
                     const pendingFeedbacks = await Feedback.countDocuments({ status: 'Pending' });
-                    functionResponseData = { totalRooms, availableRooms, totalStudents, pendingRequests, pendingFeedbacks };
+                    
+                    const buildingStatsRaw = await Room.aggregate([
+                        {
+                            $group: {
+                                _id: "$building",
+                                totalCapacity: { $sum: "$capacity" },
+                                totalPeople: { $sum: "$current_people" }
+                            }
+                        }
+                    ]);
+                    
+                    const buildingStats = buildingStatsRaw.map(b => ({
+                        building: b._id,
+                        occupancyRate: b.totalCapacity > 0 ? ((b.totalPeople / b.totalCapacity) * 100).toFixed(1) + '%' : '0%'
+                    }));
+
+                    functionResponseData = { totalRooms, availableRooms, totalStudents, pendingRequests, pendingFeedbacks, buildingStats };
                 }
                 else if (isAdmin && name === 'searchStudent') {
                     const { keyword } = functionCall.args;
